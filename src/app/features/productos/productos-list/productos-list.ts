@@ -9,6 +9,7 @@ import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
+import { Switch } from '../../../shared/ui/atoms/switch/switch';
 import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { ImageUpload } from '../../../shared/ui/molecules/image-upload/image-upload';
@@ -29,6 +30,9 @@ import { Linea } from '../../../core/models/linea.model';
 import { Bodega } from '../../../core/models/bodega.model';
 import { environment } from '../../../../environments/environment';
 
+/** Umbral de alerta de stock bajo cuando no se personaliza al crear/editar un producto. */
+const STOCK_MINIMO_DEFAULT = 2;
+
 @Component({
   selector: 'app-productos-list',
   standalone: true,
@@ -42,6 +46,7 @@ import { environment } from '../../../../environments/environment';
     FormField,
     Input,
     Select,
+    Switch,
     SearchBar,
     EmptyState,
     ImageUpload,
@@ -77,6 +82,10 @@ export class ProductosList {
 
   /** Bodega + cantidad actual/nueva al editar un producto ya existente — ver `guardarAjustesStock()`. */
   protected readonly stockEdicion = signal<{ bodegaId: string; cantidadActual: number; cantidadNueva: number }[]>([]);
+
+  /** Umbral de alerta de stock bajo — si no se personaliza, el default es 2 (ver `guardarStockMinimoInicial`). */
+  protected readonly stockMinimoPersonalizado = signal(false);
+  protected readonly stockMinimoValor = signal(2);
   protected readonly search = signal('');
   protected readonly showForm = signal(false);
   protected readonly editingId = signal<string | null>(null);
@@ -232,6 +241,8 @@ export class ProductosList {
     this.stockInicial.set([]);
     this.stockEdicion.set([]);
     this.categoriaIdsSeleccionadas.set([]);
+    this.stockMinimoPersonalizado.set(false);
+    this.stockMinimoValor.set(STOCK_MINIMO_DEFAULT);
     this.form.reset({
       nombre: '',
       codigoBarras: '',
@@ -251,6 +262,8 @@ export class ProductosList {
     this.editingImagenUrl.set(this.imageUrl(producto.imagenUrl));
     this.selectedImage.set(null);
     this.stockInicial.set([]);
+    this.stockMinimoPersonalizado.set(false);
+    this.stockMinimoValor.set(STOCK_MINIMO_DEFAULT);
     this.categoriaIdsSeleccionadas.set(producto.categorias.map((c) => c.id));
     this.stockEdicion.set(
       this.bodegas().map((bodega) => {
@@ -310,11 +323,11 @@ export class ProductosList {
       : this.productosService.create(payload, this.selectedImage());
 
     request$.subscribe({
-      next: () => {
+      next: (producto) => {
         if (editingId) {
           this.guardarAjustesStock(editingId);
         } else {
-          this.finalizarGuardado(editingId);
+          this.guardarStockMinimoInicial(producto.id);
         }
       },
       error: (err) => {
@@ -326,13 +339,9 @@ export class ProductosList {
 
   /** Solo dispara `AJUSTE` para las bodegas cuya cantidad realmente cambió — evita ruido en el kardex. */
   private guardarAjustesStock(productoId: string): void {
-    const cambiadas = this.stockEdicion().filter((f) => f.cantidadNueva !== f.cantidadActual);
-    if (cambiadas.length === 0) {
-      this.finalizarGuardado(productoId);
-      return;
-    }
-    forkJoin(
-      cambiadas.map((f) =>
+    const llamadas = this.stockEdicion()
+      .filter((f) => f.cantidadNueva !== f.cantidadActual)
+      .map((f) =>
         this.inventarioService.ajustar({
           productoId,
           bodegaId: f.bodegaId,
@@ -340,9 +349,21 @@ export class ProductosList {
           cantidad: f.cantidadNueva,
           motivo: 'Editado desde ficha de producto',
         }),
-      ),
-    ).subscribe({
-      next: () => this.finalizarGuardado(productoId),
+      );
+    // El switch de stock mínimo es opt-in en edición — si no se activa, no se toca
+    // lo que ya hubiera configurado (evita pisar un ajuste fino hecho desde Inventario).
+    if (this.stockMinimoPersonalizado()) {
+      const valor = this.stockMinimoValor();
+      for (const fila of this.stockEdicion()) {
+        llamadas.push(this.inventarioService.setStockMinimo(productoId, fila.bodegaId, valor));
+      }
+    }
+    if (llamadas.length === 0) {
+      this.finalizarGuardado(true);
+      return;
+    }
+    forkJoin(llamadas).subscribe({
+      next: () => this.finalizarGuardado(true),
       error: (err) => {
         this.saving.set(false);
         this.toast.error(err.error?.message ?? 'Producto guardado, pero no se pudo actualizar el stock');
@@ -350,10 +371,29 @@ export class ProductosList {
     });
   }
 
-  private finalizarGuardado(editingId: string | null): void {
+  /** En creación, cada bodega con stock inicial recibe el mínimo personalizado o el default (2). */
+  private guardarStockMinimoInicial(productoId: string): void {
+    const stockInicial = this.stockInicial().filter((s) => s.bodegaId && s.cantidad > 0);
+    if (stockInicial.length === 0) {
+      this.finalizarGuardado(false);
+      return;
+    }
+    const valor = this.stockMinimoPersonalizado() ? this.stockMinimoValor() : STOCK_MINIMO_DEFAULT;
+    forkJoin(
+      stockInicial.map((s) => this.inventarioService.setStockMinimo(productoId, s.bodegaId, valor)),
+    ).subscribe({
+      next: () => this.finalizarGuardado(false),
+      error: (err) => {
+        this.saving.set(false);
+        this.toast.error(err.error?.message ?? 'Producto creado, pero no se pudo definir el stock mínimo');
+      },
+    });
+  }
+
+  private finalizarGuardado(esEdicion: boolean): void {
     this.saving.set(false);
     this.showForm.set(false);
-    this.toast.success(editingId ? 'Producto actualizado' : 'Producto creado');
+    this.toast.success(esEdicion ? 'Producto actualizado' : 'Producto creado');
     this.load();
   }
 

@@ -177,6 +177,22 @@
   color: var(--text-tertiary);
 }
 
+.topbar__notif-item__accion {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent-primary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .topbar__notif-vertodas {
   margin-top: var(--space-2);
   padding: var(--space-2);

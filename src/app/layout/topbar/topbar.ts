@@ -5,7 +5,9 @@ import { Badge, BadgeTone } from '../../shared/ui/atoms/badge/badge';
 import { MobileNavService } from '../../core/services/mobile-nav.service';
 import { CajaService } from '../../core/services/caja.service';
 import { AlertasService } from '../../core/services/alertas.service';
+import { ListaPedidosService } from '../../core/services/lista-pedidos.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Alerta, SeveridadAlerta } from '../../core/models/alerta.model';
 import { DatePipe } from '@angular/common';
 
@@ -31,7 +33,9 @@ export class Topbar {
   protected readonly mobileNav = inject(MobileNavService);
   private readonly cajaService = inject(CajaService);
   protected readonly alertasService = inject(AlertasService);
+  private readonly listaPedidosService = inject(ListaPedidosService);
   private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   /** Igual que en Sidebar: con turno de caja abierto, el botón hamburguesa se ve en cualquier tamaño de pantalla. */
@@ -42,25 +46,30 @@ export class Topbar {
     () => !this.auth.esSistema() && this.auth.tienePermiso('ALERTAS', 'VER'),
   );
 
+  /** `ultimasAlertas` vive en el servicio (se refresca solo cada 30s) — el panel solo la muestra. */
   protected readonly showNotificaciones = signal(false);
-  protected readonly cargandoNotificaciones = signal(false);
-  protected readonly ultimasAlertas = signal<Alerta[]>([]);
 
   protected tonoSeveridad(severidad: SeveridadAlerta): BadgeTone {
     return TONOS_SEVERIDAD[severidad];
   }
 
+  protected esAlertaDeStock(alerta: Alerta): boolean {
+    return (alerta.tipo === 'STOCK_BAJO' || alerta.tipo === 'PRODUCTO_AGOTADO') && !!alerta.productoId;
+  }
+
   protected alternarNotificaciones(): void {
     const abrir = !this.showNotificaciones();
     this.showNotificaciones.set(abrir);
-    if (!abrir) return;
-    this.cargandoNotificaciones.set(true);
-    this.alertasService.findAll().subscribe({
-      next: (alertas) => {
-        this.ultimasAlertas.set(alertas.slice(0, 5));
-        this.cargandoNotificaciones.set(false);
-      },
-      error: () => this.cargandoNotificaciones.set(false),
+    if (abrir) {
+      this.alertasService.refrescarConteo().subscribe();
+    }
+  }
+
+  protected agregarAListaPedidos(alerta: Alerta): void {
+    if (!alerta.productoId) return;
+    this.listaPedidosService.agregar(alerta.productoId).subscribe({
+      next: () => this.toast.success('Agregado a la lista de pedidos'),
+      error: (err) => this.toast.error(err.error?.message ?? 'No se pudo agregar a la lista de pedidos'),
     });
   }
 

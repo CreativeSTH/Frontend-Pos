@@ -6,6 +6,7 @@ export interface SucursalPayload {
   nombre: string;
   direccion?: string;
   telefono?: string;
+  metaVentasDiaria?: number;
 }
 
 @Injectable({ providedIn: 'root' })

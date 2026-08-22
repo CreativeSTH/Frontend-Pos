@@ -28,17 +28,20 @@
           <div class="topbar__notif-backdrop" (click)="showNotificaciones.set(false)"></div>
           <div class="topbar__notif-panel">
             <div class="topbar__notif-panel__header">Notificaciones</div>
-            @if (cargandoNotificaciones()) {
-              <div class="topbar__notif-empty">Cargando...</div>
-            } @else if (ultimasAlertas().length === 0) {
+            @if (alertasService.ultimasAlertas().length === 0) {
               <div class="topbar__notif-empty">Sin alertas recientes</div>
             } @else {
-              @for (alerta of ultimasAlertas(); track alerta.id) {
+              @for (alerta of alertasService.ultimasAlertas(); track alerta.id) {
                 <div class="topbar__notif-item" [class.topbar__notif-item--leida]="alerta.leida">
                   <ds-badge [tone]="tonoSeveridad(alerta.severidad)">{{ alerta.severidad }}</ds-badge>
                   <div class="topbar__notif-item__info">
                     <span class="topbar__notif-item__mensaje">{{ alerta.mensaje }}</span>
                     <span class="topbar__notif-item__fecha">{{ alerta.createdAt | date: 'short' }}</span>
+                    @if (esAlertaDeStock(alerta)) {
+                      <button type="button" class="topbar__notif-item__accion" (click)="agregarAListaPedidos(alerta)">
+                        + Añadir a lista de pedidos
+                      </button>
+                    }
                   </div>
                 </div>
               }

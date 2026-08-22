@@ -80,6 +80,14 @@ export const routes: Routes = [
           import('./features/bodegas/bodegas-list/bodegas-list').then((m) => m.BodegasList),
       },
       {
+        path: 'lista-pedidos',
+        canActivate: [permisoGuard('INVENTARIO')],
+        loadComponent: () =>
+          import('./features/lista-pedidos/lista-pedidos-list/lista-pedidos-list').then(
+            (m) => m.ListaPedidosList,
+          ),
+      },
+      {
         path: 'caja',
         canActivate: [permisoGuard('CAJA'), sucursalGuard],
         loadComponent: () => import('./features/caja/caja-home/caja-home').then((m) => m.CajaHome),

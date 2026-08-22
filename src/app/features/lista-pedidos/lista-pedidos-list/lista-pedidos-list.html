@@ -1,0 +1,49 @@
+<app-topbar title="Lista de pedidos" subtitle="Productos que hay que pedirle a un proveedor">
+  <ds-button [variant]="!mostrarComprados() ? 'primary' : 'glass'" (click)="mostrarComprados.set(false)">
+    Pendientes
+  </ds-button>
+  <ds-button [variant]="mostrarComprados() ? 'primary' : 'glass'" (click)="mostrarComprados.set(true)">
+    Comprados
+  </ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="lista-pedidos-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando...</span>
+  </div>
+} @else if (itemsFiltrados().length === 0) {
+  <ds-empty-state
+    icon="box"
+    [title]="mostrarComprados() ? 'Sin compras registradas' : 'Nada pendiente de pedir'"
+    [description]="
+      mostrarComprados()
+        ? 'Los ítems que marques como comprados aparecerán aquí.'
+        : 'Agregá productos desde una alerta de stock bajo o agotado.'
+    "
+  />
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Agregado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of itemsFiltrados(); track item.id) {
+        <tr>
+          <td>{{ item.nombreProducto }}</td>
+          <td>{{ item.createdAt | date: 'short' }}</td>
+          <td class="lista-pedidos-actions">
+            @if (!item.comprado) {
+              <ds-button variant="glass" size="sm" (click)="marcarComprado(item)">Marcar comprado</ds-button>
+            }
+            <ds-button variant="ghost" size="sm" (click)="quitar(item)">Quitar</ds-button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}

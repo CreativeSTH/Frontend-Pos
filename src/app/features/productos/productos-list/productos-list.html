@@ -161,6 +161,28 @@
         }
       </div>
 
+      <div class="producto-form__stock-minimo">
+        <ds-switch
+          label="Definir stock mínimo personalizado"
+          [ngModel]="stockMinimoPersonalizado()"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="stockMinimoPersonalizado.set($event)"
+        />
+        @if (stockMinimoPersonalizado()) {
+          <ds-form-field label="Alertar cuando el stock llegue a">
+            <ds-input
+              type="number"
+              icon="alert-triangle"
+              [ngModel]="stockMinimoValor()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="stockMinimoValor.set($event)"
+            />
+          </ds-form-field>
+        } @else {
+          <p class="producto-form__stock-empty">Se usará el valor por defecto (2 unidades).</p>
+        }
+      </div>
+
       @if (!editingId()) {
         <div class="producto-form__stock">
           <div class="producto-form__stock-header">

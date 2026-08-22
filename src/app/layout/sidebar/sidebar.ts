@@ -30,6 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Marcas', icon: 'tag', route: '/marcas', modulo: 'MARCAS' },
   { label: 'Inventario', icon: 'archive', route: '/inventario', modulo: 'INVENTARIO' },
   { label: 'Bodegas', icon: 'layers', route: '/bodegas', modulo: 'BODEGAS' },
+  { label: 'Lista de pedidos', icon: 'clipboard', route: '/lista-pedidos', modulo: 'INVENTARIO' },
   { label: 'Caja', icon: 'cash-register', route: '/caja', modulo: 'CAJA' },
   { label: 'Ventas', icon: 'receipt', route: '/ventas', modulo: 'VENTAS' },
   { label: 'Clientes', icon: 'users', route: '/clientes', modulo: 'CLIENTES' },

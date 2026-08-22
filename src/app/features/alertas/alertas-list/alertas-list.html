@@ -1,4 +1,6 @@
-<app-topbar title="Alertas" subtitle="Stock bajo, cuotas por vencer/vencidas, límite de crédito y ventas en mora">
+<app-topbar title="Alertas" subtitle="Stock bajo, cuotas por vencer/vencidas, límite de crédito, ventas en mora y reglas propias">
+  <ds-button variant="glass" icon="plus" (click)="abrirNuevaRegla()">Nueva regla</ds-button>
+  <ds-button variant="glass" icon="plus" (click)="abrirNuevaAlerta()">Nuevo recordatorio</ds-button>
   <ds-button variant="glass" icon="alert-triangle" [loading]="generando()" (click)="generar()">Actualizar</ds-button>
 </app-topbar>
 
@@ -49,15 +51,23 @@
           <th>Mensaje</th>
           <th>Fecha</th>
           <th></th>
+          <th>Activa</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
         @for (alerta of alertasFiltradas(); track alerta.id) {
-          <tr [class.alertas-row--leida]="alerta.leida">
+          <tr [class.alertas-row--leida]="alerta.leida" [class.alertas-row--inactiva]="!alerta.activa">
             <td><ds-badge [tone]="tonoSeveridad(alerta.severidad)">{{ alerta.severidad }}</ds-badge></td>
             <td>{{ etiquetasTipo[alerta.tipo] }}</td>
-            <td>{{ alerta.mensaje }}</td>
+            <td>
+              {{ alerta.mensaje }}
+              @if (esAlertaDeStock(alerta)) {
+                <button type="button" class="alertas-lista-pedidos-btn" (click)="agregarAListaPedidos(alerta)">
+                  + Añadir a lista de pedidos
+                </button>
+              }
+            </td>
             <td>{{ alerta.createdAt | date: 'short' }}</td>
             <td>
               @if (alerta.resuelta) {
@@ -65,6 +75,13 @@
               } @else if (!alerta.leida) {
                 <ds-badge tone="info">Nueva</ds-badge>
               }
+            </td>
+            <td>
+              <ds-switch
+                [ngModel]="alerta.activa"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="alternarActiva(alerta, $event)"
+              />
             </td>
             <td class="alertas-actions">
               @if (!alerta.leida) {
@@ -79,4 +96,105 @@
       </tbody>
     </ds-table>
   }
+}
+
+<section class="alertas-reglas">
+  <div class="alertas-reglas__header">
+    <h2>Reglas de notificación</h2>
+    <p>Se lanzan solas cuando la condición se cumple — se evalúan junto con "Actualizar" y cada 30 min.</p>
+  </div>
+
+  @if (reglas().length === 0) {
+    <ds-empty-state
+      icon="bell"
+      title="Sin reglas todavía"
+      description='Ej. "Avisar si un ítem de la lista de pedidos lleva más de 24h sin resolverse".'
+    >
+      <ds-button variant="glass" icon="plus" (click)="abrirNuevaRegla()">Nueva regla</ds-button>
+    </ds-empty-state>
+  } @else {
+    <ds-table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Lanzar cuando...</th>
+          <th>Severidad</th>
+          <th>Activa</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (regla of reglas(); track regla.id) {
+          <tr>
+            <td>{{ regla.nombre }}</td>
+            <td>{{ infoCondicion(regla.tipoCondicion).label }} (&gt; {{ regla.parametros.valor }}{{ infoCondicion(regla.tipoCondicion).sufijo }})</td>
+            <td><ds-badge [tone]="tonoSeveridad(regla.severidad)">{{ regla.severidad }}</ds-badge></td>
+            <td>
+              <ds-switch
+                [ngModel]="regla.activa"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="alternarReglaActiva(regla, $event)"
+              />
+            </td>
+            <td class="alertas-actions">
+              <ds-button variant="ghost" size="sm" (click)="eliminarRegla(regla)">Eliminar</ds-button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </ds-table>
+  }
+</section>
+
+@if (showNuevaAlerta()) {
+  <ds-modal title="Nuevo recordatorio" size="sm" (close)="showNuevaAlerta.set(false)">
+    <ds-form-field label="Severidad">
+      <ds-select [ngModel]="nuevaSeveridad()" (ngModelChange)="nuevaSeveridad.set($event)">
+        <option value="CRITICA">Crítica</option>
+        <option value="ALTA">Alta</option>
+        <option value="MEDIA">Media</option>
+        <option value="BAJA">Baja</option>
+      </ds-select>
+    </ds-form-field>
+    <ds-form-field label="Mensaje">
+      <ds-input [ngModel]="nuevoMensaje()" (ngModelChange)="nuevoMensaje.set($event)" placeholder="Ej. Revisar factura del proveedor X" />
+    </ds-form-field>
+    <div class="alertas-nueva-switch">
+      <ds-switch label="Activa" [ngModel]="nuevaActiva()" (ngModelChange)="nuevaActiva.set($event)" />
+    </div>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showNuevaAlerta.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="creandoAlerta()" (click)="crearAlerta()">Crear</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showNuevaRegla()) {
+  <ds-modal title="Nueva regla de notificación" size="sm" (close)="showNuevaRegla.set(false)">
+    <ds-form-field label="Nombre">
+      <ds-input [ngModel]="nuevaReglaNombre()" (ngModelChange)="nuevaReglaNombre.set($event)" placeholder="Ej. Pedidos olvidados" />
+    </ds-form-field>
+    <ds-form-field label="Lanzar cuando...">
+      <ds-select [ngModel]="nuevaReglaCondicion()" (ngModelChange)="nuevaReglaCondicion.set($event)">
+        @for (condicion of condiciones; track condicion.value) {
+          <option [value]="condicion.value">{{ condicion.label }}</option>
+        }
+      </ds-select>
+    </ds-form-field>
+    <ds-form-field [label]="infoCondicion(nuevaReglaCondicion()).labelValor">
+      <ds-input type="number" [ngModel]="nuevaReglaValor()" (ngModelChange)="nuevaReglaValor.set($event)" />
+    </ds-form-field>
+    <ds-form-field label="Severidad">
+      <ds-select [ngModel]="nuevaReglaSeveridad()" (ngModelChange)="nuevaReglaSeveridad.set($event)">
+        <option value="CRITICA">Crítica</option>
+        <option value="ALTA">Alta</option>
+        <option value="MEDIA">Media</option>
+        <option value="BAJA">Baja</option>
+      </ds-select>
+    </ds-form-field>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showNuevaRegla.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="creandoRegla()" (click)="crearRegla()">Crear regla</ds-button>
+    </div>
+  </ds-modal>
 }

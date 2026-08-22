@@ -35,6 +35,7 @@ export class SucursalesList {
     nombre: ['', Validators.required],
     direccion: [''],
     telefono: [''],
+    metaVentasDiaria: [0],
   });
 
   constructor() {
@@ -57,7 +58,7 @@ export class SucursalesList {
 
   protected openCreate(): void {
     this.editingId.set(null);
-    this.form.reset({ nombre: '', direccion: '', telefono: '' });
+    this.form.reset({ nombre: '', direccion: '', telefono: '', metaVentasDiaria: 0 });
     this.showForm.set(true);
   }
 
@@ -67,6 +68,7 @@ export class SucursalesList {
       nombre: sucursal.nombre,
       direccion: sucursal.direccion ?? '',
       telefono: sucursal.telefono ?? '',
+      metaVentasDiaria: sucursal.metaVentasDiaria ?? 0,
     });
     this.showForm.set(true);
   }
@@ -82,6 +84,7 @@ export class SucursalesList {
       nombre: raw.nombre,
       direccion: raw.direccion || undefined,
       telefono: raw.telefono || undefined,
+      metaVentasDiaria: raw.metaVentasDiaria || undefined,
     };
 
     const editingId = this.editingId();

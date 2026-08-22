@@ -18,6 +18,7 @@
         <th>Nombre</th>
         <th>Dirección</th>
         <th>Teléfono</th>
+        <th>Meta diaria</th>
         <th></th>
       </tr>
     </thead>
@@ -27,6 +28,7 @@
           <td>{{ sucursal.nombre }}</td>
           <td>{{ sucursal.direccion || '—' }}</td>
           <td>{{ sucursal.telefono || '—' }}</td>
+          <td>{{ sucursal.metaVentasDiaria ? ('$' + sucursal.metaVentasDiaria) : '—' }}</td>
           <td class="sucursales-actions">
             <button type="button" class="sucursales-actions__btn" (click)="openEdit(sucursal)">
               <ds-icon name="pencil" [size]="16" />
@@ -52,6 +54,9 @@
       </ds-form-field>
       <ds-form-field label="Teléfono">
         <ds-input formControlName="telefono" placeholder="3001234567" />
+      </ds-form-field>
+      <ds-form-field label="Meta de ventas diaria" hint="0 = sin meta, no genera alerta">
+        <ds-input type="number" icon="banknote" formControlName="metaVentasDiaria" />
       </ds-form-field>
     </form>
 

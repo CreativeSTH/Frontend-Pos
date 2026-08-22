@@ -689,6 +689,7 @@ export class PuntoVenta {
           this.procesando.set(false);
           this.showCobro.set(false);
           this.ventaCompletada.set(venta);
+          this.descontarStockVendido(this.carrito());
           this.carrito.set([]);
           this.toast.success('Venta registrada');
         },
@@ -701,6 +702,20 @@ export class PuntoVenta {
 
   protected nuevaVenta(): void {
     this.ventaCompletada.set(null);
+  }
+
+  /** El backend ya descontó el stock real — esto solo evita que la tarjeta del producto quede desactualizada hasta recargar. */
+  private descontarStockVendido(lineas: LineaCarrito[]): void {
+    this.stockPorProducto.update((mapa) => {
+      const actualizado = new Map(mapa);
+      for (const linea of lineas) {
+        const actual = actualizado.get(linea.productoId);
+        if (actual !== undefined) {
+          actualizado.set(linea.productoId, Math.max(0, actual - linea.cantidad));
+        }
+      }
+      return actualizado;
+    });
   }
 
   protected confirmarCerrarCaja(): void {
