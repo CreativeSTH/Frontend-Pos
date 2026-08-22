@@ -84,6 +84,13 @@ export class DashboardHome {
 
   private load(): void {
     this.loading.set(true);
+    // Un usuario de tier SISTEMA (plataforma) no pertenece a ningún negocio —
+    // ninguno de estos endpoints le aplica (403 por permiso, o 500 por falta
+    // de negocioId en el contexto tenant).
+    if (this.auth.esSistema()) {
+      this.loading.set(false);
+      return;
+    }
     forkJoin({
       productos: this.productosService.findAll(),
       ventas: this.ventasService.findAll(),

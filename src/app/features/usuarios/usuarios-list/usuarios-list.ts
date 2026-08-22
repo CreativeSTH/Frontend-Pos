@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Badge } from '../../../shared/ui/atoms/badge/badge';
@@ -13,16 +14,12 @@ import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
+import { RolesService } from '../../../core/services/roles.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Usuario } from '../../../core/models/usuario.model';
-import { RolUsuario } from '../../../core/models/auth.model';
+import { Rol } from '../../../core/models/rol.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
-
-const ROLES_DISPONIBLES: { value: RolUsuario; label: string }[] = [
-  { value: 'CAJERO', label: 'Cajero' },
-  { value: 'ADMIN_NEGOCIO', label: 'Administrador' },
-];
 
 @Component({
   selector: 'app-usuarios-list',
@@ -48,6 +45,7 @@ const ROLES_DISPONIBLES: { value: RolUsuario; label: string }[] = [
 export class UsuariosList {
   private readonly usuariosService = inject(UsuariosService);
   private readonly sucursalesService = inject(SucursalesService);
+  private readonly rolesService = inject(RolesService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
   protected readonly auth = inject(AuthService);
@@ -55,17 +53,17 @@ export class UsuariosList {
   protected readonly loading = signal(true);
   protected readonly usuarios = signal<Usuario[]>([]);
   protected readonly sucursales = signal<Sucursal[]>([]);
+  protected readonly roles = signal<Rol[]>([]);
   protected readonly showForm = signal(false);
   protected readonly editingId = signal<string | null>(null);
   protected readonly saving = signal(false);
-  protected readonly roles = ROLES_DISPONIBLES;
 
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     password: [''],
     pin: ['', Validators.pattern(/^\d{4,6}$/)],
-    rol: ['CAJERO' as RolUsuario, Validators.required],
+    rolId: ['', Validators.required],
     sucursalId: [''],
   });
 
@@ -75,9 +73,15 @@ export class UsuariosList {
 
   private load(): void {
     this.loading.set(true);
-    this.usuariosService.findAll().subscribe({
-      next: (data) => {
-        this.usuarios.set(data);
+    forkJoin({
+      usuarios: this.usuariosService.findAll(),
+      sucursales: this.sucursalesService.findAll(),
+      roles: this.rolesService.findAll(),
+    }).subscribe({
+      next: ({ usuarios, sucursales, roles }) => {
+        this.usuarios.set(usuarios);
+        this.sucursales.set(sucursales);
+        this.roles.set(roles);
         this.loading.set(false);
       },
       error: () => {
@@ -85,7 +89,6 @@ export class UsuariosList {
         this.toast.error('No se pudieron cargar los usuarios');
       },
     });
-    this.sucursalesService.findAll().subscribe((data) => this.sucursales.set(data));
   }
 
   protected nombreSucursal(id: string | null): string {
@@ -93,9 +96,13 @@ export class UsuariosList {
     return this.sucursales().find((s) => s.id === id)?.nombre ?? '—';
   }
 
+  protected nombreRol(usuario: Usuario): string {
+    return usuario.rol?.nombre ?? this.roles().find((r) => r.id === usuario.rolId)?.nombre ?? '—';
+  }
+
   protected openCreate(): void {
     this.editingId.set(null);
-    this.form.reset({ nombre: '', email: '', password: '', pin: '', rol: 'CAJERO', sucursalId: '' });
+    this.form.reset({ nombre: '', email: '', password: '', pin: '', rolId: this.roles()[0]?.id ?? '', sucursalId: '' });
     this.form.controls.password.setValidators([Validators.required, Validators.minLength(6)]);
     this.form.controls.password.updateValueAndValidity();
     this.showForm.set(true);
@@ -108,7 +115,7 @@ export class UsuariosList {
       email: usuario.email,
       password: '',
       pin: '',
-      rol: usuario.rol,
+      rolId: usuario.rolId,
       sucursalId: usuario.sucursalId ?? '',
     });
     this.form.controls.password.clearValidators();
@@ -130,7 +137,7 @@ export class UsuariosList {
           nombre: raw.nombre,
           email: raw.email,
           pin: raw.pin || undefined,
-          rol: raw.rol,
+          rolId: raw.rolId,
           sucursalId: raw.sucursalId || undefined,
         })
       : this.usuariosService.create({
@@ -138,7 +145,7 @@ export class UsuariosList {
           email: raw.email,
           password: raw.password,
           pin: raw.pin || undefined,
-          rol: raw.rol,
+          rolId: raw.rolId,
           sucursalId: raw.sucursalId || undefined,
         });
 

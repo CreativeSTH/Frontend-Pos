@@ -1,5 +1,13 @@
 <div class="app-aurora"><span class="app-aurora__spot"></span></div>
 
+@if (auth.enModoSoporte()) {
+  <div class="modo-soporte-bar">
+    <ds-icon name="layers" [size]="16" />
+    <span>Estás operando este negocio en modo soporte, como su Administrador.</span>
+    <button type="button" class="modo-soporte-bar__salir" (click)="auth.salirModoSoporte()">Salir</button>
+  </div>
+}
+
 <div class="dashboard-shell">
   <app-sidebar />
   <main class="dashboard-shell__content">

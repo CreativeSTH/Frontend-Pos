@@ -1,0 +1,113 @@
+<app-topbar title="Negocios" subtitle="Los negocios que usan la plataforma">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nuevo negocio</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="negocios-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando negocios...</span>
+  </div>
+} @else if (negocios().length === 0) {
+  <ds-empty-state icon="store" title="Aún no hay negocios" description="Crea el primero para empezar.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nuevo negocio</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>NIT</th>
+        <th>Plan</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (negocio of negocios(); track negocio.id) {
+        <tr>
+          <td>{{ negocio.nombre }}</td>
+          <td>{{ negocio.nit || '—' }}</td>
+          <td><ds-badge tone="neutral">{{ negocio.plan }}</ds-badge></td>
+          <td>
+            <ds-badge [tone]="negocio.activo ? 'success' : 'neutral'">
+              {{ negocio.activo ? 'Activo' : 'Inactivo' }}
+            </ds-badge>
+          </td>
+          <td class="negocios-actions">
+            <button
+              type="button"
+              class="negocios-entrar-btn"
+              [disabled]="!negocio.activo || entrando() === negocio.id"
+              (click)="entrar(negocio)"
+              title="Entrar como el Administrador de este negocio"
+            >
+              <ds-icon name="log-in" [size]="14" />
+              {{ entrando() === negocio.id ? 'Entrando...' : 'Entrar' }}
+            </button>
+            <button type="button" class="negocios-actions__btn" (click)="openEdit(negocio)" title="Editar">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            @if (negocio.activo) {
+              <button type="button" class="negocios-actions__btn negocios-actions__btn--danger" (click)="eliminar(negocio)" title="Desactivar">
+                <ds-icon name="trash" [size]="16" />
+              </button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar negocio' : 'Nuevo negocio'" size="sm" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="negocio-form" (ngSubmit)="save()">
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Mascotas Pet Shop" />
+      </ds-form-field>
+
+      <ds-form-field label="NIT (opcional)">
+        <ds-input formControlName="nit" />
+      </ds-form-field>
+
+      <ds-form-field label="Tipo de negocio (opcional)">
+        <ds-input formControlName="tipoNegocio" placeholder="Veterinaria, restaurante, etc." />
+      </ds-form-field>
+
+      <ds-form-field label="Email (opcional)">
+        <ds-input type="email" formControlName="email" />
+      </ds-form-field>
+
+      <ds-form-field label="Teléfono (opcional)">
+        <ds-input formControlName="telefono" />
+      </ds-form-field>
+
+      <ds-form-field label="Dirección (opcional)">
+        <ds-input formControlName="direccion" />
+      </ds-form-field>
+
+      @if (!editingId()) {
+        <div class="negocio-form__admin">
+          <p class="negocio-form__admin-title">Administrador inicial</p>
+
+          <ds-form-field label="Nombre">
+            <ds-input formControlName="adminNombre" />
+          </ds-form-field>
+
+          <ds-form-field label="Email">
+            <ds-input type="email" formControlName="adminEmail" />
+          </ds-form-field>
+
+          <ds-form-field label="Contraseña">
+            <ds-input type="password" formControlName="adminPassword" placeholder="Mínimo 6 caracteres" />
+          </ds-form-field>
+        </div>
+      }
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}

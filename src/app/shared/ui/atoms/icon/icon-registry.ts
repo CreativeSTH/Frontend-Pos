@@ -17,6 +17,8 @@ export const ICONS: Record<string, string> = {
     '<path d="M3 9V7l2-4h14l2 4v2"/><path d="M3 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M10 20v-6h4v6"/>',
   'log-out':
     '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+  'log-in':
+    '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/>',
   search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   barcode:
     '<path d="M4 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M14 5v14"/><path d="M18 5v14"/><path d="M20 5v14"/>',

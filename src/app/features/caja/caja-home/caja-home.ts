@@ -110,8 +110,8 @@ export class CajaHome {
   protected readonly pinCancelarVenta = signal('');
   protected readonly cancelandoVenta = signal(false);
 
-  /** Solo un admin cancela directo — cualquier otro rol necesita el PIN de uno (ver backend). */
-  protected readonly requierePin = computed(() => this.auth.usuario()?.rol !== 'ADMIN_NEGOCIO');
+  /** Solo quien tiene VENTAS:ELIMINAR cancela directo — cualquier otro rol necesita el PIN de alguien que lo tenga (ver backend). */
+  protected readonly requierePin = computed(() => !this.auth.tienePermiso('VENTAS', 'ELIMINAR'));
 
   protected readonly turnoAbierto = computed(() => this.turnos().find((t) => t.estado === 'ABIERTO') ?? null);
   protected readonly historial = computed(() => this.turnos().filter((t) => t.estado === 'CERRADO'));

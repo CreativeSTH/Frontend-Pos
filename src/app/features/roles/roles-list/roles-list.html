@@ -1,0 +1,115 @@
+<app-topbar title="Roles y permisos" subtitle="Quién puede ver, crear, editar o eliminar en cada módulo">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nuevo rol</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="roles-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando roles...</span>
+  </div>
+} @else if (roles().length === 0) {
+  <ds-empty-state icon="users" title="Aún no hay roles" description="Crea el primero para empezar a asignar permisos.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nuevo rol</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Permisos</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (rol of roles(); track rol.id) {
+        <tr>
+          <td class="roles-name-cell">
+            {{ rol.nombre }}
+            @if (rol.esDefault) {
+              <ds-badge tone="neutral">Por defecto</ds-badge>
+            }
+          </td>
+          <td>{{ rol.descripcion || '—' }}</td>
+          <td>
+            <button type="button" class="roles-permisos-btn" (click)="abrirPermisos(rol)">
+              <ds-icon name="tag" [size]="14" />
+              Gestionar permisos ({{ rol.permisos.length }})
+            </button>
+          </td>
+          <td class="roles-actions">
+            <button type="button" class="roles-actions__btn" (click)="openEdit(rol)" title="Editar">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            @if (!rol.esDefault) {
+              <button type="button" class="roles-actions__btn roles-actions__btn--danger" (click)="eliminar(rol)" title="Eliminar">
+                <ds-icon name="trash" [size]="16" />
+              </button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar rol' : 'Nuevo rol'" size="sm" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="rol-form" (ngSubmit)="save()">
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Ej. Supervisor" />
+      </ds-form-field>
+
+      <ds-form-field label="Descripción (opcional)">
+        <ds-input formControlName="descripcion" placeholder="Para qué se usa este rol" />
+      </ds-form-field>
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showPermisos()) {
+  <ds-modal [title]="'Permisos de ' + (rolPermisos()?.nombre ?? '')" size="lg" (close)="showPermisos.set(false)">
+    <div class="matriz-wrapper">
+      <table class="matriz">
+        <thead>
+          <tr>
+            <th class="matriz__modulo">Módulo</th>
+            @for (accion of acciones; track accion) {
+              <th>{{ etiquetasAccion[accion] }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of filasMatriz(); track fila.modulo) {
+            <tr>
+              <td class="matriz__modulo">{{ fila.etiqueta }}</td>
+              @for (celda of fila.celdas; track celda.accion) {
+                <td class="matriz__celda">
+                  @if (celda.permiso) {
+                    <input
+                      type="checkbox"
+                      [checked]="marcado(celda.permiso.id)"
+                      (change)="toggle(celda.permiso.id)"
+                    />
+                  } @else {
+                    <span class="matriz__na">—</span>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showPermisos.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="savingPermisos()" (click)="guardarPermisos()">Guardar permisos</ds-button>
+    </div>
+  </ds-modal>
+}

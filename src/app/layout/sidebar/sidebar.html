@@ -9,7 +9,7 @@
   </div>
 
   <nav class="sidebar__nav">
-    @for (item of navItems; track item.label) {
+    @for (item of navItems(); track item.label) {
       @if (item.route) {
         <a
           class="sidebar__item"
@@ -34,7 +34,7 @@
     <ds-avatar [name]="auth.usuario()?.nombre ?? ''" />
     <div class="sidebar__user-info">
       <span class="sidebar__user-name">{{ auth.usuario()?.nombre }}</span>
-      <span class="sidebar__user-role">{{ auth.usuario()?.rol }}</span>
+      <span class="sidebar__user-role">{{ auth.usuario()?.rolNombre }}</span>
     </div>
     <button type="button" class="sidebar__pin-btn" (click)="abrirCambioCajero()" title="Cambiar de cajero (PIN)">
       <ds-icon name="lock" [size]="18" />

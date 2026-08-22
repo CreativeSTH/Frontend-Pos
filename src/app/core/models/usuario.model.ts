@@ -1,4 +1,4 @@
-import { RolUsuario } from './auth.model';
+import { Rol } from './rol.model';
 
 export interface Usuario {
   id: string;
@@ -6,7 +6,8 @@ export interface Usuario {
   sucursalId: string | null;
   nombre: string;
   email: string;
-  rol: RolUsuario;
+  rolId: string;
+  rol?: Rol;
   activo: boolean;
   createdAt: string;
 }
@@ -15,7 +16,7 @@ export interface CreateUsuarioPayload {
   nombre: string;
   email: string;
   password: string;
-  rol: RolUsuario;
+  rolId: string;
   sucursalId?: string;
   pin?: string;
 }

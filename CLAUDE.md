@@ -48,8 +48,12 @@ src/app/
 - `inject()` en vez de inyección por constructor.
 - Multi-tenant: el backend ya filtra por negocio vía JWT — el frontend nunca envía `negocioId` manualmente.
 
-## Estado (Fases 1–3 completas)
+## Estado (Fases 1–4 completas)
 
-Implementado: Login, Dashboard, Punto de venta (POS), Productos, Categorías, Inventario (con vista de Kardex por producto/bodega), Bodegas, Caja, Clientes, Cobros, Reportes (ventas/márgenes/cierres de caja), Sucursales, Usuarios. El sidebar ya no tiene entradas "Pronto".
+Implementado: Login, Dashboard, Punto de venta (POS), Productos, Categorías, Inventario (con vista de Kardex por producto/bodega), Bodegas, Caja, Clientes, Cobros, Reportes (ventas/márgenes/cierres de caja), Sucursales, Usuarios, y **Roles y permisos** (`/roles`). El sidebar ya no tiene entradas "Pronto".
 
-Pendiente: UI de gestión de Negocios (SUPER_ADMIN, hoy solo vía API/seed) y página de Alertas dedicada (el módulo backend existe pero no tiene vista propia) — ninguna es parte formal del roadmap de fases, quedan como mejoras sueltas.
+Pendiente: UI de gestión de Negocios (tier SISTEMA, hoy solo vía API/seed) y página de Alertas dedicada (el módulo backend existe pero no tiene vista propia) — ninguna es parte formal del roadmap de fases, quedan como mejoras sueltas.
+
+## Roles y permisos (Fase 4)
+
+`AuthService.tienePermiso(modulo, accion)` reemplaza los viejos `isSuperAdmin`/`isAdminNegocio` — respaldado por un signal `permisos` poblado desde la respuesta de `/auth/login` (una foto para UI, la autorización real siempre la re-chequea el backend). El sidebar (`layout/sidebar/sidebar.ts`) filtra `NAV_ITEMS` por `tienePermiso(modulo, 'VER')`, y cada ruta protegida en `app.routes.ts` usa el factory `core/guards/permiso.guard.ts` (protección de UX — la protección real es el `PermissionsGuard` del backend). Pantalla de administración en `features/roles/roles-list/` (matriz de checkboxes Ver/Crear/Editar/Eliminar por módulo, patrón calcado de `features/marcas`).

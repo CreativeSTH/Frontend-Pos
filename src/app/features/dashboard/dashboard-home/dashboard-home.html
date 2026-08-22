@@ -1,16 +1,30 @@
 <app-topbar title="Dashboard" [subtitle]="'Hola ' + (auth.usuario()?.nombre ?? '') + ', esto es lo que pasa hoy'">
-  @if (turnoAbierto()) {
-    <ds-badge tone="success">Caja abierta</ds-badge>
-    <ds-button variant="glass" size="sm" (click)="showConfirmarCerrarTurno.set(true)">Cerrar turno</ds-button>
-  } @else {
-    <ds-badge tone="neutral">Caja cerrada</ds-badge>
-    <ds-button variant="primary" size="sm" icon="cash-register" (click)="showAbrirTurno.set(true)">
-      Abrir turno
-    </ds-button>
+  @if (!auth.esSistema()) {
+    @if (turnoAbierto()) {
+      <ds-badge tone="success">Caja abierta</ds-badge>
+      <ds-button variant="glass" size="sm" (click)="showConfirmarCerrarTurno.set(true)">Cerrar turno</ds-button>
+    } @else {
+      <ds-badge tone="neutral">Caja cerrada</ds-badge>
+      <ds-button variant="primary" size="sm" icon="cash-register" (click)="showAbrirTurno.set(true)">
+        Abrir turno
+      </ds-button>
+    }
   }
 </app-topbar>
 
-@if (loading()) {
+@if (auth.esSistema()) {
+  <section class="caja-panel">
+    <div class="caja-panel__row">
+      <ds-icon name="layers" [size]="22" />
+      <div>
+        <p class="caja-panel__title">Sesión de plataforma</p>
+        <p class="caja-panel__meta">
+          Tu usuario administra negocios, no opera dentro de uno — no hay estadísticas de venta/caja que mostrar aquí.
+        </p>
+      </div>
+    </div>
+  </section>
+} @else if (loading()) {
   <div class="dashboard-loading">
     <ds-icon name="layers" [size]="28" />
     <span>Cargando dashboard...</span>

@@ -1,5 +1,32 @@
 @use 'mixins' as mix;
 
+.modo-soporte-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent-primary);
+  color: white;
+  font-size: var(--fs-sm);
+  position: relative;
+  z-index: 10;
+}
+
+.modo-soporte-bar__salir {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+}
+
 .dashboard-shell {
   display: flex;
   min-height: 100vh;

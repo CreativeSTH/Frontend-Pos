@@ -83,8 +83,8 @@ export class VentasList {
   protected readonly pinAutorizacion = signal('');
   protected readonly cancelando = signal(false);
 
-  /** Solo un admin cancela directo — cualquier otro rol necesita el PIN de uno (ver backend). */
-  protected readonly requierePin = computed(() => this.auth.usuario()?.rol !== 'ADMIN_NEGOCIO');
+  /** Solo quien tiene VENTAS:ELIMINAR cancela directo — cualquier otro rol necesita el PIN de alguien que lo tenga (ver backend). */
+  protected readonly requierePin = computed(() => !this.auth.tienePermiso('VENTAS', 'ELIMINAR'));
 
   protected readonly ventasFiltradas = computed(() => {
     const term = this.search().toLowerCase().trim();

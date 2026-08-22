@@ -4,7 +4,7 @@ import { catchError, map, of } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { CajaService } from '../services/caja.service';
 
-/** Landing: Punto de Venta si hay un turno de caja abierto, si no Dashboard. */
+/** Landing: Negocios si es un usuario de plataforma; si no, Punto de Venta con turno abierto o Dashboard. */
 export const landingGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const cajaService = inject(CajaService);
@@ -12,6 +12,9 @@ export const landingGuard: CanActivateFn = () => {
 
   if (!authService.isAuthenticated()) {
     return router.createUrlTree(['/login']);
+  }
+  if (authService.esSistema()) {
+    return router.createUrlTree(['/negocios']);
   }
 
   return cajaService.findAllTurnos().pipe(
@@ -30,6 +33,17 @@ export const authGuard: CanActivateFn = () => {
     return true;
   }
   return router.createUrlTree(['/login']);
+};
+
+/** Bloquea pantallas operativas de un negocio (Dashboard, Punto de venta) a usuarios de tier SISTEMA, que no pertenecen a ninguno. */
+export const soloNegocioGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (!authService.isAuthenticated()) {
+    return router.createUrlTree(['/login']);
+  }
+  return !authService.esSistema() || router.createUrlTree(['/negocios']);
 };
 
 export const guestGuard: CanActivateFn = () => {

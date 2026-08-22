@@ -31,9 +31,7 @@
           </td>
           <td>{{ usuario.email }}</td>
           <td>
-            <ds-badge [tone]="usuario.rol === 'ADMIN_NEGOCIO' ? 'info' : 'neutral'">
-              {{ usuario.rol === 'ADMIN_NEGOCIO' ? 'Administrador' : 'Cajero' }}
-            </ds-badge>
+            <ds-badge tone="info">{{ nombreRol(usuario) }}</ds-badge>
           </td>
           <td>{{ nombreSucursal(usuario.sucursalId) }}</td>
           <td class="usuarios-actions">
@@ -77,9 +75,9 @@
       </ds-form-field>
 
       <ds-form-field label="Rol">
-        <ds-select formControlName="rol">
-          @for (rol of roles; track rol.value) {
-            <option [value]="rol.value">{{ rol.label }}</option>
+        <ds-select formControlName="rolId">
+          @for (rol of roles(); track rol.id) {
+            <option [value]="rol.id">{{ rol.nombre }}</option>
           }
         </ds-select>
       </ds-form-field>

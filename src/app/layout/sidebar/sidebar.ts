@@ -11,28 +11,34 @@ import { AuthService } from '../../core/services/auth.service';
 import { MobileNavService } from '../../core/services/mobile-nav.service';
 import { CajaService } from '../../core/services/caja.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ModuloPermiso } from '../../core/models/auth.model';
 
 interface NavItem {
   label: string;
   icon: string;
   route?: string;
+  modulo?: ModuloPermiso;
+  /** Pantallas operativas de un negocio, sin sentido para un usuario de tier SISTEMA (no pertenece a ninguno). */
+  soloNegocio?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
-  { label: 'Punto de venta', icon: 'shopping-bag', route: '/punto-venta' },
-  { label: 'Productos', icon: 'box', route: '/productos' },
-  { label: 'Categorías', icon: 'layers', route: '/categorias' },
-  { label: 'Marcas', icon: 'tag', route: '/marcas' },
-  { label: 'Inventario', icon: 'archive', route: '/inventario' },
-  { label: 'Bodegas', icon: 'layers', route: '/bodegas' },
-  { label: 'Caja', icon: 'cash-register', route: '/caja' },
-  { label: 'Ventas', icon: 'receipt', route: '/ventas' },
-  { label: 'Clientes', icon: 'users', route: '/clientes' },
-  { label: 'Cobros', icon: 'wallet', route: '/cobros' },
-  { label: 'Reportes', icon: 'bar-chart', route: '/reportes' },
-  { label: 'Sucursales', icon: 'store', route: '/sucursales' },
-  { label: 'Usuarios', icon: 'users', route: '/usuarios' },
+  { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', soloNegocio: true },
+  { label: 'Punto de venta', icon: 'shopping-bag', route: '/punto-venta', soloNegocio: true },
+  { label: 'Productos', icon: 'box', route: '/productos', modulo: 'PRODUCTOS' },
+  { label: 'Categorías', icon: 'layers', route: '/categorias', modulo: 'CATEGORIAS' },
+  { label: 'Marcas', icon: 'tag', route: '/marcas', modulo: 'MARCAS' },
+  { label: 'Inventario', icon: 'archive', route: '/inventario', modulo: 'INVENTARIO' },
+  { label: 'Bodegas', icon: 'layers', route: '/bodegas', modulo: 'BODEGAS' },
+  { label: 'Caja', icon: 'cash-register', route: '/caja', modulo: 'CAJA' },
+  { label: 'Ventas', icon: 'receipt', route: '/ventas', modulo: 'VENTAS' },
+  { label: 'Clientes', icon: 'users', route: '/clientes', modulo: 'CLIENTES' },
+  { label: 'Cobros', icon: 'wallet', route: '/cobros', modulo: 'COBROS' },
+  { label: 'Reportes', icon: 'bar-chart', route: '/reportes', modulo: 'REPORTES' },
+  { label: 'Sucursales', icon: 'store', route: '/sucursales', modulo: 'SUCURSALES' },
+  { label: 'Usuarios', icon: 'users', route: '/usuarios', modulo: 'USUARIOS' },
+  { label: 'Roles', icon: 'tag', route: '/roles', modulo: 'ROLES' },
+  { label: 'Negocios', icon: 'store', route: '/negocios', modulo: 'NEGOCIOS' },
 ];
 
 @Component({
@@ -48,7 +54,14 @@ export class Sidebar {
   protected readonly mobileNav = inject(MobileNavService);
   private readonly cajaService = inject(CajaService);
   private readonly toast = inject(ToastService);
-  protected readonly navItems = NAV_ITEMS;
+  /** Solo los ítems cuyo módulo el usuario puede VER (Dashboard no tiene permiso asociado, siempre se muestra) y que no sean exclusivos de un negocio si el usuario es de tier SISTEMA. */
+  protected readonly navItems = computed(() =>
+    NAV_ITEMS.filter(
+      (item) =>
+        (!item.modulo || this.auth.tienePermiso(item.modulo, 'VER')) &&
+        (!item.soloNegocio || !this.auth.esSistema()),
+    ),
+  );
 
   /** Con un turno de caja abierto, el sidebar pasa a modo off-canvas/hamburguesa en cualquier tamaño de pantalla. */
   protected readonly hamburgerMode = computed(() => this.cajaService.turnoAbierto() !== null);

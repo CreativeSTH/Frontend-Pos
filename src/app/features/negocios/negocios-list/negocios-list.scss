@@ -1,0 +1,79 @@
+.negocios-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-tertiary);
+  padding: var(--space-10) 0;
+}
+
+.negocios-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.negocios-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+  }
+
+  &--danger:hover {
+    color: var(--accent-danger);
+  }
+}
+
+.negocios-entrar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--accent-primary);
+  color: white;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--accent-primary-strong);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.negocio-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.negocio-form__admin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--glass-border);
+}
+
+.negocio-form__admin-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}

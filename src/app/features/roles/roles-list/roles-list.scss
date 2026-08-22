@@ -1,0 +1,104 @@
+.roles-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-tertiary);
+  padding: var(--space-10) 0;
+}
+
+.roles-name-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.roles-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.roles-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+  }
+
+  &--danger:hover {
+    color: var(--accent-danger);
+  }
+}
+
+.roles-permisos-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+  }
+}
+
+.rol-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.matriz-wrapper {
+  overflow-x: auto;
+}
+
+.matriz {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+
+  th,
+  td {
+    padding: var(--space-2) var(--space-3);
+    text-align: center;
+    border-bottom: 1px solid var(--glass-border);
+    white-space: nowrap;
+  }
+
+  thead th {
+    color: var(--text-tertiary);
+    font-weight: 500;
+  }
+}
+
+.matriz__modulo {
+  text-align: left !important;
+  color: var(--text-primary);
+}
+
+.matriz__celda input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent-primary);
+}
+
+.matriz__na {
+  color: var(--text-tertiary);
+}
