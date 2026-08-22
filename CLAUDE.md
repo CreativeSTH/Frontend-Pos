@@ -9,6 +9,10 @@ npm start          # ng serve en http://localhost:4200
 npm run build       # build de producción
 ```
 
+## Git
+
+⚠️ **Punto crítico, no se puede vulnerar sin que el usuario lo pida explícitamente en el momento:** solo se commitea y pushea a la rama `develop`. `main` se mantiene vacía (solo el commit inicial) hasta que el usuario pida explícitamente el merge/release — nunca abrir, aceptar ni sugerir de iniciativa propia un PR `develop → main`, ni pushear directo a `main`. Convención de commits: `feat:`, `fix:`, `test:`, `chore:`, `docs:`, `refactor:`, `style:`. Detalle completo en [`../docs/ARQUITECTURA.md`](../docs/ARQUITECTURA.md) sección 17.
+
 ## Sistema de Diseño
 
 Estética **glassmorphism oscuro y tecnológico** — sin cards con bordes de color, todo con superficies de vidrio neutras (`--glass-*`) y acentos en degradado (azul→violeta). Ver tokens completos en `src/styles/_tokens.scss`.
