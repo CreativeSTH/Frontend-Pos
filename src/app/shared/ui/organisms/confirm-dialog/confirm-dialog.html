@@ -1,0 +1,14 @@
+@if (confirmService.state(); as estado) {
+  <ds-modal [title]="estado.options.title ?? 'Confirmar'" size="sm" (close)="confirmService.responder(false)">
+    <p>{{ estado.options.message }}</p>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="confirmService.responder(false)">
+        {{ estado.options.cancelLabel ?? 'Cancelar' }}
+      </ds-button>
+      <ds-button [variant]="estado.options.danger ? 'danger' : 'primary'" (click)="confirmService.responder(true)">
+        {{ estado.options.confirmLabel ?? 'Confirmar' }}
+      </ds-button>
+    </div>
+  </ds-modal>
+}

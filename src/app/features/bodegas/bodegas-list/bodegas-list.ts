@@ -13,6 +13,7 @@ import { BodegasService } from '../../../core/services/bodegas.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { InventarioService, InventarioItem } from '../../../core/services/inventario.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { Bodega } from '../../../core/models/bodega.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
 
@@ -29,6 +30,7 @@ export class BodegasList {
   private readonly sucursalesService = inject(SucursalesService);
   private readonly inventarioService = inject(InventarioService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly loading = signal(true);
@@ -131,8 +133,8 @@ export class BodegasList {
     });
   }
 
-  protected eliminar(bodega: Bodega): void {
-    if (!confirm(`¿Eliminar "${bodega.nombre}"?`)) return;
+  protected async eliminar(bodega: Bodega): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Eliminar "${bodega.nombre}"?`, danger: true }))) return;
     this.bodegasService.remove(bodega.id).subscribe({
       next: () => {
         this.toast.success('Bodega eliminada');

@@ -1,0 +1,30 @@
+<div class="document-upload">
+  <span class="document-upload__label">{{ label() }}</span>
+
+  <button type="button" class="document-upload__dropzone" (click)="openPicker()">
+    @if (tieneDocumento()) {
+      <ds-icon name="file-text" [size]="22" />
+      <span>{{ nombreArchivo() ?? 'Documento cargado' }}</span>
+      @if (existingUrl() && !nombreArchivo()) {
+        <a
+          class="document-upload__view"
+          [href]="existingUrl()"
+          target="_blank"
+          rel="noopener"
+          (click)="$event.stopPropagation()"
+        >
+          Ver documento actual
+        </a>
+      }
+      <button type="button" class="document-upload__remove" (click)="clear($event)" title="Quitar documento">
+        <ds-icon name="x" [size]="14" />
+      </button>
+    } @else {
+      <ds-icon name="upload" [size]="22" />
+      <span>Subir documento</span>
+      <span class="document-upload__hint">{{ hint() }}</span>
+    }
+  </button>
+
+  <input #fileInput type="file" accept=".pdf,image/png,image/jpeg,image/webp" hidden (change)="handleFileChange($event)" />
+</div>

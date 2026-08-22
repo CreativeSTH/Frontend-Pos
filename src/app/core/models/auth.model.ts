@@ -7,6 +7,7 @@ export type ModuloPermiso =
   | 'CATEGORIAS'
   | 'MARCAS'
   | 'LINEAS'
+  | 'PROVEEDORES'
   | 'BODEGAS'
   | 'INVENTARIO'
   | 'VENTAS'

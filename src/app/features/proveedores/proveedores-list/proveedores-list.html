@@ -1,0 +1,114 @@
+<app-topbar title="Proveedores" subtitle="A quién le comprás y sus datos de verificación">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nuevo proveedor</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="proveedores-loading">
+    <ds-icon name="truck" [size]="28" />
+    <span>Cargando proveedores...</span>
+  </div>
+} @else if (proveedores().length === 0) {
+  <ds-empty-state icon="truck" title="Aún no hay proveedores" description="Creá el primero para poder vincularlo a tus productos.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nuevo proveedor</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>NIT</th>
+        <th>Contacto</th>
+        <th>Teléfono</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (proveedor of proveedores(); track proveedor.id) {
+        <tr>
+          <td>{{ proveedor.nombre }}</td>
+          <td>{{ proveedor.nit || '—' }}</td>
+          <td>{{ proveedor.contactoNombre || '—' }}</td>
+          <td>{{ proveedor.telefono || '—' }}</td>
+          <td class="proveedores-actions">
+            <button type="button" class="proveedores-actions__btn" (click)="openEdit(proveedor)" title="Editar">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            <button type="button" class="proveedores-actions__btn proveedores-actions__btn--danger" (click)="eliminar(proveedor)" title="Eliminar">
+              <ds-icon name="trash" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar proveedor' : 'Nuevo proveedor'" size="lg" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="proveedor-form" (ngSubmit)="save()">
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Distribuidora Mascotas SAS" />
+      </ds-form-field>
+
+      <div class="proveedor-form__row">
+        <ds-form-field label="NIT">
+          <ds-input formControlName="nit" placeholder="900123456-7" />
+        </ds-form-field>
+        <ds-form-field label="Persona de contacto">
+          <ds-input formControlName="contactoNombre" placeholder="Juan Pérez" />
+        </ds-form-field>
+      </div>
+
+      <div class="proveedor-form__row">
+        <ds-form-field label="Teléfono">
+          <ds-input formControlName="telefono" placeholder="3001234567" />
+        </ds-form-field>
+        <ds-form-field label="Email">
+          <ds-input type="email" formControlName="email" placeholder="ventas@proveedor.com" />
+        </ds-form-field>
+      </div>
+
+      <ds-form-field label="Dirección">
+        <ds-input formControlName="direccion" placeholder="Calle 10 # 5-20, Bogotá" />
+      </ds-form-field>
+
+      <div class="proveedor-form__row">
+        <ds-form-field label="Número de RUT">
+          <ds-input formControlName="rutNumero" />
+        </ds-form-field>
+        <ds-document-upload
+          label="Documento RUT"
+          [existingUrl]="documentoUrl(editingProveedor()?.rutDocumentoUrl)"
+          (fileSelected)="documentos.rutDocumento = $event"
+        />
+      </div>
+
+      <div class="proveedor-form__row">
+        <ds-form-field label="Número cámara de comercio">
+          <ds-input formControlName="camaraComercioNumero" />
+        </ds-form-field>
+        <ds-document-upload
+          label="Documento cámara de comercio"
+          [existingUrl]="documentoUrl(editingProveedor()?.camaraComercioUrl)"
+          (fileSelected)="documentos.camaraComercioDocumento = $event"
+        />
+      </div>
+
+      <div class="proveedor-form__row">
+        <ds-form-field label="Certificación bancaria (banco / cuenta)">
+          <ds-input formControlName="certificacionBancariaInfo" />
+        </ds-form-field>
+        <ds-document-upload
+          label="Documento certificación bancaria"
+          [existingUrl]="documentoUrl(editingProveedor()?.certificacionBancariaUrl)"
+          (fileSelected)="documentos.certificacionBancariaDocumento = $event"
+        />
+      </div>
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}

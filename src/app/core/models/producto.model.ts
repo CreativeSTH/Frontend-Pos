@@ -27,6 +27,13 @@ export interface StockInicialPayload {
   cantidad: number;
 }
 
+export interface ProveedorInicialPayload {
+  proveedorId?: string;
+  proveedorNuevo?: { nombre: string };
+  costo: number;
+  referencia?: string;
+}
+
 export interface CreateProductoPayload {
   nombre: string;
   descripcion?: string;
@@ -41,4 +48,5 @@ export interface CreateProductoPayload {
   tipoImpuesto?: TipoImpuesto;
   porcentajeImpuesto?: number;
   stockInicial?: StockInicialPayload[];
+  proveedores?: ProveedorInicialPayload[];
 }

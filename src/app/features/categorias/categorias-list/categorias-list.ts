@@ -11,6 +11,7 @@ import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { CategoriasService } from '../../../core/services/categorias.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { Categoria } from '../../../core/models/categoria.model';
 
 @Component({
@@ -24,6 +25,7 @@ import { Categoria } from '../../../core/models/categoria.model';
 export class CategoriasList {
   private readonly categoriasService = inject(CategoriasService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly loading = signal(true);
@@ -117,8 +119,8 @@ export class CategoriasList {
     });
   }
 
-  protected eliminar(categoria: Categoria): void {
-    if (!confirm(`¿Eliminar "${categoria.nombre}"?`)) return;
+  protected async eliminar(categoria: Categoria): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Eliminar "${categoria.nombre}"?`, danger: true }))) return;
     this.categoriasService.remove(categoria.id).subscribe({
       next: () => {
         this.toast.success('Categoría eliminada');

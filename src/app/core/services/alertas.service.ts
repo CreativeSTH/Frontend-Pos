@@ -2,6 +2,7 @@ import { Injectable, effect, inject, signal } from '@angular/core';
 import { tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
+import { RealtimeService } from './realtime.service';
 import {
   Alerta,
   CreateAlertaPayload,
@@ -12,13 +13,18 @@ import {
   TipoAlerta,
 } from '../models/alerta.model';
 
-/** Intervalo de sondeo para que la campana se sienta "en vivo" sin necesidad de websockets. */
-const POLL_MS = 30_000;
+/**
+ * El aviso "en vivo" ahora llega por WebSocket (`RealtimeService`, evento
+ * `alertas:cambio`) — este intervalo queda como respaldo por si el socket
+ * está caído (red inestable, reconectando), no como la vía principal.
+ */
+const POLL_MS = 60_000;
 
 @Injectable({ providedIn: 'root' })
 export class AlertasService {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly realtime = inject(RealtimeService);
 
   /** Contador de no-leídas para la campana del Topbar. */
   private readonly _noLeidas = signal(0);
@@ -30,14 +36,20 @@ export class AlertasService {
 
   constructor() {
     /**
+     * Vía principal: WebSocket (`RealtimeService`) — el backend emite
+     * `alertas:cambio` a la sala del negocio apenas se crea/actualiza una
+     * alerta (venta que agota stock, cron, reglas, etc.), así que cualquier
+     * sesión abierta del negocio se entera al instante, no solo la que
+     * disparó el cambio. Se registra una sola vez — `RealtimeService`
+     * reengancha este listener solo si el socket se reconecta.
+     */
+    this.realtime.on('alertas:cambio', () => this.refrescarConteo().subscribe());
+
+    /**
      * Singleton `providedIn: 'root'` — se refresca solo al cambiar de
      * usuario/negocio (mismo motivo que `CajaService`), y además hace polling
-     * cada 30s mientras la sesión esté activa para que las notificaciones
-     * aparezcan solas (stock agotado durante una venta, cron cada 30 min,
-     * etc.) sin que el usuario tenga que recargar la página ni apretar
-     * "Actualizar". No hay websockets en el proyecto — este es el término
-     * medio pragmático entre "en vivo de verdad" y no tener que montar
-     * infraestructura de push nueva.
+     * de respaldo mientras la sesión esté activa, por si el socket está
+     * caído (red inestable, reconectando) — ver `POLL_MS`.
      */
     effect((onCleanup) => {
       const usuario = this.auth.usuario();

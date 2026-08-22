@@ -16,6 +16,7 @@ import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state
 import { AlertasService } from '../../../core/services/alertas.service';
 import { ListaPedidosService } from '../../../core/services/lista-pedidos.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import {
   Alerta,
   ReglaAlerta,
@@ -102,6 +103,7 @@ export class AlertasList {
   private readonly alertasService = inject(AlertasService);
   private readonly listaPedidosService = inject(ListaPedidosService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly loading = signal(true);
@@ -206,8 +208,8 @@ export class AlertasList {
     });
   }
 
-  protected eliminarRegla(regla: ReglaAlerta): void {
-    if (!confirm(`¿Eliminar la regla "${regla.nombre}"?`)) return;
+  protected async eliminarRegla(regla: ReglaAlerta): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Eliminar la regla "${regla.nombre}"?`, danger: true }))) return;
     this.alertasService.eliminarRegla(regla.id).subscribe({
       next: () => {
         this.reglas.update((lista) => lista.filter((r) => r.id !== regla.id));

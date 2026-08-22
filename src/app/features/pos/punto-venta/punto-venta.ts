@@ -29,6 +29,7 @@ import { PrintAgentService } from '../../../core/services/print-agent.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { VentasSuspendidasService, VentaSuspendida } from '../../../core/services/ventas-suspendidas.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { AlertasService } from '../../../core/services/alertas.service';
 import { Producto } from '../../../core/models/producto.model';
 import { Categoria } from '../../../core/models/categoria.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
@@ -99,6 +100,7 @@ export class PuntoVenta {
   protected readonly auth = inject(AuthService);
   private readonly ventasSuspendidasService = inject(VentasSuspendidasService);
   private readonly toast = inject(ToastService);
+  private readonly alertasService = inject(AlertasService);
   private readonly router = inject(Router);
 
   protected readonly loading = signal(true);
@@ -692,6 +694,9 @@ export class PuntoVenta {
           this.descontarStockVendido(this.carrito());
           this.carrito.set([]);
           this.toast.success('Venta registrada');
+          // El backend ya generó la alerta de stock bajo/agotado (si aplica) como parte
+          // de crear la venta — se refresca acá para que la campana no espere el poll de 30s.
+          this.alertasService.refrescarConteo().subscribe();
         },
         error: (err) => {
           this.procesando.set(false);

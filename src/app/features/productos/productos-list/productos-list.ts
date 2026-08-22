@@ -22,16 +22,29 @@ import { MarcasService } from '../../../core/services/marcas.service';
 import { LineasService } from '../../../core/services/lineas.service';
 import { InventarioItem, InventarioService } from '../../../core/services/inventario.service';
 import { BodegasService } from '../../../core/services/bodegas.service';
+import { ProveedoresService } from '../../../core/services/proveedores.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { Producto, StockInicialPayload, TipoImpuesto } from '../../../core/models/producto.model';
+import { ConfirmService } from '../../../core/services/confirm.service';
+import { AlertasService } from '../../../core/services/alertas.service';
+import { Producto, ProveedorInicialPayload, StockInicialPayload, TipoImpuesto } from '../../../core/models/producto.model';
 import { Categoria } from '../../../core/models/categoria.model';
 import { Marca } from '../../../core/models/marca.model';
 import { Linea } from '../../../core/models/linea.model';
 import { Bodega } from '../../../core/models/bodega.model';
+import { ProductoProveedor, Proveedor } from '../../../core/models/proveedor.model';
 import { environment } from '../../../../environments/environment';
 
 /** Umbral de alerta de stock bajo cuando no se personaliza al crear/editar un producto. */
 const STOCK_MINIMO_DEFAULT = 2;
+/** Sentinel para "crear un proveedor nuevo" dentro de una fila de proveedor — nunca colisiona con un UUID real. */
+const NUEVO_PROVEEDOR = '__nuevo__';
+
+interface FilaProveedorInicial {
+  proveedorId: string;
+  nombreNuevo: string;
+  costo: number;
+  referencia: string;
+}
 
 @Component({
   selector: 'app-productos-list',
@@ -66,7 +79,10 @@ export class ProductosList {
   private readonly lineasService = inject(LineasService);
   private readonly inventarioService = inject(InventarioService);
   private readonly bodegasService = inject(BodegasService);
+  private readonly proveedoresService = inject(ProveedoresService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
+  private readonly alertasService = inject(AlertasService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly loading = signal(true);
@@ -75,10 +91,27 @@ export class ProductosList {
   protected readonly marcas = signal<Marca[]>([]);
   protected readonly lineas = signal<Linea[]>([]);
   protected readonly bodegas = signal<Bodega[]>([]);
+  protected readonly proveedoresCatalogo = signal<Proveedor[]>([]);
   protected readonly stockInicial = signal<StockInicialPayload[]>([]);
+  protected readonly NUEVO_PROVEEDOR = NUEVO_PROVEEDOR;
+  /** Filas de proveedor a vincular al crear el producto (patrón calcado de stockInicial). */
+  protected readonly proveedoresInicial = signal<FilaProveedorInicial[]>([]);
+  /** Proveedores ya vinculados al producto en edición — cada alta/baja pega directo a la API, no se batchea con el guardado. */
+  protected readonly proveedoresProducto = signal<ProductoProveedor[]>([]);
+  protected readonly cargandoProveedoresProducto = signal(false);
+  protected readonly guardandoProveedorProducto = signal(false);
+  protected readonly nuevaFilaProveedor = signal<FilaProveedorInicial>({
+    proveedorId: '',
+    nombreNuevo: '',
+    costo: 0,
+    referencia: '',
+  });
   protected readonly inventario = signal<InventarioItem[]>([]);
   protected readonly stockPorProducto = signal<Map<string, number>>(new Map());
   protected readonly categoriaIdsSeleccionadas = signal<string[]>([]);
+  protected readonly showCategoriasModal = signal(false);
+  /** Copia de trabajo mientras el modal de selección está abierto — ver `abrirSeleccionCategorias`. */
+  protected readonly categoriaIdsBorrador = signal<string[]>([]);
 
   /** Bodega + cantidad actual/nueva al editar un producto ya existente — ver `guardarAjustesStock()`. */
   protected readonly stockEdicion = signal<{ bodegaId: string; cantidadActual: number; cantidadNueva: number }[]>([]);
@@ -131,14 +164,26 @@ export class ProductosList {
     return resultado;
   };
 
-  protected categoriaSeleccionada(id: string): boolean {
-    return this.categoriaIdsSeleccionadas().includes(id);
+  /** Categorías ya elegidas, en el mismo orden jerárquico que `categoriasOrdenadas` — lo que se muestra como chips en el form principal. */
+  protected readonly categoriasSeleccionadasOrdenadas = computed(() =>
+    this.categoriasOrdenadas().filter((c) => this.categoriaIdsSeleccionadas().includes(c.id)),
+  );
+
+  /** Abre el modal grande de selección con una copia de trabajo — "Cancelar" no debe tocar la selección real. */
+  protected abrirSeleccionCategorias(): void {
+    this.categoriaIdsBorrador.set([...this.categoriaIdsSeleccionadas()]);
+    this.showCategoriasModal.set(true);
   }
 
-  protected alternarCategoria(id: string, seleccionada: boolean): void {
-    this.categoriaIdsSeleccionadas.update((actuales) =>
+  protected alternarCategoriaBorrador(id: string, seleccionada: boolean): void {
+    this.categoriaIdsBorrador.update((actuales) =>
       seleccionada ? [...actuales, id] : actuales.filter((c) => c !== id),
     );
+  }
+
+  protected guardarSeleccionCategorias(): void {
+    this.categoriaIdsSeleccionadas.set(this.categoriaIdsBorrador());
+    this.showCategoriasModal.set(false);
   }
 
   protected readonly lineasDeMarca = () => {
@@ -199,6 +244,104 @@ export class ProductosList {
     this.marcasService.findAll().subscribe((data) => this.marcas.set(data));
     this.lineasService.findAll().subscribe((data) => this.lineas.set(data));
     this.bodegasService.findAll().subscribe((data) => this.bodegas.set(data));
+    this.proveedoresService.findAll().subscribe((data) => this.proveedoresCatalogo.set(data));
+  }
+
+  // ---------- Proveedores: filas al crear ----------
+
+  protected agregarFilaProveedor(): void {
+    this.proveedoresInicial.update((filas) => [
+      ...filas,
+      { proveedorId: '', nombreNuevo: '', costo: 0, referencia: '' },
+    ]);
+  }
+
+  protected actualizarFilaProveedor(index: number, cambios: Partial<FilaProveedorInicial>): void {
+    this.proveedoresInicial.update((filas) => filas.map((f, i) => (i === index ? { ...f, ...cambios } : f)));
+  }
+
+  protected quitarFilaProveedor(index: number): void {
+    this.proveedoresInicial.update((filas) => filas.filter((_, i) => i !== index));
+  }
+
+  // ---------- Proveedores: vínculo en vivo al editar ----------
+
+  private cargarProveedoresProducto(productoId: string): void {
+    this.cargandoProveedoresProducto.set(true);
+    this.proveedoresService.porProducto(productoId).subscribe({
+      next: (vinculos) => {
+        this.proveedoresProducto.set(vinculos);
+        this.cargandoProveedoresProducto.set(false);
+      },
+      error: () => {
+        this.cargandoProveedoresProducto.set(false);
+        this.toast.error('No se pudieron cargar los proveedores del producto');
+      },
+    });
+  }
+
+  protected actualizarNuevaFilaProveedor(cambios: Partial<FilaProveedorInicial>): void {
+    this.nuevaFilaProveedor.update((fila) => ({ ...fila, ...cambios }));
+  }
+
+  protected agregarProveedorAProducto(): void {
+    const productoId = this.editingId();
+    const fila = this.nuevaFilaProveedor();
+    if (!productoId) return;
+    if (!fila.proveedorId) {
+      this.toast.error('Elegí un proveedor');
+      return;
+    }
+    if (fila.proveedorId === NUEVO_PROVEEDOR && !fila.nombreNuevo.trim()) {
+      this.toast.error('Escribí el nombre del nuevo proveedor');
+      return;
+    }
+    if (!(fila.costo > 0)) {
+      this.toast.error('El costo debe ser mayor a 0');
+      return;
+    }
+
+    this.guardandoProveedorProducto.set(true);
+    this.proveedoresService
+      .vincularProducto(productoId, {
+        proveedorId: fila.proveedorId === NUEVO_PROVEEDOR ? undefined : fila.proveedorId,
+        proveedorNuevo: fila.proveedorId === NUEVO_PROVEEDOR ? { nombre: fila.nombreNuevo.trim() } : undefined,
+        costo: fila.costo,
+        referencia: fila.referencia || undefined,
+      })
+      .subscribe({
+        next: () => {
+          this.guardandoProveedorProducto.set(false);
+          this.nuevaFilaProveedor.set({ proveedorId: '', nombreNuevo: '', costo: 0, referencia: '' });
+          this.cargarProveedoresProducto(productoId);
+          this.proveedoresService.findAll().subscribe((data) => this.proveedoresCatalogo.set(data));
+          this.toast.success('Proveedor vinculado');
+        },
+        error: (err) => {
+          this.guardandoProveedorProducto.set(false);
+          this.toast.error(err.error?.message ?? 'No se pudo vincular el proveedor');
+        },
+      });
+  }
+
+  protected async quitarProveedorDeProducto(vinculo: ProductoProveedor): Promise<void> {
+    const productoId = this.editingId();
+    if (!productoId) return;
+    if (
+      !(await this.confirmService.ask({
+        message: `¿Quitar "${vinculo.proveedor?.nombre}" como proveedor de este producto?`,
+        danger: true,
+      }))
+    ) {
+      return;
+    }
+    this.proveedoresService.desvincularProducto(productoId, vinculo.proveedorId).subscribe({
+      next: () => {
+        this.proveedoresProducto.update((lista) => lista.filter((v) => v.id !== vinculo.id));
+        this.toast.success('Proveedor desvinculado');
+      },
+      error: () => this.toast.error('No se pudo desvincular el proveedor'),
+    });
   }
 
   protected agregarFilaStock(): void {
@@ -241,6 +384,8 @@ export class ProductosList {
     this.stockInicial.set([]);
     this.stockEdicion.set([]);
     this.categoriaIdsSeleccionadas.set([]);
+    this.proveedoresInicial.set([]);
+    this.proveedoresProducto.set([]);
     this.stockMinimoPersonalizado.set(false);
     this.stockMinimoValor.set(STOCK_MINIMO_DEFAULT);
     this.form.reset({
@@ -262,6 +407,10 @@ export class ProductosList {
     this.editingImagenUrl.set(this.imageUrl(producto.imagenUrl));
     this.selectedImage.set(null);
     this.stockInicial.set([]);
+    this.proveedoresInicial.set([]);
+    this.proveedoresProducto.set([]);
+    this.nuevaFilaProveedor.set({ proveedorId: '', nombreNuevo: '', costo: 0, referencia: '' });
+    this.cargarProveedoresProducto(producto.id);
     this.stockMinimoPersonalizado.set(false);
     this.stockMinimoValor.set(STOCK_MINIMO_DEFAULT);
     this.categoriaIdsSeleccionadas.set(producto.categorias.map((c) => c.id));
@@ -304,6 +453,14 @@ export class ProductosList {
     const raw = this.form.getRawValue();
     const editingId = this.editingId();
     const stockInicial = this.stockInicial().filter((s) => s.bodegaId && s.cantidad > 0);
+    const proveedores: ProveedorInicialPayload[] = this.proveedoresInicial()
+      .filter((f) => f.proveedorId && f.costo > 0 && (f.proveedorId !== NUEVO_PROVEEDOR || f.nombreNuevo.trim()))
+      .map((f) => ({
+        proveedorId: f.proveedorId === NUEVO_PROVEEDOR ? undefined : f.proveedorId,
+        proveedorNuevo: f.proveedorId === NUEVO_PROVEEDOR ? { nombre: f.nombreNuevo.trim() } : undefined,
+        costo: f.costo,
+        referencia: f.referencia || undefined,
+      }));
     const payload = {
       nombre: raw.nombre,
       codigoBarras: raw.codigoBarras || undefined,
@@ -316,6 +473,7 @@ export class ProductosList {
       tipoImpuesto: raw.tipoImpuesto,
       porcentajeImpuesto: raw.tipoImpuesto === 'GRAVADO' ? Number(raw.porcentajeImpuesto) : 0,
       stockInicial: !editingId && stockInicial.length > 0 ? stockInicial : undefined,
+      proveedores: !editingId && proveedores.length > 0 ? proveedores : undefined,
     };
 
     const request$ = editingId
@@ -395,10 +553,13 @@ export class ProductosList {
     this.showForm.set(false);
     this.toast.success(esEdicion ? 'Producto actualizado' : 'Producto creado');
     this.load();
+    // Si el guardado tocó stock, el backend ya generó la alerta correspondiente (si aplica) —
+    // se refresca acá para que la campana no espere el poll de 30s.
+    this.alertasService.refrescarConteo().subscribe();
   }
 
-  protected eliminar(producto: Producto): void {
-    if (!confirm(`¿Eliminar "${producto.nombre}"?`)) return;
+  protected async eliminar(producto: Producto): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Eliminar "${producto.nombre}"?`, danger: true }))) return;
     this.productosService.remove(producto.id).subscribe({
       next: () => {
         this.toast.success('Producto eliminado');

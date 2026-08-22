@@ -1,7 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { tap } from 'rxjs';
 import { ApiService } from './api.service';
-import { ItemPedido } from '../models/item-pedido.model';
+import {
+  ConfirmarIngresoPayload,
+  EstadoItemPedido,
+  ItemPedido,
+  RealizarPedidoPayload,
+} from '../models/item-pedido.model';
 
 @Injectable({ providedIn: 'root' })
 export class ListaPedidosService {
@@ -11,8 +16,8 @@ export class ListaPedidosService {
   private readonly _pendientes = signal(0);
   readonly pendientes = this._pendientes.asReadonly();
 
-  findAll(comprado?: boolean) {
-    return this.api.get<ItemPedido[]>('/lista-pedidos', comprado !== undefined ? { comprado } : undefined);
+  findAll(estado?: EstadoItemPedido) {
+    return this.api.get<ItemPedido[]>('/lista-pedidos', estado ? { estado } : undefined);
   }
 
   /** Idempotente — si el producto ya está pendiente, el backend devuelve el registro existente sin duplicar. */
@@ -20,8 +25,12 @@ export class ListaPedidosService {
     return this.api.post<ItemPedido>('/lista-pedidos', { productoId });
   }
 
-  marcarComprado(id: string) {
-    return this.api.patch<ItemPedido>(`/lista-pedidos/${id}/comprado`, {});
+  realizarPedido(id: string, payload: RealizarPedidoPayload) {
+    return this.api.patch<ItemPedido>(`/lista-pedidos/${id}/pedir`, payload);
+  }
+
+  confirmarIngreso(id: string, payload: ConfirmarIngresoPayload) {
+    return this.api.patch<ItemPedido>(`/lista-pedidos/${id}/confirmar-ingreso`, payload);
   }
 
   remove(id: string) {
@@ -29,6 +38,6 @@ export class ListaPedidosService {
   }
 
   refrescarPendientes() {
-    return this.findAll(false).pipe(tap((items) => this._pendientes.set(items.length)));
+    return this.findAll('PENDIENTE').pipe(tap((items) => this._pendientes.set(items.length)));
   }
 }

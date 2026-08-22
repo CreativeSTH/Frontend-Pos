@@ -1,10 +1,9 @@
 <app-topbar title="Lista de pedidos" subtitle="Productos que hay que pedirle a un proveedor">
-  <ds-button [variant]="!mostrarComprados() ? 'primary' : 'glass'" (click)="mostrarComprados.set(false)">
-    Pendientes
-  </ds-button>
-  <ds-button [variant]="mostrarComprados() ? 'primary' : 'glass'" (click)="mostrarComprados.set(true)">
-    Comprados
-  </ds-button>
+  @for (tab of tabs; track tab.estado) {
+    <ds-button [variant]="tabActual() === tab.estado ? 'primary' : 'glass'" (click)="tabActual.set(tab.estado)">
+      {{ tab.label }}
+    </ds-button>
+  }
 </app-topbar>
 
 @if (loading()) {
@@ -15,11 +14,13 @@
 } @else if (itemsFiltrados().length === 0) {
   <ds-empty-state
     icon="box"
-    [title]="mostrarComprados() ? 'Sin compras registradas' : 'Nada pendiente de pedir'"
+    [title]="tabActual() === 'PENDIENTE' ? 'Nada pendiente de pedir' : tabActual() === 'PEDIDO' ? 'Nada en camino' : 'Sin ingresos registrados'"
     [description]="
-      mostrarComprados()
-        ? 'Los ítems que marques como comprados aparecerán aquí.'
-        : 'Agregá productos desde una alerta de stock bajo o agotado.'
+      tabActual() === 'PENDIENTE'
+        ? 'Agregá productos desde una alerta de stock bajo.'
+        : tabActual() === 'PEDIDO'
+          ? 'Los productos que le pidas a un proveedor aparecen acá mientras llegan.'
+          : 'Los productos que confirmes como ingresados quedan acá como historial.'
     "
   />
 } @else {
@@ -27,7 +28,12 @@
     <thead>
       <tr>
         <th>Producto</th>
-        <th>Agregado</th>
+        @if (tabActual() !== 'PENDIENTE') {
+          <th>Proveedor</th>
+          <th>Costo</th>
+          <th>Cantidad</th>
+        }
+        <th>{{ tabActual() === 'INGRESADO' ? 'Ingresado' : 'Agregado' }}</th>
         <th></th>
       </tr>
     </thead>
@@ -35,15 +41,114 @@
       @for (item of itemsFiltrados(); track item.id) {
         <tr>
           <td>{{ item.nombreProducto }}</td>
-          <td>{{ item.createdAt | date: 'short' }}</td>
+          @if (tabActual() !== 'PENDIENTE') {
+            <td>{{ item.nombreProveedor }}</td>
+            <td>{{ item.costoUnitario | number: '1.0-2' }}</td>
+            <td>{{ item.cantidad }}</td>
+          }
+          <td>{{ (tabActual() === 'INGRESADO' ? item.fechaIngreso : item.createdAt) | date: 'short' }}</td>
           <td class="lista-pedidos-actions">
-            @if (!item.comprado) {
-              <ds-button variant="glass" size="sm" (click)="marcarComprado(item)">Marcar comprado</ds-button>
+            @if (item.estado === 'PENDIENTE') {
+              <ds-button variant="glass" size="sm" (click)="abrirRealizarPedido(item)">Realizar pedido</ds-button>
+              <ds-button variant="ghost" size="sm" (click)="quitar(item)">Quitar</ds-button>
+            } @else if (item.estado === 'PEDIDO') {
+              <ds-button variant="glass" size="sm" (click)="abrirConfirmarIngreso(item)">Confirmar ingreso</ds-button>
+              <ds-button variant="ghost" size="sm" (click)="quitar(item)">Cancelar pedido</ds-button>
             }
-            <ds-button variant="ghost" size="sm" (click)="quitar(item)">Quitar</ds-button>
           </td>
         </tr>
       }
     </tbody>
   </ds-table>
+}
+
+@if (showPedidoModal()) {
+  <ds-modal title="Realizar pedido" size="sm" (close)="showPedidoModal.set(false)">
+    <div class="lista-pedidos-form">
+      <p class="lista-pedidos-form__producto">{{ itemPedidoActual()?.nombreProducto }}</p>
+
+      <ds-form-field label="Proveedor">
+        <ds-select [ngModel]="proveedorSeleccionado()" (ngModelChange)="onProveedorChange($event)">
+          <option value="" disabled>Elegí un proveedor</option>
+          @for (proveedor of proveedoresCatalogo(); track proveedor.id) {
+            <option [value]="proveedor.id">{{ proveedor.nombre }}</option>
+          }
+          <option [value]="NUEVO_PROVEEDOR">+ Nuevo proveedor</option>
+        </ds-select>
+      </ds-form-field>
+
+      @if (proveedorSeleccionado() === NUEVO_PROVEEDOR) {
+        <ds-form-field label="Nombre del nuevo proveedor" hint="El resto de sus datos se completa después desde Proveedores">
+          <ds-input [ngModel]="nombreProveedorNuevo()" (ngModelChange)="nombreProveedorNuevo.set($event)" />
+        </ds-form-field>
+      }
+
+      <div class="lista-pedidos-form__row">
+        <ds-form-field label="Costo unitario">
+          <ds-input type="number" [ngModel]="costoUnitario()" (ngModelChange)="costoUnitario.set($event)" />
+        </ds-form-field>
+        <ds-form-field label="Cantidad">
+          <ds-input type="number" [ngModel]="cantidad()" (ngModelChange)="cantidad.set($event)" />
+        </ds-form-field>
+      </div>
+    </div>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showPedidoModal.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="guardandoPedido()" (click)="confirmarPedido()">Confirmar pedido</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showIngresoModal()) {
+  <ds-modal title="Confirmar ingreso" size="sm" (close)="showIngresoModal.set(false)">
+    <div class="lista-pedidos-form">
+      <p class="lista-pedidos-form__producto">{{ itemIngresoActual()?.nombreProducto }}</p>
+
+      <div class="lista-pedidos-resumen">
+        <span>Proveedor: <strong>{{ itemIngresoActual()?.nombreProveedor }}</strong></span>
+        <span>Costo pactado: <strong>{{ itemIngresoActual()?.costoUnitario | number: '1.0-2' }}</strong></span>
+        <span>Cantidad: <strong>{{ itemIngresoActual()?.cantidad }}</strong></span>
+      </div>
+
+      <ds-form-field label="Bodega de destino">
+        <ds-select [ngModel]="bodegaSeleccionada()" (ngModelChange)="bodegaSeleccionada.set($event)">
+          <option value="" disabled>Elegí una bodega</option>
+          @for (bodega of bodegas(); track bodega.id) {
+            <option [value]="bodega.id">{{ bodega.nombre }}</option>
+          }
+        </ds-select>
+      </ds-form-field>
+    </div>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showIngresoModal.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="guardandoIngreso()" (click)="confirmarIngresoClick()">Confirmar ingreso</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showPrecioModal()) {
+  <ds-modal [title]="costoSubio() ? 'El costo subió' : 'El costo bajó'" size="sm" (close)="showPrecioModal.set(false)">
+    <div class="lista-pedidos-form">
+      <p>
+        El costo de compra (<strong>{{ itemIngresoActual()?.costoUnitario | number: '1.0-2' }}</strong>) es
+        {{ costoSubio() ? 'mayor' : 'menor' }} al costo actual del producto (<strong>{{ productoActual()?.costo | number: '1.0-2' }}</strong>).
+        ¿Querés {{ costoSubio() ? 'actualizar' : 'ajustar' }} también el precio de venta?
+      </p>
+
+      <ds-form-field label="Nuevo precio de venta">
+        <ds-input type="number" [ngModel]="nuevoPrecioVenta()" (ngModelChange)="nuevoPrecioVenta.set($event)" />
+      </ds-form-field>
+    </div>
+
+    <div modal-footer>
+      <ds-button variant="ghost" [loading]="guardandoIngreso()" (click)="confirmarSinActualizarPrecio()">
+        No actualizar
+      </ds-button>
+      <ds-button variant="primary" [loading]="guardandoIngreso()" (click)="confirmarActualizandoPrecio()">
+        Actualizar precio
+      </ds-button>
+    </div>
+  </ds-modal>
 }

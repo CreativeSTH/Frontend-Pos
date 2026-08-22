@@ -65,6 +65,15 @@ export class Topbar {
     }
   }
 
+  /** Al tocar una notificación del panel se marca como leída — el contador de la campana se recalcula solo. */
+  protected marcarLeidaNotif(alerta: Alerta): void {
+    if (alerta.leida) return;
+    this.alertasService.marcarLeida(alerta.id).subscribe({
+      next: () => this.alertasService.refrescarConteo().subscribe(),
+      error: () => this.toast.error('No se pudo marcar como leída'),
+    });
+  }
+
   protected agregarAListaPedidos(alerta: Alerta): void {
     if (!alerta.productoId) return;
     this.listaPedidosService.agregar(alerta.productoId).subscribe({

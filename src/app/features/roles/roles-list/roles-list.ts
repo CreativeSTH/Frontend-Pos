@@ -12,6 +12,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { RolesService } from '../../../core/services/roles.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { Permiso, Rol } from '../../../core/models/rol.model';
 import { AccionPermiso, ModuloPermiso } from '../../../core/models/auth.model';
 
@@ -26,6 +27,7 @@ const ETIQUETAS_MODULO: Record<ModuloPermiso, string> = {
   CATEGORIAS: 'Categorías',
   MARCAS: 'Marcas',
   LINEAS: 'Líneas',
+  PROVEEDORES: 'Proveedores',
   BODEGAS: 'Bodegas',
   INVENTARIO: 'Inventario',
   VENTAS: 'Ventas',
@@ -60,6 +62,7 @@ interface FilaMatriz {
 export class RolesList {
   private readonly rolesService = inject(RolesService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly acciones = ACCIONES;
@@ -159,8 +162,8 @@ export class RolesList {
     });
   }
 
-  protected eliminar(rol: Rol): void {
-    if (!confirm(`¿Eliminar el rol "${rol.nombre}"?`)) return;
+  protected async eliminar(rol: Rol): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Eliminar el rol "${rol.nombre}"?`, danger: true }))) return;
     this.rolesService.remove(rol.id).subscribe({
       next: () => {
         this.toast.success('Rol eliminado');

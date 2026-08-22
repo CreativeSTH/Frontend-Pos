@@ -48,11 +48,20 @@ src/app/
 - `inject()` en vez de inyección por constructor.
 - Multi-tenant: el backend ya filtra por negocio vía JWT — el frontend nunca envía `negocioId` manualmente.
 
-## Estado (Fases 1–4 completas)
+## Estado (Fases 1–4 completas + extensiones)
 
-Implementado: Login, Dashboard, Punto de venta (POS), Productos, Categorías, Inventario (con vista de Kardex por producto/bodega), Bodegas, Caja, Clientes, Cobros, Reportes (ventas/márgenes/cierres de caja), Sucursales, Usuarios, y **Roles y permisos** (`/roles`). El sidebar ya no tiene entradas "Pronto".
+Implementado: Login, Dashboard, Punto de venta (POS), Productos (multi-categoría vía selector modal, proveedores vinculados), Categorías, Marcas/Líneas, **Proveedores** (`/proveedores`), Inventario (con vista de Kardex por producto/bodega), Bodegas, **Lista de pedidos** (`/lista-pedidos` — flujo Pendientes/Pedidos/Historial, ver abajo), Caja, Clientes, Cobros, Reportes (ventas/márgenes/cierres de caja), Sucursales, Usuarios, Alertas (con panel dedicado y notificaciones en vivo, ver abajo), y **Roles y permisos** (`/roles`). El sidebar ya no tiene entradas "Pronto".
 
-Pendiente: UI de gestión de Negocios (tier SISTEMA, hoy solo vía API/seed) y página de Alertas dedicada (el módulo backend existe pero no tiene vista propia) — ninguna es parte formal del roadmap de fases, quedan como mejoras sueltas.
+Pendiente: UI de gestión de Negocios (tier SISTEMA, hoy solo vía API/seed), y **Domicilios** (fase futura — `RealtimeService` ya está pensado para que ese módulo lo reutilice sin cambios).
+
+## Lista de pedidos y proveedores
+
+`features/lista-pedidos/` tiene tres pestañas (Pendientes/Pedidos/Historial) siguiendo el estado de `ItemPedido`. "Realizar pedido" muestra el catálogo completo de proveedores (no solo los ya vinculados al producto — se puede vincular uno existente al vuelo) y precarga el costo si ya había un vínculo previo. "Confirmar ingreso" pide la bodega de destino y, si el costo pactado difiere del costo actual del producto, abre un sub-diálogo para decidir si también se actualiza el precio de venta — esa decisión se resuelve en el frontend antes de llamar al backend, en una sola petición. `features/productos/productos-list/` permite vincular proveedores tanto al crear (filas repetibles, patrón igual a `stockInicial`) como al editar (altas/bajas en vivo contra la API, sin pasar por el guardado general del form).
+
+## Confirmaciones y notificaciones
+
+- `ConfirmService` + `ds-confirm-dialog` (montado en `DashboardLayout`) reemplazan el `confirm()` nativo del navegador en toda la app — nunca usar `confirm()` directo, inyectar `ConfirmService` y `await this.confirmService.ask({ message, danger: true })`.
+- `RealtimeService` (`core/services/realtime.service.ts`) conecta un socket por sesión (mismo patrón `effect()` que `AlertasService`/`CajaService`) y expone `on(evento, callback)` — los listeners sobreviven a una reconexión/relogin porque se reenganchan solos al socket nuevo. `AlertasService` lo usa para refrescar la campana al instante (`alertas:cambio`); el polling de 30s bajó a 60s y quedó como respaldo si el socket cae.
 
 ## Roles y permisos (Fase 4)
 

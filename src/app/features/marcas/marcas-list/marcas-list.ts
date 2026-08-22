@@ -13,6 +13,7 @@ import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state
 import { MarcasService } from '../../../core/services/marcas.service';
 import { LineasService } from '../../../core/services/lineas.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { Marca } from '../../../core/models/marca.model';
 import { Linea } from '../../../core/models/linea.model';
 
@@ -28,6 +29,7 @@ export class MarcasList {
   private readonly marcasService = inject(MarcasService);
   private readonly lineasService = inject(LineasService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly loading = signal(true);
@@ -143,8 +145,8 @@ export class MarcasList {
     });
   }
 
-  protected eliminar(marca: Marca): void {
-    if (!confirm(`¿Eliminar "${marca.nombre}"?`)) return;
+  protected async eliminar(marca: Marca): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Eliminar "${marca.nombre}"?`, danger: true }))) return;
     this.marcasService.remove(marca.id).subscribe({
       next: () => {
         this.toast.success('Marca eliminada');
@@ -198,8 +200,8 @@ export class MarcasList {
     });
   }
 
-  protected eliminarLinea(linea: Linea): void {
-    if (!confirm(`¿Eliminar la línea "${linea.nombre}"?`)) return;
+  protected async eliminarLinea(linea: Linea): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Eliminar la línea "${linea.nombre}"?`, danger: true }))) return;
     this.lineasService.remove(linea.id).subscribe({
       next: () => {
         this.toast.success('Línea eliminada');

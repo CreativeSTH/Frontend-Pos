@@ -68,6 +68,12 @@ export const routes: Routes = [
           import('./features/marcas/marcas-list/marcas-list').then((m) => m.MarcasList),
       },
       {
+        path: 'proveedores',
+        canActivate: [permisoGuard('PROVEEDORES')],
+        loadComponent: () =>
+          import('./features/proveedores/proveedores-list/proveedores-list').then((m) => m.ProveedoresList),
+      },
+      {
         path: 'inventario',
         canActivate: [permisoGuard('INVENTARIO')],
         loadComponent: () =>

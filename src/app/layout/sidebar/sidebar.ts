@@ -28,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Productos', icon: 'box', route: '/productos', modulo: 'PRODUCTOS' },
   { label: 'Categorías', icon: 'layers', route: '/categorias', modulo: 'CATEGORIAS' },
   { label: 'Marcas', icon: 'tag', route: '/marcas', modulo: 'MARCAS' },
+  { label: 'Proveedores', icon: 'truck', route: '/proveedores', modulo: 'PROVEEDORES' },
   { label: 'Inventario', icon: 'archive', route: '/inventario', modulo: 'INVENTARIO' },
   { label: 'Bodegas', icon: 'layers', route: '/bodegas', modulo: 'BODEGAS' },
   { label: 'Lista de pedidos', icon: 'clipboard', route: '/lista-pedidos', modulo: 'INVENTARIO' },

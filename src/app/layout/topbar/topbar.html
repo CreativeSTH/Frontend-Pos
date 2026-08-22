@@ -32,13 +32,21 @@
               <div class="topbar__notif-empty">Sin alertas recientes</div>
             } @else {
               @for (alerta of alertasService.ultimasAlertas(); track alerta.id) {
-                <div class="topbar__notif-item" [class.topbar__notif-item--leida]="alerta.leida">
+                <div
+                  class="topbar__notif-item"
+                  [class.topbar__notif-item--leida]="alerta.leida"
+                  (click)="marcarLeidaNotif(alerta)"
+                >
                   <ds-badge [tone]="tonoSeveridad(alerta.severidad)">{{ alerta.severidad }}</ds-badge>
                   <div class="topbar__notif-item__info">
                     <span class="topbar__notif-item__mensaje">{{ alerta.mensaje }}</span>
                     <span class="topbar__notif-item__fecha">{{ alerta.createdAt | date: 'short' }}</span>
                     @if (esAlertaDeStock(alerta)) {
-                      <button type="button" class="topbar__notif-item__accion" (click)="agregarAListaPedidos(alerta)">
+                      <button
+                        type="button"
+                        class="topbar__notif-item__accion"
+                        (click)="$event.stopPropagation(); agregarAListaPedidos(alerta)"
+                      >
                         + Añadir a lista de pedidos
                       </button>
                     }

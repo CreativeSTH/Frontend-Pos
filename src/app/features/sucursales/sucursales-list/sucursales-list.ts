@@ -10,6 +10,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { Sucursal } from '../../../core/models/sucursal.model';
 
 @Component({
@@ -23,6 +24,7 @@ import { Sucursal } from '../../../core/models/sucursal.model';
 export class SucursalesList {
   private readonly sucursalesService = inject(SucursalesService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly loading = signal(true);
@@ -106,8 +108,8 @@ export class SucursalesList {
     });
   }
 
-  protected eliminar(sucursal: Sucursal): void {
-    if (!confirm(`¿Eliminar "${sucursal.nombre}"?`)) return;
+  protected async eliminar(sucursal: Sucursal): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Eliminar "${sucursal.nombre}"?`, danger: true }))) return;
     this.sucursalesService.remove(sucursal.id).subscribe({
       next: () => {
         this.toast.success('Sucursal eliminada');

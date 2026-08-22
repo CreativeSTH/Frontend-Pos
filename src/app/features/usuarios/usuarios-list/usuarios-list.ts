@@ -17,6 +17,7 @@ import { SucursalesService } from '../../../core/services/sucursales.service';
 import { RolesService } from '../../../core/services/roles.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { Usuario } from '../../../core/models/usuario.model';
 import { Rol } from '../../../core/models/rol.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
@@ -47,6 +48,7 @@ export class UsuariosList {
   private readonly sucursalesService = inject(SucursalesService);
   private readonly rolesService = inject(RolesService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
   protected readonly auth = inject(AuthService);
 
@@ -163,8 +165,8 @@ export class UsuariosList {
     });
   }
 
-  protected eliminar(usuario: Usuario): void {
-    if (!confirm(`¿Desactivar a "${usuario.nombre}"?`)) return;
+  protected async eliminar(usuario: Usuario): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Desactivar a "${usuario.nombre}"?`, danger: true }))) return;
     this.usuariosService.remove(usuario.id).subscribe({
       next: () => {
         this.toast.success('Usuario desactivado');

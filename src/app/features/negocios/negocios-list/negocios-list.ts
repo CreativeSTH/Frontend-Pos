@@ -13,6 +13,7 @@ import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state
 import { NegociosService } from '../../../core/services/negocios.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { Negocio } from '../../../core/models/negocio.model';
 
 @Component({
@@ -27,6 +28,7 @@ export class NegociosList {
   private readonly negociosService = inject(NegociosService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
 
@@ -145,8 +147,8 @@ export class NegociosList {
     });
   }
 
-  protected eliminar(negocio: Negocio): void {
-    if (!confirm(`¿Desactivar "${negocio.nombre}"?`)) return;
+  protected async eliminar(negocio: Negocio): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Desactivar "${negocio.nombre}"?`, danger: true }))) return;
     this.negociosService.remove(negocio.id).subscribe({
       next: () => {
         this.toast.success('Negocio desactivado');

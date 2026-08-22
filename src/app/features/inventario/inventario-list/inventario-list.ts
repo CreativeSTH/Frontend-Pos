@@ -26,6 +26,7 @@ import { BodegasService } from '../../../core/services/bodegas.service';
 import { CategoriasService } from '../../../core/services/categorias.service';
 import { MarcasService } from '../../../core/services/marcas.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { AlertasService } from '../../../core/services/alertas.service';
 import { Producto } from '../../../core/models/producto.model';
 import { Bodega } from '../../../core/models/bodega.model';
 import { Categoria } from '../../../core/models/categoria.model';
@@ -63,6 +64,7 @@ export class InventarioList {
   private readonly categoriasService = inject(CategoriasService);
   private readonly marcasService = inject(MarcasService);
   private readonly toast = inject(ToastService);
+  private readonly alertasService = inject(AlertasService);
 
   protected readonly loading = signal(true);
   protected readonly inventario = signal<InventarioItem[]>([]);
@@ -198,6 +200,9 @@ export class InventarioList {
           this.showAjuste.set(false);
           this.toast.success('Stock actualizado');
           this.load();
+          // El ajuste ya generó la alerta de stock (si aplica) en el backend — se refresca
+          // acá para que la campana no espere el poll de 30s.
+          this.alertasService.refrescarConteo().subscribe();
         },
         error: (err) => {
           this.guardando.set(false);
