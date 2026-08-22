@@ -50,13 +50,21 @@ src/app/
 
 ## Estado (Fases 1–4 completas + extensiones)
 
-Implementado: Login, Dashboard, Punto de venta (POS), Productos (multi-categoría vía selector modal, proveedores vinculados), Categorías, Marcas/Líneas, **Proveedores** (`/proveedores`), Inventario (con vista de Kardex por producto/bodega), Bodegas, **Lista de pedidos** (`/lista-pedidos` — flujo Pendientes/Pedidos/Historial, ver abajo), Caja, Clientes, Cobros, Reportes (ventas/márgenes/cierres de caja), Sucursales, Usuarios, Alertas (con panel dedicado y notificaciones en vivo, ver abajo), y **Roles y permisos** (`/roles`). El sidebar ya no tiene entradas "Pronto".
+Implementado: Login, Dashboard, Punto de venta (POS), Productos (multi-categoría vía selector modal, proveedores vinculados), Categorías, Marcas/Líneas, **Proveedores** (`/proveedores`), Inventario (con vista de Kardex por producto/bodega), Bodegas, **Lista de pedidos** (`/lista-pedidos` — flujo Pendientes/Pedidos/Historial, ver abajo), **Domicilios** (`/domicilios`, ver abajo), Caja, Clientes, Cobros, Reportes (ventas/márgenes/cierres de caja), Sucursales, Usuarios, Alertas (con panel dedicado y notificaciones en vivo, ver abajo), y **Roles y permisos** (`/roles`). El sidebar ya no tiene entradas "Pronto".
 
-Pendiente: UI de gestión de Negocios (tier SISTEMA, hoy solo vía API/seed), y **Domicilios** (fase futura — `RealtimeService` ya está pensado para que ese módulo lo reutilice sin cambios).
+Pendiente: UI de gestión de Negocios (tier SISTEMA, hoy solo vía API/seed).
 
 ## Lista de pedidos y proveedores
 
 `features/lista-pedidos/` tiene tres pestañas (Pendientes/Pedidos/Historial) siguiendo el estado de `ItemPedido`. "Realizar pedido" muestra el catálogo completo de proveedores (no solo los ya vinculados al producto — se puede vincular uno existente al vuelo) y precarga el costo si ya había un vínculo previo. "Confirmar ingreso" pide la bodega de destino y, si el costo pactado difiere del costo actual del producto, abre un sub-diálogo para decidir si también se actualiza el precio de venta — esa decisión se resuelve en el frontend antes de llamar al backend, en una sola petición. `features/productos/productos-list/` permite vincular proveedores tanto al crear (filas repetibles, patrón igual a `stockInicial`) como al editar (altas/bajas en vivo contra la API, sin pasar por el guardado general del form).
+
+## Domicilios
+
+El switch "Domicilio" vive en `features/pos/punto-venta/` (diálogo de cobro), no en la vista de Domicilios — un domicilio siempre nace de una venta. Solo se puede activar con un cliente real ya resuelto (`clienteResueltoId` computado: `clienteId()` en CRÉDITO, `clienteVentaSeleccionado()?.id` en CONTADO — cualquiera de los dos caminos de cliente que ya tenía el POS). Al activarse abre un modal que lista las direcciones guardadas del cliente (`ClientesService.direcciones()`) + "+ Nueva dirección" (mismo idioma sentinel `NUEVA_DIRECCION` que ya usan Lista de pedidos/Productos para "+ nuevo proveedor"); una dirección nueva se guarda de inmediato (`ClientesService.agregarDireccion()`), no se difiere hasta cobrar. `registrarVenta()` manda `domicilio: { direccionClienteId }` en el payload — el backend crea el `Domicilio` en la misma transacción que la venta.
+
+`features/domicilios/domicilios-list/` sigue el mismo esqueleto que `lista-pedidos-list` (pestañas por estado + `ds-modal` para las acciones) y se suscribe a `RealtimeService.on('domicilios:cambio', ...)` para refrescarse sola cuando cualquier sesión del negocio avanza un domicilio. El botón "Nuevo domicilio" navega a `/punto-venta?domicilio=1` — el POS lee ese query param y prende el switch de Domicilio solo apenas se resuelve un cliente (no hay una segunda vía de creación de ventas).
+
+**Panel rápido en el POS**: para que el cajero no tenga que salir de `/punto-venta`, hay un botón fijo abajo a la izquierda ("Domicilios", con badge de activos) que abre un panel calcado del de notificaciones del topbar — lista los domicilios NUEVO/EN_CAMINO con acciones para avanzar de estado ahí mismo (sin pedir quién lo lleva ni motivo de cancelación — esa mayor precisión queda para "Ver más", que navega a `/domicilios`). El estado vive en `core/services/domicilios.service.ts`, ahora un servicio `providedIn: 'root'` con el mismo patrón que `AlertasService`: signal `activos` (NUEVO+EN_CAMINO), poll de respaldo (60s) y una suscripción global a `domicilios:cambio` que dispara un toast "Nuevo domicilio para {cliente}" cuando el evento trae `estado === 'NUEVO'` — un domicilio nace en NUEVO y nunca vuelve a ese estado, así que no hace falta un evento de socket aparte solo para distinguir "recién creado" de "actualizado".
 
 ## Confirmaciones y notificaciones
 

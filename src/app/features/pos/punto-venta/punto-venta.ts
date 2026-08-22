@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
@@ -30,6 +30,8 @@ import { AuthService } from '../../../core/services/auth.service';
 import { VentasSuspendidasService, VentaSuspendida } from '../../../core/services/ventas-suspendidas.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AlertasService } from '../../../core/services/alertas.service';
+import { DomiciliosService } from '../../../core/services/domicilios.service';
+import { ConfirmService } from '../../../core/services/confirm.service';
 import { Producto } from '../../../core/models/producto.model';
 import { Categoria } from '../../../core/models/categoria.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
@@ -37,7 +39,12 @@ import { Bodega } from '../../../core/models/bodega.model';
 import { TurnoCaja } from '../../../core/models/caja.model';
 import { MetodoPago, Venta } from '../../../core/models/venta.model';
 import { Cliente, VerificarCreditoResponse } from '../../../core/models/cliente.model';
+import { CreateDireccionClientePayload, DireccionCliente } from '../../../core/models/direccion-cliente.model';
+import { Domicilio } from '../../../core/models/domicilio.model';
 import { environment } from '../../../../environments/environment';
+
+/** Sentinel para "cargar una dirección nueva" en el selector — nunca colisiona con un UUID real. */
+const NUEVA_DIRECCION = '__nueva__';
 
 interface LineaPago {
   metodoPago: MetodoPago;
@@ -101,7 +108,10 @@ export class PuntoVenta {
   private readonly ventasSuspendidasService = inject(VentasSuspendidasService);
   private readonly toast = inject(ToastService);
   private readonly alertasService = inject(AlertasService);
+  protected readonly domiciliosService = inject(DomiciliosService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly loading = signal(true);
   protected readonly productos = signal<Producto[]>([]);
@@ -162,6 +172,30 @@ export class PuntoVenta {
 
   protected readonly showClienteExistente = signal(false);
   protected readonly clienteExistenteEncontrado = signal<Cliente | null>(null);
+
+  /**
+   * Domicilio: necesita un Cliente real (las direcciones dependen de él), sin
+   * importar si viene del camino CRÉDITO (`clienteId`) o del switch opcional
+   * de CONTADO (`clienteVentaSeleccionado`) — ver `alternarDomicilio`.
+   */
+  protected readonly clienteResueltoId = computed<string | null>(() =>
+    this.tipoVenta() === 'CREDITO' ? this.clienteId() || null : (this.clienteVentaSeleccionado()?.id ?? null),
+  );
+  protected readonly domicilioActivo = signal(false);
+  protected readonly showDireccionModal = signal(false);
+  protected readonly cargandoDirecciones = signal(false);
+  protected readonly direccionesCliente = signal<DireccionCliente[]>([]);
+  protected readonly direccionSeleccionadaId = signal<string>('');
+  protected readonly direccionElegida = signal<DireccionCliente | null>(null);
+  protected readonly guardandoDireccion = signal(false);
+  protected readonly nuevaDireccion = signal<CreateDireccionClientePayload>({ direccionLinea1: '' });
+  protected readonly NUEVA_DIRECCION = NUEVA_DIRECCION;
+  /** `?domicilio=1` en la URL — prende el switch solo apenas se resuelva un cliente (ver Domicilios → "Nuevo domicilio"). */
+  private readonly domicilioSolicitadoPorQuery = signal(false);
+
+  /** Panel rápido de domicilios — para que el cajero pueda avanzar estados sin salir del POS. */
+  protected readonly showPanelDomicilios = signal(false);
+  protected readonly guardandoDomicilioPanel = signal<string | null>(null);
 
   protected readonly ventaCompletada = signal<Venta | null>(null);
   protected readonly imprimiendo = signal(false);
@@ -235,6 +269,19 @@ export class PuntoVenta {
 
   constructor() {
     this.load();
+    this.domicilioSolicitadoPorQuery.set(this.route.snapshot.queryParamMap.get('domicilio') === '1');
+
+    /** Apenas se resuelve un cliente real durante una sesión "Nuevo domicilio" (desde /domicilios), prende el switch solo. */
+    effect(() => {
+      if (
+        this.clienteResueltoId() &&
+        this.domicilioSolicitadoPorQuery() &&
+        !this.domicilioActivo() &&
+        this.showCobro()
+      ) {
+        this.alternarDomicilio(true);
+      }
+    });
 
     /** Turno y stock dependen de la sucursal/bodega activa — se recargan solos cuando cambian. */
     effect(() => {
@@ -448,6 +495,7 @@ export class PuntoVenta {
     this.verificacionCredito.set(null);
     this.clienteVentaActivo.set(false);
     this.reiniciarClienteVenta();
+    this.reiniciarDomicilio();
     this.showCobro.set(true);
   }
 
@@ -455,6 +503,7 @@ export class PuntoVenta {
     this.clienteVentaActivo.set(activo);
     if (!activo) {
       this.reiniciarClienteVenta();
+      this.reiniciarDomicilio();
     }
   }
 
@@ -499,6 +548,7 @@ export class PuntoVenta {
   /** Vuelve a pedir el teléfono — para buscar otro cliente distinto al ya seleccionado/en creación. */
   protected cambiarClienteVenta(): void {
     this.reiniciarClienteVenta();
+    this.reiniciarDomicilio();
   }
 
   /**
@@ -533,6 +583,153 @@ export class PuntoVenta {
       });
   }
 
+  // ---------- Domicilio ----------
+
+  private reiniciarDomicilio(): void {
+    this.domicilioActivo.set(false);
+    this.direccionElegida.set(null);
+    this.direccionSeleccionadaId.set('');
+    this.direccionesCliente.set([]);
+  }
+
+  protected alternarDomicilio(activo: boolean): void {
+    if (!activo) {
+      this.reiniciarDomicilio();
+      return;
+    }
+    if (!this.clienteResueltoId()) {
+      this.toast.error('Seleccioná un cliente para poder domiciliar');
+      return;
+    }
+    this.abrirModalDireccion();
+  }
+
+  protected abrirModalDireccion(): void {
+    const clienteId = this.clienteResueltoId();
+    if (!clienteId) return;
+
+    this.direccionSeleccionadaId.set(this.direccionElegida()?.id ?? '');
+    this.nuevaDireccion.set({ direccionLinea1: '' });
+    this.cargandoDirecciones.set(true);
+    this.clientesService.direcciones(clienteId).subscribe({
+      next: (direcciones) => {
+        this.cargandoDirecciones.set(false);
+        this.direccionesCliente.set(direcciones);
+        if (!this.direccionSeleccionadaId()) {
+          const predeterminada = direcciones.find((d) => d.predeterminada);
+          if (predeterminada) this.direccionSeleccionadaId.set(predeterminada.id);
+        }
+      },
+      error: () => {
+        this.cargandoDirecciones.set(false);
+        this.toast.error('No se pudieron cargar las direcciones del cliente');
+      },
+    });
+    this.showDireccionModal.set(true);
+  }
+
+  protected actualizarNuevaDireccion(cambios: Partial<CreateDireccionClientePayload>): void {
+    this.nuevaDireccion.update((d) => ({ ...d, ...cambios }));
+  }
+
+  protected cerrarModalDireccion(): void {
+    this.showDireccionModal.set(false);
+    if (!this.direccionElegida()) {
+      this.domicilioActivo.set(false);
+    }
+  }
+
+  protected confirmarDireccion(): void {
+    const seleccion = this.direccionSeleccionadaId();
+    if (!seleccion) {
+      this.toast.error('Elegí una dirección');
+      return;
+    }
+
+    if (seleccion === NUEVA_DIRECCION) {
+      if (!this.nuevaDireccion().direccionLinea1.trim()) {
+        this.toast.error('Ingresá la dirección de entrega');
+        return;
+      }
+      const clienteId = this.clienteResueltoId();
+      if (!clienteId) return;
+      this.guardandoDireccion.set(true);
+      this.clientesService.agregarDireccion(clienteId, this.nuevaDireccion()).subscribe({
+        next: (direccion) => {
+          this.guardandoDireccion.set(false);
+          this.direccionesCliente.update((lista) => [...lista, direccion]);
+          this.direccionElegida.set(direccion);
+          this.domicilioActivo.set(true);
+          this.showDireccionModal.set(false);
+          this.toast.success('Dirección guardada');
+        },
+        error: (err) => {
+          this.guardandoDireccion.set(false);
+          this.toast.error(err.error?.message ?? 'No se pudo guardar la dirección');
+        },
+      });
+      return;
+    }
+
+    const direccion = this.direccionesCliente().find((d) => d.id === seleccion);
+    if (!direccion) return;
+    this.direccionElegida.set(direccion);
+    this.domicilioActivo.set(true);
+    this.showDireccionModal.set(false);
+  }
+
+  // ---------- Panel rápido de domicilios ----------
+
+  protected alternarPanelDomicilios(): void {
+    this.showPanelDomicilios.update((v) => !v);
+  }
+
+  /** Sin pedir quién lo lleva — es la vía rápida; ese detalle se completa desde "Ver más" si hace falta. */
+  protected marcarEnCaminoDesdePos(domicilio: Domicilio): void {
+    this.guardandoDomicilioPanel.set(domicilio.id);
+    this.domiciliosService.marcarEnCamino(domicilio.id).subscribe({
+      next: () => {
+        this.guardandoDomicilioPanel.set(null);
+        this.toast.success('Domicilio en camino');
+      },
+      error: (err) => {
+        this.guardandoDomicilioPanel.set(null);
+        this.toast.error(err.error?.message ?? 'No se pudo actualizar el domicilio');
+      },
+    });
+  }
+
+  protected async marcarEntregadoDesdePos(domicilio: Domicilio): Promise<void> {
+    if (!(await this.confirmService.ask(`¿Confirmar la entrega a "${domicilio.nombreCliente}"?`))) return;
+    this.guardandoDomicilioPanel.set(domicilio.id);
+    this.domiciliosService.marcarEntregado(domicilio.id).subscribe({
+      next: () => {
+        this.guardandoDomicilioPanel.set(null);
+        this.toast.success('Domicilio entregado');
+      },
+      error: (err) => {
+        this.guardandoDomicilioPanel.set(null);
+        this.toast.error(err.error?.message ?? 'No se pudo actualizar el domicilio');
+      },
+    });
+  }
+
+  protected async cancelarDesdePos(domicilio: Domicilio): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Cancelar el domicilio de "${domicilio.nombreCliente}"?`, danger: true })))
+      return;
+    this.guardandoDomicilioPanel.set(domicilio.id);
+    this.domiciliosService.cancelar(domicilio.id).subscribe({
+      next: () => {
+        this.guardandoDomicilioPanel.set(null);
+        this.toast.success('Domicilio cancelado');
+      },
+      error: (err) => {
+        this.guardandoDomicilioPanel.set(null);
+        this.toast.error(err.error?.message ?? 'No se pudo cancelar el domicilio');
+      },
+    });
+  }
+
   private calcularFechaPorDefecto(): string {
     const fecha = new Date();
     fecha.setDate(fecha.getDate() + 30);
@@ -549,6 +746,7 @@ export class PuntoVenta {
 
   protected onClienteChange(clienteId: string): void {
     this.clienteId.set(clienteId);
+    this.reiniciarDomicilio();
     this.verificarCupoCliente();
   }
 
@@ -666,6 +864,7 @@ export class PuntoVenta {
     clienteContadoId?: string,
     nombreClienteContado?: string,
   ): void {
+    const direccion = this.direccionElegida();
     this.procesando.set(true);
     this.ventasService
       .create({
@@ -685,6 +884,9 @@ export class PuntoVenta {
               clienteId: clienteContadoId,
               nombreCliente: nombreClienteContado,
             }),
+        ...(this.domicilioActivo() && direccion
+          ? { domicilio: { direccionClienteId: direccion.id } }
+          : {}),
       })
       .subscribe({
         next: (venta) => {

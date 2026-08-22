@@ -1,0 +1,30 @@
+.domicilios-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-tertiary);
+  padding: var(--space-10) 0;
+}
+
+.domicilios-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.domicilios-direccion {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.domicilios-direccion__ref {
+  font-size: var(--fs-xs);
+  color: var(--text-tertiary);
+}
+
+.domicilios-form__producto {
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}

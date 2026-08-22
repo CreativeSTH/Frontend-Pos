@@ -14,6 +14,7 @@ export type ModuloPermiso =
   | 'CAJA'
   | 'COBROS'
   | 'CLIENTES'
+  | 'DOMICILIOS'
   | 'ALERTAS'
   | 'REPORTES';
 

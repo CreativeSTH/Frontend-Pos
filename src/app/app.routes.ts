@@ -51,6 +51,12 @@ export const routes: Routes = [
           import('./features/clientes/clientes-list/clientes-list').then((m) => m.ClientesList),
       },
       {
+        path: 'domicilios',
+        canActivate: [permisoGuard('DOMICILIOS')],
+        loadComponent: () =>
+          import('./features/domicilios/domicilios-list/domicilios-list').then((m) => m.DomiciliosList),
+      },
+      {
         path: 'cobros',
         canActivate: [permisoGuard('COBROS')],
         loadComponent: () => import('./features/cobros/cobros-list/cobros-list').then((m) => m.CobrosList),

@@ -1,3 +1,5 @@
+import { DomicilioVentaPayload } from './domicilio.model';
+
 export interface Venta {
   id: string;
   negocioId: string;
@@ -54,4 +56,5 @@ export interface CreateVentaPayload {
   descuentoVenta?: number;
   items: Array<{ productoId: string; cantidad: number; descuento?: number }>;
   pagos?: Array<{ metodoPago: MetodoPago; monto: number; referencia?: string }>;
+  domicilio?: DomicilioVentaPayload;
 }

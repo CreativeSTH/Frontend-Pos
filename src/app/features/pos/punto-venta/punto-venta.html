@@ -369,6 +369,20 @@
             <span>{{ cliente.nombre }} — {{ cliente.telefono }}</span>
             <button type="button" class="pos-cliente-cambiar" (click)="cambiarClienteVenta()">Cambiar</button>
           </div>
+
+          <div class="cobro-cliente-switch">
+            <ds-switch
+              label="Domicilio"
+              [ngModel]="domicilioActivo()"
+              (ngModelChange)="alternarDomicilio($event)"
+            />
+          </div>
+          @if (domicilioActivo() && direccionElegida(); as direccion) {
+            <div class="cobro-aviso cobro-aviso--success">
+              <span>{{ direccion.direccionLinea1 }}@if (direccion.barrio) {, {{ direccion.barrio }}}</span>
+              <button type="button" class="pos-cliente-cambiar" (click)="abrirModalDireccion()">Cambiar</button>
+            </div>
+          }
         }
       }
     } @else {
@@ -391,6 +405,22 @@
             <span>{{ v.mensaje }}</span>
           }
         </div>
+      }
+
+      @if (clienteId()) {
+        <div class="cobro-cliente-switch">
+          <ds-switch
+            label="Domicilio"
+            [ngModel]="domicilioActivo()"
+            (ngModelChange)="alternarDomicilio($event)"
+          />
+        </div>
+        @if (domicilioActivo() && direccionElegida(); as direccion) {
+          <div class="cobro-aviso cobro-aviso--success">
+            <span>{{ direccion.direccionLinea1 }}@if (direccion.barrio) {, {{ direccion.barrio }}}</span>
+            <button type="button" class="pos-cliente-cambiar" (click)="abrirModalDireccion()">Cambiar</button>
+          </div>
+        }
       }
 
       <div class="cobro-pago-row">
@@ -436,6 +466,80 @@
   </ds-modal>
 }
 
+@if (showDireccionModal()) {
+  <ds-modal title="Dirección de entrega" size="sm" (close)="cerrarModalDireccion()">
+    @if (cargandoDirecciones()) {
+      <div class="cobro-aviso">Cargando direcciones...</div>
+    } @else {
+      <ds-form-field label="Dirección">
+        <ds-select
+          [ngModel]="direccionSeleccionadaId()"
+          (ngModelChange)="direccionSeleccionadaId.set($event)"
+        >
+          <option value="" disabled>Elegí una dirección</option>
+          @for (direccion of direccionesCliente(); track direccion.id) {
+            <option [value]="direccion.id">
+              {{ direccion.etiqueta ? direccion.etiqueta + ' — ' : '' }}{{ direccion.direccionLinea1 }}
+            </option>
+          }
+          <option [value]="NUEVA_DIRECCION">+ Nueva dirección</option>
+        </ds-select>
+      </ds-form-field>
+
+      @if (direccionSeleccionadaId() === NUEVA_DIRECCION) {
+        <ds-form-field label="Etiqueta (opcional)">
+          <ds-input
+            [ngModel]="nuevaDireccion().etiqueta ?? ''"
+            (ngModelChange)="actualizarNuevaDireccion({ etiqueta: $event })"
+            placeholder="Casa, Trabajo..."
+          />
+        </ds-form-field>
+        <ds-form-field label="Dirección">
+          <ds-input
+            [ngModel]="nuevaDireccion().direccionLinea1"
+            (ngModelChange)="actualizarNuevaDireccion({ direccionLinea1: $event })"
+            placeholder="Calle 10 # 5-20"
+          />
+        </ds-form-field>
+        <ds-form-field label="Apto / interior / torre (opcional)">
+          <ds-input
+            [ngModel]="nuevaDireccion().direccionLinea2 ?? ''"
+            (ngModelChange)="actualizarNuevaDireccion({ direccionLinea2: $event })"
+          />
+        </ds-form-field>
+        <div class="cobro-pago-row">
+          <ds-form-field label="Barrio (opcional)">
+            <ds-input
+              [ngModel]="nuevaDireccion().barrio ?? ''"
+              (ngModelChange)="actualizarNuevaDireccion({ barrio: $event })"
+            />
+          </ds-form-field>
+          <ds-form-field label="Teléfono de contacto (opcional)">
+            <ds-input
+              [ngModel]="nuevaDireccion().telefonoContacto ?? ''"
+              (ngModelChange)="actualizarNuevaDireccion({ telefonoContacto: $event })"
+            />
+          </ds-form-field>
+        </div>
+        <ds-form-field label="Punto de referencia (opcional)">
+          <ds-input
+            [ngModel]="nuevaDireccion().puntoReferencia ?? ''"
+            (ngModelChange)="actualizarNuevaDireccion({ puntoReferencia: $event })"
+            placeholder="Frente al parque, casa azul..."
+          />
+        </ds-form-field>
+      }
+    }
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="cerrarModalDireccion()">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="guardandoDireccion()" (click)="confirmarDireccion()">
+        Usar esta dirección
+      </ds-button>
+    </div>
+  </ds-modal>
+}
+
 @if (ventaCompletada(); as venta) {
   <ds-modal title="Venta completada" size="sm" (close)="imprimiendo() ? null : nuevaVenta()">
     @if (imprimiendo()) {
@@ -458,4 +562,69 @@
       </div>
     }
   </ds-modal>
+}
+
+@if (auth.tienePermiso('DOMICILIOS', 'VER')) {
+  <div class="pos-domicilios-wrapper">
+    <button type="button" class="pos-domicilios-btn" (click)="alternarPanelDomicilios()">
+      <ds-icon name="map-pin" [size]="20" />
+      <span>Domicilios</span>
+      @if (domiciliosService.activos().length > 0) {
+        <span class="pos-domicilios-btn__badge">{{ domiciliosService.activos().length }}</span>
+      }
+    </button>
+
+    @if (showPanelDomicilios()) {
+      <div class="pos-domicilios-backdrop" (click)="showPanelDomicilios.set(false)"></div>
+      <div class="pos-domicilios-panel">
+        <div class="pos-domicilios-panel__header">Domicilios activos</div>
+
+        @if (domiciliosService.activos().length === 0) {
+          <div class="pos-domicilios-empty">Sin domicilios activos</div>
+        } @else {
+          @for (domicilio of domiciliosService.activos(); track domicilio.id) {
+            <div class="pos-domicilios-item">
+              <div class="pos-domicilios-item__info">
+                <span class="pos-domicilios-item__cliente">{{ domicilio.nombreCliente }}</span>
+                <span class="pos-domicilios-item__direccion">{{ domicilio.direccionTexto }}</span>
+                <ds-badge [tone]="domicilio.estado === 'NUEVO' ? 'info' : 'warning'">
+                  {{ domicilio.estado === 'NUEVO' ? 'Nuevo' : 'En camino' }}
+                </ds-badge>
+              </div>
+              <div class="pos-domicilios-item__acciones">
+                @if (domicilio.estado === 'NUEVO') {
+                  <ds-button
+                    variant="glass"
+                    size="sm"
+                    [loading]="guardandoDomicilioPanel() === domicilio.id"
+                    (click)="marcarEnCaminoDesdePos(domicilio)"
+                  >
+                    En camino
+                  </ds-button>
+                } @else {
+                  <ds-button
+                    variant="glass"
+                    size="sm"
+                    [loading]="guardandoDomicilioPanel() === domicilio.id"
+                    (click)="marcarEntregadoDesdePos(domicilio)"
+                  >
+                    Entregado
+                  </ds-button>
+                }
+                <ds-button
+                  variant="ghost"
+                  size="sm"
+                  [loading]="guardandoDomicilioPanel() === domicilio.id"
+                  (click)="cancelarDesdePos(domicilio)"
+                >
+                  Cancelar
+                </ds-button>
+                <a class="pos-domicilios-item__vermas" routerLink="/domicilios">Ver más</a>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    }
+  </div>
 }

@@ -1,0 +1,103 @@
+<app-topbar title="Domicilios" subtitle="Pedidos por entregar">
+  <ds-button [variant]="tabActual() === 'NUEVO' ? 'primary' : 'glass'" (click)="tabActual.set('NUEVO')">
+    Nuevos
+  </ds-button>
+  <ds-button [variant]="tabActual() === 'EN_CAMINO' ? 'primary' : 'glass'" (click)="tabActual.set('EN_CAMINO')">
+    En camino
+  </ds-button>
+  <ds-button [variant]="tabActual() === 'HISTORIAL' ? 'primary' : 'glass'" (click)="tabActual.set('HISTORIAL')">
+    Historial
+  </ds-button>
+  <ds-button variant="primary" icon="plus" routerLink="/punto-venta" [queryParams]="{ domicilio: 1 }">
+    Nuevo domicilio
+  </ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="domicilios-loading">
+    <ds-icon name="map-pin" [size]="28" />
+    <span>Cargando...</span>
+  </div>
+} @else if (itemsFiltrados().length === 0) {
+  <ds-empty-state
+    icon="map-pin"
+    [title]="tabActual() === 'NUEVO' ? 'Nada pendiente de entregar' : tabActual() === 'EN_CAMINO' ? 'Nada en camino' : 'Sin historial todavía'"
+    [description]="
+      tabActual() === 'NUEVO'
+        ? 'Los domicilios nuevos, creados desde el punto de venta, aparecen acá.'
+        : tabActual() === 'EN_CAMINO'
+          ? 'Los domicilios que marques \'en camino\' aparecen acá mientras se entregan.'
+          : 'Los domicilios entregados o cancelados quedan acá como historial.'
+    "
+  />
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Dirección</th>
+        <th>Estado</th>
+        @if (tabActual() === 'EN_CAMINO') {
+          <th>Domiciliario</th>
+        }
+        <th>Creado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (domicilio of itemsFiltrados(); track domicilio.id) {
+        <tr>
+          <td>{{ domicilio.nombreCliente }}</td>
+          <td>
+            <div class="domicilios-direccion">
+              <span>{{ domicilio.direccionTexto }}</span>
+              @if (domicilio.puntoReferencia) {
+                <span class="domicilios-direccion__ref">{{ domicilio.puntoReferencia }}</span>
+              }
+            </div>
+          </td>
+          <td><ds-badge [tone]="tonoEstado(domicilio.estado)">{{ etiquetasEstado[domicilio.estado] }}</ds-badge></td>
+          @if (tabActual() === 'EN_CAMINO') {
+            <td>{{ domicilio.domiciliarioNombre || '—' }}</td>
+          }
+          <td>{{ domicilio.createdAt | date: 'short' }}</td>
+          <td class="domicilios-actions">
+            @if (domicilio.estado === 'NUEVO') {
+              <ds-button variant="glass" size="sm" (click)="abrirEnCamino(domicilio)">Marcar en camino</ds-button>
+              <ds-button variant="ghost" size="sm" (click)="abrirCancelar(domicilio)">Cancelar</ds-button>
+            } @else if (domicilio.estado === 'EN_CAMINO') {
+              <ds-button variant="glass" size="sm" (click)="marcarEntregado(domicilio)">Marcar entregado</ds-button>
+              <ds-button variant="ghost" size="sm" (click)="abrirCancelar(domicilio)">Cancelar</ds-button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showEnCaminoModal()) {
+  <ds-modal title="Marcar en camino" size="sm" (close)="showEnCaminoModal.set(false)">
+    <p class="domicilios-form__producto">{{ domicilioEnCamino()?.nombreCliente }}</p>
+    <ds-form-field label="¿Quién lo lleva? (opcional)">
+      <ds-input [ngModel]="domiciliarioNombre()" (ngModelChange)="domiciliarioNombre.set($event)" />
+    </ds-form-field>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showEnCaminoModal.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="guardandoEnCamino()" (click)="confirmarEnCamino()">Confirmar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showCancelarModal()) {
+  <ds-modal title="Cancelar domicilio" size="sm" (close)="showCancelarModal.set(false)">
+    <p class="domicilios-form__producto">{{ domicilioACancelar()?.nombreCliente }}</p>
+    <ds-form-field label="Motivo (opcional)">
+      <ds-input [ngModel]="motivoCancelacion()" (ngModelChange)="motivoCancelacion.set($event)" />
+    </ds-form-field>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showCancelarModal.set(false)">Volver</ds-button>
+      <ds-button variant="danger" [loading]="cancelando()" (click)="confirmarCancelar()">Cancelar domicilio</ds-button>
+    </div>
+  </ds-modal>
+}

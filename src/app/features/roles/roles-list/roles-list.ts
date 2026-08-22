@@ -34,6 +34,7 @@ const ETIQUETAS_MODULO: Record<ModuloPermiso, string> = {
   CAJA: 'Caja',
   COBROS: 'Cobros',
   CLIENTES: 'Clientes',
+  DOMICILIOS: 'Domicilios',
   ALERTAS: 'Alertas',
   REPORTES: 'Reportes',
 };

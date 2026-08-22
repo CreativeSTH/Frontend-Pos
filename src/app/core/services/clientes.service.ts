@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
 import { Cliente, CreateClientePayload, VerificarCreditoResponse } from '../models/cliente.model';
+import { CreateDireccionClientePayload, DireccionCliente } from '../models/direccion-cliente.model';
 
 @Injectable({ providedIn: 'root' })
 export class ClientesService {
@@ -32,5 +33,28 @@ export class ClientesService {
 
   desbloquear(id: string) {
     return this.api.post<Cliente>(`/clientes/${id}/desbloquear`, {});
+  }
+
+  direcciones(clienteId: string) {
+    return this.api.get<DireccionCliente[]>(`/clientes/${clienteId}/direcciones`);
+  }
+
+  agregarDireccion(clienteId: string, payload: CreateDireccionClientePayload) {
+    return this.api.post<DireccionCliente>(`/clientes/${clienteId}/direcciones`, payload);
+  }
+
+  actualizarDireccion(
+    clienteId: string,
+    direccionId: string,
+    payload: Partial<CreateDireccionClientePayload>,
+  ) {
+    return this.api.patch<DireccionCliente>(
+      `/clientes/${clienteId}/direcciones/${direccionId}`,
+      payload,
+    );
+  }
+
+  eliminarDireccion(clienteId: string, direccionId: string) {
+    return this.api.delete<void>(`/clientes/${clienteId}/direcciones/${direccionId}`);
   }
 }
