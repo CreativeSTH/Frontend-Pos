@@ -1,0 +1,19 @@
+@use 'mixins' as mix;
+
+.dashboard-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.dashboard-shell__content {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-8) var(--space-10);
+  overflow-y: auto;
+  max-height: 100vh;
+  @include mix.scrollbar-thin;
+
+  @include mix.tablet-down {
+    padding: var(--space-5);
+  }
+}

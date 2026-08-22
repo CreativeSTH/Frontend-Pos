@@ -1,0 +1,17 @@
+<article class="stat-card">
+  <div class="stat-card__icon" [class]="'stat-card__icon--' + accent()">
+    <ds-icon [name]="icon()" [size]="22" />
+  </div>
+
+  <div class="stat-card__body">
+    <span class="stat-card__label">{{ label() }}</span>
+    <span class="stat-card__value">{{ value() }}</span>
+  </div>
+
+  @if (trend() !== undefined) {
+    <div class="stat-card__trend" [class.stat-card__trend--down]="trend()! < 0">
+      <ds-icon [name]="trend()! >= 0 ? 'arrow-up-right' : 'arrow-down-right'" [size]="14" />
+      {{ trend()! >= 0 ? '+' : '' }}{{ trend() }}%
+    </div>
+  }
+</article>

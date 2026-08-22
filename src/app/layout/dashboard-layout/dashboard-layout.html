@@ -1,0 +1,14 @@
+<div class="app-aurora"><span class="app-aurora__spot"></span></div>
+
+<div class="dashboard-shell">
+  <app-sidebar />
+  <main class="dashboard-shell__content">
+    <router-outlet />
+  </main>
+</div>
+
+@if (auth.locked()) {
+  <app-lock-screen />
+}
+
+<ds-toast-container />

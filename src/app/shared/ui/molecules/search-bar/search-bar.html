@@ -1,0 +1,17 @@
+<div class="search-bar">
+  <ds-icon name="search" [size]="18" class="search-bar__icon" />
+  <input
+    #inputEl
+    class="search-bar__field"
+    type="text"
+    [placeholder]="placeholder()"
+    [value]="value()"
+    (input)="handleInput($event)"
+    (keydown)="handleKeydown($event)"
+  />
+  @if (value()) {
+    <button type="button" class="search-bar__clear" (click)="clear()">
+      <ds-icon name="x" [size]="16" />
+    </button>
+  }
+</div>

@@ -1,0 +1,15 @@
+<button
+  class="ds-btn"
+  [class]="'ds-btn--' + variant() + ' ds-btn--' + size()"
+  [class.ds-btn--full]="fullWidth()"
+  [class.ds-btn--loading]="loading()"
+  [type]="type()"
+  [disabled]="disabled() || loading()"
+>
+  @if (loading()) {
+    <span class="ds-btn__spinner"></span>
+  } @else if (icon()) {
+    <ds-icon [name]="icon()!" [size]="size() === 'sm' ? 16 : 18" />
+  }
+  <span class="ds-btn__label"><ng-content /></span>
+</button>

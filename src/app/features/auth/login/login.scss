@@ -1,0 +1,52 @@
+@use 'mixins' as mix;
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-10) var(--space-8);
+  border-radius: var(--radius-xl);
+  @include mix.glass-panel-elevated;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.login-card__brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  color: var(--text-tertiary);
+  font-size: var(--fs-sm);
+}
+
+.login-card__mark {
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.login-card__intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  h1 {
+    font-size: var(--fs-xl);
+    color: var(--text-primary);
+  }
+
+  p {
+    font-size: var(--fs-sm);
+    color: var(--text-tertiary);
+  }
+}
+
+.login-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}

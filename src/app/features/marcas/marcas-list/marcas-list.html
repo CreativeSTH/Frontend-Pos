@@ -1,0 +1,129 @@
+<app-topbar title="Marcas" subtitle="Marcas, sub-marcas y líneas de tu catálogo">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nueva marca</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="marcas-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando marcas...</span>
+  </div>
+} @else if (marcas().length === 0) {
+  <ds-empty-state icon="layers" title="Aún no hay marcas" description="Crea la primera para organizar tus productos.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nueva marca</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Líneas</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (marca of marcasOrdenadas(); track marca.id) {
+        <tr>
+          <td [class.marcas-sub]="esSubMarca(marca)">
+            @if (esSubMarca(marca)) {
+              <span class="marcas-sub__prefix">—</span>
+            }
+            {{ marca.nombre }}
+          </td>
+          <td>
+            <button type="button" class="marcas-lineas-btn" (click)="abrirLineas(marca)" title="Crear o administrar líneas de esta marca">
+              <ds-icon name="tag" [size]="14" />
+              Gestionar líneas ({{ lineasDe(marca.id).length }})
+            </button>
+          </td>
+          <td class="marcas-actions">
+            <button type="button" class="marcas-actions__btn" (click)="openEdit(marca)" title="Editar">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            <button type="button" class="marcas-actions__btn marcas-actions__btn--danger" (click)="eliminar(marca)" title="Eliminar">
+              <ds-icon name="trash" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar marca' : 'Nueva marca'" size="sm" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="marca-form" (ngSubmit)="save()">
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Purina" />
+      </ds-form-field>
+
+      <ds-form-field label="Marca padre (opcional)" hint="Déjalo vacío si es una marca principal">
+        <ds-select formControlName="marcaPadreId">
+          <option value="">Ninguna — es una marca principal</option>
+          @for (principal of marcasPrincipales(); track principal.id) {
+            @if (principal.id !== editingId()) {
+              <option [value]="principal.id">{{ principal.nombre }}</option>
+            }
+          }
+        </ds-select>
+      </ds-form-field>
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showLineas()) {
+  <ds-modal [title]="'Líneas de ' + (marcaLineas()?.nombre ?? '')" size="sm" (close)="showLineas.set(false)">
+    <div class="lineas-header">
+      <ds-button variant="glass" size="sm" icon="plus" (click)="abrirNuevaLinea()">Nueva línea</ds-button>
+    </div>
+
+    @if (lineasDeMarcaActual().length === 0) {
+      <ds-empty-state icon="tag" title="Sin líneas" description="Esta marca todavía no tiene líneas de producto." />
+    } @else {
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (linea of lineasDeMarcaActual(); track linea.id) {
+            <tr>
+              <td>{{ linea.nombre }}</td>
+              <td class="marcas-actions">
+                <button type="button" class="marcas-actions__btn" (click)="abrirEditarLinea(linea)">
+                  <ds-icon name="pencil" [size]="16" />
+                </button>
+                <button type="button" class="marcas-actions__btn marcas-actions__btn--danger" (click)="eliminarLinea(linea)">
+                  <ds-icon name="trash" [size]="16" />
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+    }
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showLineas.set(false)">Cerrar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showLineaForm()) {
+  <ds-modal [title]="editingLineaId() ? 'Editar línea' : 'Nueva línea'" size="sm" (close)="showLineaForm.set(false)">
+    <ds-form-field label="Nombre">
+      <ds-input [ngModel]="lineaNombre()" (ngModelChange)="lineaNombre.set($event)" placeholder="Veterinary Diet" />
+    </ds-form-field>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showLineaForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="savingLinea()" (click)="guardarLinea()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}

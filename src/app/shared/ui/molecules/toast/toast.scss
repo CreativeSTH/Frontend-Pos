@@ -1,0 +1,54 @@
+@use 'mixins' as mix;
+
+.ds-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 280px;
+  max-width: 380px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  @include mix.glass-panel-elevated;
+  animation: ds-toast-in var(--duration-slow) var(--ease-emphasized);
+}
+
+.ds-toast__text {
+  flex: 1;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+
+.ds-toast__close {
+  flex-shrink: 0;
+  display: inline-flex;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+.ds-toast--success {
+  color: var(--accent-success);
+}
+.ds-toast--error {
+  color: var(--accent-danger);
+}
+.ds-toast--info {
+  color: var(--accent-cyan);
+}
+
+@keyframes ds-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

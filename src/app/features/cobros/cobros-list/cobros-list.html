@@ -1,0 +1,92 @@
+<app-topbar title="Cobros" subtitle="Cuotas pendientes y vencidas de ventas a crédito" />
+
+@if (totales(); as t) {
+  <div class="cobros-stats">
+    <ds-stat-card icon="banknote" label="Total pendiente" [value]="formatMoney(t.totalPendiente)" accent="primary" />
+    <ds-stat-card icon="alert-triangle" label="Total vencido" [value]="formatMoney(t.totalVencido)" accent="danger" />
+    <ds-stat-card icon="wallet" label="Mora acumulada" [value]="formatMoney(t.totalMora)" accent="warning" />
+    <ds-stat-card icon="users" label="Clientes con deuda" [value]="t.clientesConDeuda.toString()" accent="cyan" />
+  </div>
+}
+
+<div class="cobros-tabs">
+  <button type="button" class="cobros-tab" [class.cobros-tab--active]="filtro() === 'pendientes'" (click)="cambiarFiltro('pendientes')">
+    Pendientes
+  </button>
+  <button type="button" class="cobros-tab" [class.cobros-tab--active]="filtro() === 'vencidos'" (click)="cambiarFiltro('vencidos')">
+    Vencidos
+  </button>
+  <button type="button" class="cobros-tab" [class.cobros-tab--active]="filtro() === 'proxima-quincena'" (click)="cambiarFiltro('proxima-quincena')">
+    Próxima quincena
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="cobros-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando cobros...</span>
+  </div>
+} @else if (items().length === 0) {
+  <ds-empty-state icon="wallet" title="Sin cuotas en esta vista" description="No hay nada que cobrar aquí por ahora." />
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Teléfono</th>
+        <th>Cuota</th>
+        <th>Vencimiento</th>
+        <th>Saldo</th>
+        <th>Mora</th>
+        <th>Total a pagar</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of items(); track item.ventaId + '-' + item.cuota.numero) {
+        <tr>
+          <td>{{ item.nombreCliente }}</td>
+          <td>{{ item.telefonoCliente || '—' }}</td>
+          <td>#{{ item.cuota.numero }}</td>
+          <td>
+            {{ item.cuota.fechaVencimiento | date: 'mediumDate' }}
+            @if (item.cuota.diasMora > 0) {
+              <ds-badge tone="danger">{{ item.cuota.diasMora }}d mora</ds-badge>
+            }
+          </td>
+          <td>{{ formatMoney(item.cuota.saldoPendiente) }}</td>
+          <td>{{ formatMoney(item.cuota.montoMora) }}</td>
+          <td>{{ formatMoney(item.cuota.montoTotalConMora) }}</td>
+          <td>
+            <ds-button variant="glass" size="sm" (click)="abrirAbono(item)">Abonar</ds-button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showAbono()) {
+  <ds-modal title="Registrar abono" size="sm" (close)="showAbono.set(false)">
+    @if (cobroSeleccionado(); as item) {
+      <p class="abono-cliente">{{ item.nombreCliente }} — Cuota #{{ item.cuota.numero }}</p>
+
+      <ds-form-field label="Monto a abonar">
+        <ds-input type="number" icon="banknote" [ngModel]="montoAbono()" (ngModelChange)="montoAbono.set($event)" />
+      </ds-form-field>
+
+      <ds-form-field label="Método de pago">
+        <ds-select [ngModel]="metodoPago()" (ngModelChange)="metodoPago.set($event)">
+          @for (m of metodosPago; track m) {
+            <option [value]="m">{{ m }}</option>
+          }
+        </ds-select>
+      </ds-form-field>
+    }
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showAbono.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="guardando()" (click)="confirmarAbono()">Registrar abono</ds-button>
+    </div>
+  </ds-modal>
+}

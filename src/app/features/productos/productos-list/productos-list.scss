@@ -1,0 +1,129 @@
+@use 'mixins' as mix;
+
+.productos-toolbar {
+  max-width: 420px;
+  margin-bottom: var(--space-5);
+}
+
+.productos-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-tertiary);
+  padding: var(--space-10) 0;
+}
+
+.productos-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.productos-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+  }
+
+  &--danger:hover {
+    color: var(--accent-danger);
+  }
+}
+
+.producto-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.producto-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+
+  @include mix.mobile-down {
+    grid-template-columns: 1fr;
+  }
+}
+
+.producto-form__stock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+}
+
+.producto-form__stock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.producto-form__stock-add {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: none;
+  background: none;
+  color: var(--accent-primary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--accent-secondary);
+  }
+}
+
+.producto-form__stock-empty {
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.producto-form__stock-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+
+  @include mix.mobile-down {
+    grid-template-columns: 1fr auto;
+
+    .ds-select {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.producto-form__stock-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg-hover);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--accent-danger);
+  }
+}

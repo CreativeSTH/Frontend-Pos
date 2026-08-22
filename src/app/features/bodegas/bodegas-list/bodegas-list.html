@@ -1,0 +1,101 @@
+<app-topbar title="Bodegas" subtitle="Almacenes donde guardas tu inventario">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nueva bodega</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="bodegas-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando bodegas...</span>
+  </div>
+} @else if (bodegas().length === 0) {
+  <ds-empty-state icon="archive" title="Aún no hay bodegas" description="Crea la primera para poder registrar inventario.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nueva bodega</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Sucursal</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (bodega of bodegas(); track bodega.id) {
+        <tr>
+          <td>{{ bodega.nombre }}</td>
+          <td>{{ nombreSucursal(bodega.sucursalId) }}</td>
+          <td class="bodegas-actions">
+            <button type="button" class="bodegas-actions__btn" (click)="verInventario(bodega)" title="Ver inventario">
+              <ds-icon name="eye" [size]="16" />
+            </button>
+            <button type="button" class="bodegas-actions__btn" (click)="openEdit(bodega)" title="Editar">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            <button type="button" class="bodegas-actions__btn bodegas-actions__btn--danger" (click)="eliminar(bodega)" title="Eliminar">
+              <ds-icon name="trash" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar bodega' : 'Nueva bodega'" size="sm" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="bodega-form" (ngSubmit)="save()">
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Bodega Principal" />
+      </ds-form-field>
+      <ds-form-field label="Sucursal">
+        <ds-select formControlName="sucursalId">
+          @for (sucursal of sucursales(); track sucursal.id) {
+            <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+          }
+        </ds-select>
+      </ds-form-field>
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showInventario()) {
+  <ds-modal [title]="'Inventario de ' + (bodegaInventario()?.nombre ?? '')" size="md" (close)="showInventario.set(false)">
+    @if (cargandoInventarioBodega()) {
+      <div class="bodegas-loading">
+        <ds-icon name="layers" [size]="24" />
+        <span>Cargando inventario...</span>
+      </div>
+    } @else if (itemsInventarioBodega().length === 0) {
+      <ds-empty-state icon="archive" title="Sin stock registrado" description="Esta bodega todavía no tiene productos con stock." />
+    } @else {
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Stock mínimo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of itemsInventarioBodega(); track item.id) {
+            <tr>
+              <td>{{ item.producto?.nombre ?? '—' }}</td>
+              <td>{{ item.cantidad }}</td>
+              <td>{{ item.stockMinimo }}</td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+    }
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showInventario.set(false)">Cerrar</ds-button>
+    </div>
+  </ds-modal>
+}

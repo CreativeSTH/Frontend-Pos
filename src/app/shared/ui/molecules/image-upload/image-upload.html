@@ -1,0 +1,24 @@
+<div class="image-upload">
+  <span class="image-upload__label">{{ label() }}</span>
+
+  <button type="button" class="image-upload__dropzone" (click)="openPicker()">
+    @if (previewUrl()) {
+      <img class="image-upload__preview" [src]="previewUrl()" alt="Vista previa" />
+      <button type="button" class="image-upload__remove" (click)="clear($event)" title="Quitar imagen">
+        <ds-icon name="x" [size]="14" />
+      </button>
+    } @else {
+      <ds-icon name="box" [size]="26" />
+      <span>Subir imagen</span>
+      <span class="image-upload__hint">JPG, PNG o WEBP · máx. 3MB</span>
+    }
+  </button>
+
+  <input
+    #fileInput
+    type="file"
+    accept="image/png,image/jpeg,image/webp"
+    hidden
+    (change)="handleFileChange($event)"
+  />
+</div>

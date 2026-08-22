@@ -1,0 +1,129 @@
+.caja-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-tertiary);
+  padding: var(--space-10) 0;
+}
+
+.caja-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.caja-section__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+
+  h2 {
+    font-size: var(--fs-md);
+    color: var(--text-primary);
+  }
+}
+
+.caja-section__meta {
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+}
+
+.caja-toolbar {
+  max-width: 360px;
+}
+
+.factura-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-1);
+}
+
+.factura-header__id {
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+.factura-header__fecha {
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+}
+
+.factura-cliente {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+
+.factura-totales {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--glass-border);
+}
+
+.factura-totales__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  padding: var(--space-1) 0;
+
+  &--total {
+    font-weight: var(--fw-semibold);
+    color: var(--text-primary);
+    font-size: var(--fs-base);
+    padding-top: var(--space-2);
+    margin-top: var(--space-1);
+    border-top: 1px solid var(--glass-border);
+  }
+}
+
+.factura-pagos {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--glass-border);
+}
+
+.factura-pagos__titulo {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-tertiary);
+}
+
+.movimiento-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.caja-historial-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.detalle-turno__meta {
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-4);
+}
+
+.detalle-turno__subtitulo {
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  margin: var(--space-5) 0 var(--space-3);
+}
+
+.caja-fila-acciones {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.caja-cancelar-switch {
+  margin: var(--space-4) 0;
+}
+

@@ -1,0 +1,17 @@
+<button
+  type="button"
+  class="ds-switch"
+  role="switch"
+  [attr.aria-checked]="checked()"
+  [class.ds-switch--checked]="checked()"
+  [class.ds-switch--disabled]="disabled()"
+  [disabled]="disabled()"
+  (click)="toggle()"
+>
+  <span class="ds-switch__track">
+    <span class="ds-switch__thumb"></span>
+  </span>
+  @if (label()) {
+    <span class="ds-switch__label">{{ label() }}</span>
+  }
+</button>

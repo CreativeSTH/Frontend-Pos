@@ -1,0 +1,99 @@
+<app-topbar title="Clientes" subtitle="Gestión de clientes y crédito">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nuevo cliente</ds-button>
+</app-topbar>
+
+<div class="clientes-toolbar">
+  <ds-search-bar placeholder="Buscar por nombre o teléfono..." [(value)]="search" />
+</div>
+
+@if (loading()) {
+  <div class="clientes-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando clientes...</span>
+  </div>
+} @else if (filtrados().length === 0) {
+  <ds-empty-state icon="users" title="Aún no hay clientes" description="Crea el primero para empezar a vender a crédito.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nuevo cliente</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Teléfono</th>
+        <th>Cupo de crédito</th>
+        <th>Deuda actual</th>
+        <th>Disponible</th>
+        <th>Score</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (cliente of filtrados(); track cliente.id) {
+        <tr>
+          <td class="clientes-name-cell">
+            <ds-avatar [name]="cliente.nombre" />
+            <span>{{ cliente.nombre }}</span>
+          </td>
+          <td>{{ cliente.telefono }}</td>
+          <td>{{ formatMoney(cliente.limiteCredito) }}</td>
+          <td>{{ formatMoney(cliente.deudaActual) }}</td>
+          <td>{{ formatMoney(creditoDisponible(cliente)) }}</td>
+          <td>{{ cliente.score }}</td>
+          <td>
+            @if (cliente.bloqueadoPorMora) {
+              <ds-badge tone="danger">Bloqueado</ds-badge>
+            } @else {
+              <ds-badge tone="success">Al día</ds-badge>
+            }
+          </td>
+          <td class="clientes-actions">
+            <button type="button" class="clientes-actions__btn" (click)="openEdit(cliente)" title="Editar">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            <button type="button" class="clientes-actions__btn" (click)="toggleBloqueo(cliente)" title="Bloquear/Desbloquear">
+              <ds-icon name="lock" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar cliente' : 'Nuevo cliente'" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="cliente-form" (ngSubmit)="save()">
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Nombre completo" />
+      </ds-form-field>
+
+      <ds-form-field label="Teléfono">
+        <ds-input formControlName="telefono" placeholder="3001234567" />
+      </ds-form-field>
+
+      <div class="cliente-form__row">
+        <ds-form-field label="Email (opcional)">
+          <ds-input type="email" icon="mail" formControlName="email" />
+        </ds-form-field>
+        <ds-form-field label="Documento (opcional)">
+          <ds-input formControlName="documentoIdentidad" />
+        </ds-form-field>
+      </div>
+
+      <ds-form-field label="Dirección (opcional)">
+        <ds-input formControlName="direccion" />
+      </ds-form-field>
+
+      <ds-form-field label="Límite de crédito (0 = solo contado)">
+        <ds-input type="number" icon="banknote" formControlName="limiteCredito" />
+      </ds-form-field>
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}

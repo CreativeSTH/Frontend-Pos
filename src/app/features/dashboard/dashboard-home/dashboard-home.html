@@ -1,0 +1,156 @@
+<app-topbar title="Dashboard" [subtitle]="'Hola ' + (auth.usuario()?.nombre ?? '') + ', esto es lo que pasa hoy'">
+  @if (turnoAbierto()) {
+    <ds-badge tone="success">Caja abierta</ds-badge>
+    <ds-button variant="glass" size="sm" (click)="showConfirmarCerrarTurno.set(true)">Cerrar turno</ds-button>
+  } @else {
+    <ds-badge tone="neutral">Caja cerrada</ds-badge>
+    <ds-button variant="primary" size="sm" icon="cash-register" (click)="showAbrirTurno.set(true)">
+      Abrir turno
+    </ds-button>
+  }
+</app-topbar>
+
+@if (loading()) {
+  <div class="dashboard-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando dashboard...</span>
+  </div>
+} @else {
+  <div class="stats-grid">
+    <ds-stat-card icon="shopping-bag" label="Ventas de hoy" [value]="ventasHoyCount().toString()" accent="primary" />
+    <ds-stat-card icon="banknote" label="Total vendido hoy" [value]="formatMoney(ventasHoyTotal())" accent="success" />
+    <ds-stat-card icon="box" label="Productos activos" [value]="productosCount().toString()" accent="cyan" />
+    <ds-stat-card icon="alert-triangle" label="Stock bajo" [value]="stockBajoCount().toString()" accent="warning" />
+  </div>
+
+  <section class="caja-panel">
+    @if (turnoAbierto(); as turno) {
+      <div class="caja-panel__row">
+        <ds-icon name="cash-register" [size]="22" />
+        <div>
+          <p class="caja-panel__title">Turno de caja en curso</p>
+          <p class="caja-panel__meta">
+            Abierto {{ turno.fechaApertura | date: 'medium' }} · Fondo inicial {{ formatMoney(turno.montoInicial) }}
+          </p>
+        </div>
+      </div>
+    } @else {
+      <div class="caja-panel__row">
+        <ds-icon name="lock" [size]="22" />
+        <div>
+          <p class="caja-panel__title">No hay un turno de caja abierto</p>
+          <p class="caja-panel__meta">Abre un turno antes de registrar ventas en el punto de venta.</p>
+        </div>
+      </div>
+    }
+  </section>
+}
+
+@if (showAbrirTurno()) {
+  <ds-modal title="Abrir turno de caja" size="sm" (close)="showAbrirTurno.set(false)">
+    <ds-form-field label="Fondo inicial en efectivo">
+      <ds-input type="number" icon="banknote" [ngModel]="montoInicial()" (ngModelChange)="montoInicial.set($event)" />
+    </ds-form-field>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showAbrirTurno.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="procesando()" (click)="abrirTurno()">Abrir turno</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showConfirmarCerrarTurno()) {
+  <ds-modal title="Cerrar caja" size="sm" (close)="showConfirmarCerrarTurno.set(false)">
+    <p class="confirmar-cierre__texto">¿Estás seguro que quieres cerrar caja?</p>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showConfirmarCerrarTurno.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" (click)="confirmarCerrarTurno()">Sí, cerrar caja</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showCerrarTurno()) {
+  <ds-modal title="Cerrar turno de caja" size="sm" (close)="showCerrarTurno.set(false)">
+    @if (cargandoResumen()) {
+      <div class="resumen-loading">
+        <ds-icon name="layers" [size]="22" />
+        <span>Calculando resumen del turno...</span>
+      </div>
+    } @else if (resumenTurno(); as resumen) {
+      <div class="resumen-turno">
+        <div class="resumen-turno__row">
+          <span>Fondo inicial</span>
+          <span>{{ formatMoney(resumen.montoInicial) }}</span>
+        </div>
+        <div class="resumen-turno__row">
+          <span>Ventas en efectivo</span>
+          <span>{{ formatMoney(resumen.ventasEfectivo) }}</span>
+        </div>
+        @if (resumen.ingresos > 0) {
+          <div class="resumen-turno__row">
+            <span>Ingresos manuales</span>
+            <span>{{ formatMoney(resumen.ingresos) }}</span>
+          </div>
+        }
+        @if (resumen.egresos > 0) {
+          <div class="resumen-turno__row">
+            <span>Egresos</span>
+            <span>−{{ formatMoney(resumen.egresos) }}</span>
+          </div>
+        }
+        @if (resumen.retiros > 0) {
+          <div class="resumen-turno__row">
+            <span>Retiros</span>
+            <span>−{{ formatMoney(resumen.retiros) }}</span>
+          </div>
+        }
+        <div class="resumen-turno__row resumen-turno__row--highlight">
+          <span>Efectivo esperado en caja</span>
+          <span>{{ formatMoney(resumen.efectivoEsperado) }}</span>
+        </div>
+
+        @if (resumen.ventasDigitales.length > 0) {
+          <div class="resumen-turno__digital-title">Dinero esperado por medio de pago</div>
+          @for (pago of resumen.ventasDigitales; track pago.metodoPago) {
+            <div class="resumen-turno__row resumen-turno__row--muted">
+              <span>{{ etiquetaMetodoPago(pago.metodoPago) }}</span>
+              <span>{{ formatMoney(pago.total) }}</span>
+            </div>
+          }
+          <div class="resumen-turno__row resumen-turno__row--muted">
+            <span>Total vendido (efectivo + digital)</span>
+            <span>{{ formatMoney(resumen.totalVentas) }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="arqueo-contado">
+        <ds-form-field label="Efectivo contado físicamente">
+          <ds-input
+            type="number"
+            icon="banknote"
+            [ngModel]="montosContados()['EFECTIVO']"
+            (ngModelChange)="actualizarMontoContado('EFECTIVO', $event)"
+          />
+        </ds-form-field>
+        @for (pago of resumen.ventasDigitales; track pago.metodoPago) {
+          <ds-form-field [label]="'Dinero contado en ' + etiquetaMetodoPago(pago.metodoPago)">
+            <ds-input
+              type="number"
+              icon="banknote"
+              [ngModel]="montosContados()[pago.metodoPago]"
+              (ngModelChange)="actualizarMontoContado(pago.metodoPago, $event)"
+            />
+          </ds-form-field>
+        }
+      </div>
+    }
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showCerrarTurno.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="procesando()" [disabled]="cargandoResumen()" (click)="cerrarTurno()">
+        Cerrar turno
+      </ds-button>
+    </div>
+  </ds-modal>
+}

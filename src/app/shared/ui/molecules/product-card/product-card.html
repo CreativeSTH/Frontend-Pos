@@ -1,0 +1,16 @@
+<button type="button" class="product-card">
+  <div class="product-card__image">
+    @if (imageSrc()) {
+      <img [src]="imageSrc()" [alt]="name()" loading="lazy" />
+    } @else {
+      <div class="product-card__placeholder">
+        <ds-icon name="box" [size]="36" />
+      </div>
+    }
+  </div>
+
+  <div class="product-card__footer">
+    <span class="product-card__name">{{ name() }}</span>
+    <span class="product-card__price">{{ priceLabel() }}</span>
+  </div>
+</button>

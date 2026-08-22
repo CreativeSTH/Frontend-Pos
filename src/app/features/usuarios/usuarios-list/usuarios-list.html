@@ -1,0 +1,102 @@
+<app-topbar title="Usuarios" subtitle="Cajeros y administradores de tu negocio">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nuevo usuario</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="usuarios-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando usuarios...</span>
+  </div>
+} @else if (usuarios().length === 0) {
+  <ds-empty-state icon="users" title="Aún no hay usuarios" description="Crea el primer cajero o administrador.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nuevo usuario</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Usuario</th>
+        <th>Email</th>
+        <th>Rol</th>
+        <th>Sucursal</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (usuario of usuarios(); track usuario.id) {
+        <tr>
+          <td class="usuarios-name-cell">
+            <ds-avatar [name]="usuario.nombre" />
+            <span>{{ usuario.nombre }}</span>
+          </td>
+          <td>{{ usuario.email }}</td>
+          <td>
+            <ds-badge [tone]="usuario.rol === 'ADMIN_NEGOCIO' ? 'info' : 'neutral'">
+              {{ usuario.rol === 'ADMIN_NEGOCIO' ? 'Administrador' : 'Cajero' }}
+            </ds-badge>
+          </td>
+          <td>{{ nombreSucursal(usuario.sucursalId) }}</td>
+          <td class="usuarios-actions">
+            <button type="button" class="usuarios-actions__btn" (click)="openEdit(usuario)">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            @if (usuario.email !== auth.usuario()?.email) {
+              <button type="button" class="usuarios-actions__btn usuarios-actions__btn--danger" (click)="eliminar(usuario)">
+                <ds-icon name="trash" [size]="16" />
+              </button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar usuario' : 'Nuevo usuario'" size="sm" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="usuario-form" (ngSubmit)="save()">
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Nombre completo" />
+      </ds-form-field>
+
+      <ds-form-field label="Email">
+        <ds-input type="email" icon="mail" formControlName="email" placeholder="usuario@negocio.com" />
+      </ds-form-field>
+
+      @if (!editingId()) {
+        <ds-form-field label="Contraseña">
+          <ds-input type="password" icon="lock" formControlName="password" placeholder="Mínimo 6 caracteres" />
+        </ds-form-field>
+      }
+
+      <ds-form-field
+        label="PIN de cajero (opcional)"
+        hint="4 a 6 dígitos — para cambio rápido de turno sin cerrar sesión"
+      >
+        <ds-input formControlName="pin" placeholder="Ej. 4821" />
+      </ds-form-field>
+
+      <ds-form-field label="Rol">
+        <ds-select formControlName="rol">
+          @for (rol of roles; track rol.value) {
+            <option [value]="rol.value">{{ rol.label }}</option>
+          }
+        </ds-select>
+      </ds-form-field>
+
+      <ds-form-field label="Sucursal (opcional)">
+        <ds-select formControlName="sucursalId">
+          <option value="">Todas las sucursales</option>
+          @for (sucursal of sucursales(); track sucursal.id) {
+            <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+          }
+        </ds-select>
+      </ds-form-field>
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}

@@ -1,0 +1,50 @@
+@use 'mixins' as mix;
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 48px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  @include mix.glass-panel(var(--glass-blur-sm));
+
+  &:focus-within {
+    border-color: rgba(var(--accent-primary-rgb), 0.5);
+    box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.16);
+  }
+}
+
+.search-bar__icon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.search-bar__field {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--fs-base);
+  font-family: var(--font-body);
+
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+}
+
+.search-bar__clear {
+  display: inline-flex;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    color: var(--text-secondary);
+  }
+}

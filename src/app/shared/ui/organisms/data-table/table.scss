@@ -1,0 +1,44 @@
+@use 'mixins' as mix;
+
+.ds-table-shell {
+  border-radius: var(--radius-lg);
+  @include mix.glass-panel;
+  overflow: hidden;
+}
+
+.ds-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+::ng-deep .ds-table {
+  thead th {
+    text-align: left;
+    padding: var(--space-4) var(--space-5);
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    font-weight: var(--fw-semibold);
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  tbody td {
+    padding: var(--space-4) var(--space-5);
+    font-size: var(--fs-sm);
+    color: var(--text-primary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  tbody tr {
+    transition: background var(--duration-base) var(--ease-standard);
+  }
+
+  tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}

@@ -1,0 +1,15 @@
+<div class="ds-select" [class.ds-select--invalid]="invalid()" [class.ds-select--disabled]="disabled()">
+  @if (icon()) {
+    <ds-icon class="ds-select__icon" [name]="icon()!" [size]="18" />
+  }
+  <select
+    class="ds-select__field"
+    [disabled]="disabled()"
+    [value]="value()"
+    (change)="handleChange($event)"
+    (blur)="handleBlur()"
+  >
+    <ng-content />
+  </select>
+  <ds-icon class="ds-select__chevron" name="chevron-down" [size]="16" />
+</div>

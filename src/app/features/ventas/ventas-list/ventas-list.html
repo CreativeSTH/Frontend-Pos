@@ -1,0 +1,161 @@
+<app-topbar title="Ventas" subtitle="Historial y búsqueda de todas las ventas registradas"></app-topbar>
+
+@if (loading()) {
+  <div class="ventas-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando ventas...</span>
+  </div>
+} @else {
+  <div class="ventas-toolbar">
+    <ds-search-bar placeholder="Buscar por cliente, producto o # de venta..." [(value)]="search" />
+    <ds-select [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
+      <option value="">Todos los tipos</option>
+      <option value="CONTADO">Contado</option>
+      <option value="CREDITO">Crédito</option>
+    </ds-select>
+    <ds-select [ngModel]="filtroEstado()" (ngModelChange)="filtroEstado.set($event)">
+      <option value="">Todos los estados</option>
+      @for (estado of ['ACTIVA', 'PARCIALMENTE_PAGADA', 'COMPLETADA', 'VENCIDA', 'EN_MORA', 'CANCELADA']; track estado) {
+        <option [value]="estado">{{ etiquetasEstado[estado] }}</option>
+      }
+    </ds-select>
+  </div>
+
+  @if (ventasFiltradas().length === 0) {
+    <ds-empty-state icon="shopping-bag" title="Sin resultados" description="Nada coincide con esa búsqueda o filtros." />
+  } @else {
+    <ds-table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Tipo</th>
+          <th>Estado</th>
+          <th>Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (venta of ventasFiltradas(); track venta.id) {
+          <tr>
+            <td>{{ venta.createdAt | date: 'short' }}</td>
+            <td>{{ venta.nombreCliente }}</td>
+            <td>{{ venta.tipoVenta === 'CREDITO' ? 'Crédito' : 'Contado' }}</td>
+            <td>
+              <ds-badge [tone]="tonoEstado(venta.estado)">{{ etiquetasEstado[venta.estado] ?? venta.estado }}</ds-badge>
+            </td>
+            <td>{{ formatMoney(venta.total) }}</td>
+            <td class="ventas-actions">
+              <ds-button variant="glass" size="sm" (click)="verDetalle(venta)">Ver</ds-button>
+              @if (venta.estado !== 'CANCELADA') {
+                <ds-button variant="ghost" size="sm" (click)="abrirCancelar(venta)">Cancelar</ds-button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </ds-table>
+  }
+}
+
+@if (showDetalle()) {
+  <ds-modal title="Detalle de venta" size="md" (close)="showDetalle.set(false)">
+    @if (ventaDetalle(); as venta) {
+      <div class="factura-header">
+        <span class="factura-header__id">Venta #{{ venta.id.slice(0, 8) }}</span>
+        <span class="factura-header__fecha">{{ venta.createdAt | date: 'medium' }}</span>
+      </div>
+      <p class="factura-cliente">{{ venta.nombreCliente }}</p>
+
+      @if (venta.estado === 'CANCELADA') {
+        <div class="ventas-cancelada-aviso">
+          <span>Cancelada {{ venta.fechaCancelacion | date: 'medium' }}</span>
+          @if (venta.motivoCancelacion) {
+            <span>Motivo: {{ venta.motivoCancelacion }}</span>
+          }
+        </div>
+      }
+
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cant.</th>
+            <th>Precio</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of venta.items; track item.id) {
+            <tr>
+              <td>{{ item.nombreProducto }}</td>
+              <td>{{ item.cantidad }}</td>
+              <td>{{ formatMoney(item.precioUnitario) }}</td>
+              <td>{{ formatMoney(item.subtotal) }}</td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+
+      <div class="factura-totales">
+        <div class="factura-totales__row"><span>Subtotal</span><span>{{ formatMoney(venta.subtotal) }}</span></div>
+        @if (venta.descuentoTotal > 0) {
+          <div class="factura-totales__row"><span>Descuento</span><span>-{{ formatMoney(venta.descuentoTotal) }}</span></div>
+        }
+        <div class="factura-totales__row"><span>IVA</span><span>{{ formatMoney(venta.impuestoTotal) }}</span></div>
+        <div class="factura-totales__row factura-totales__row--total"><span>Total</span><span>{{ formatMoney(venta.total) }}</span></div>
+      </div>
+
+      @if (venta.pagos.length > 0) {
+        <div class="factura-pagos">
+          <span class="factura-pagos__titulo">Pagos</span>
+          @for (pago of venta.pagos; track pago.id) {
+            <div class="factura-totales__row"><span>{{ pago.metodoPago }}</span><span>{{ formatMoney(pago.monto) }}</span></div>
+          }
+        </div>
+      }
+    }
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showDetalle.set(false)">Cerrar</ds-button>
+      @if (ventaDetalle(); as venta) {
+        @if (venta.estado !== 'CANCELADA') {
+          <ds-button variant="ghost" (click)="abrirCancelar(venta)">Cancelar venta</ds-button>
+        }
+        <ds-button variant="primary" icon="printer" (click)="printAgent.imprimirReciboNavegador('', venta)">
+          Imprimir
+        </ds-button>
+      }
+    </div>
+  </ds-modal>
+}
+
+@if (showCancelar()) {
+  <ds-modal title="Cancelar venta" size="sm" (close)="showCancelar.set(false)">
+    <p class="ventas-cancelar__texto">
+      Esta acción revierte el stock y, si la venta fue de contado y su turno sigue abierto, también revierte el
+      dinero en caja. No se puede deshacer.
+    </p>
+    <ds-form-field label="Motivo de la cancelación">
+      <ds-input [ngModel]="motivoCancelacion()" (ngModelChange)="motivoCancelacion.set($event)" placeholder="Ej. Producto equivocado" />
+    </ds-form-field>
+    <div class="ventas-cancelar__switch">
+      <ds-switch label="Devolver stock al inventario" [ngModel]="devolverStock()" (ngModelChange)="devolverStock.set($event)" />
+    </div>
+    @if (requierePin()) {
+      <ds-form-field label="PIN de un administrador" hint="Tu usuario no tiene permisos para cancelar directamente">
+        <ds-input
+          type="password"
+          icon="lock"
+          [ngModel]="pinAutorizacion()"
+          (ngModelChange)="pinAutorizacion.set($event)"
+          placeholder="••••"
+        />
+      </ds-form-field>
+    }
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showCancelar.set(false)">Volver</ds-button>
+      <ds-button variant="primary" [loading]="cancelando()" (click)="confirmarCancelar()">Confirmar cancelación</ds-button>
+    </div>
+  </ds-modal>
+}

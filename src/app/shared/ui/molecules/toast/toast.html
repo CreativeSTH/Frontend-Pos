@@ -1,0 +1,7 @@
+<div class="ds-toast" [class]="'ds-toast--' + tone()">
+  <ds-icon [name]="icon" [size]="18" />
+  <span class="ds-toast__text">{{ text() }}</span>
+  <button type="button" class="ds-toast__close" (click)="closed.emit()">
+    <ds-icon name="x" [size]="14" />
+  </button>
+</div>

@@ -1,0 +1,344 @@
+<app-topbar title="Caja" subtitle="Turnos, movimientos y arqueos">
+  @if (turnoAbierto()) {
+    <ds-button variant="glass" icon="plus" (click)="abrirModalMovimiento()">Registrar movimiento</ds-button>
+  }
+</app-topbar>
+
+@if (loading()) {
+  <div class="caja-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando caja...</span>
+  </div>
+} @else {
+  @if (turnoAbierto(); as turno) {
+    <section class="caja-section">
+      <div class="caja-section__header">
+        <ds-badge tone="success">Turno abierto</ds-badge>
+        <span class="caja-section__meta">
+          Desde {{ turno.fechaApertura | date: 'medium' }} · Fondo inicial {{ formatMoney(turno.montoInicial) }}
+        </span>
+      </div>
+
+      @if (movimientos().length === 0) {
+        <ds-empty-state icon="cash-register" title="Sin movimientos todavía" description="Las ventas y movimientos manuales aparecerán aquí." />
+      } @else {
+        <div class="caja-toolbar">
+          <ds-search-bar placeholder="Buscar por cliente, monto, método o venta..." [(value)]="search" />
+        </div>
+
+        @if (filasCaja().length === 0) {
+          <ds-empty-state icon="cash-register" title="Sin resultados" description="Nada coincide con esa búsqueda." />
+        } @else {
+          <ds-table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Cliente</th>
+                <th>Método</th>
+                <th>Concepto</th>
+                <th>Monto</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (fila of filasCaja(); track fila.id) {
+                <tr>
+                  <td>{{ fila.createdAt | date: 'short' }}</td>
+                  <td>
+                    <ds-badge [tone]="fila.tipo === 'EGRESO' || fila.tipo === 'RETIRO' ? 'danger' : 'success'">
+                      {{ etiquetasTipo[fila.tipo] }}
+                    </ds-badge>
+                  </td>
+                  <td>{{ fila.ventaId ? (ventasPorId().get(fila.ventaId)?.nombreCliente ?? '—') : '—' }}</td>
+                  <td>{{ metodosTexto(fila) }}</td>
+                  <td>{{ fila.concepto || '—' }}</td>
+                  <td>{{ formatMoney(fila.montoTotal) }}</td>
+                  <td class="caja-fila-acciones">
+                    @if (fila.ventaId) {
+                      <ds-button variant="glass" size="sm" (click)="verFactura(fila)">Ver factura</ds-button>
+                      @if (!ventaCancelada(fila)) {
+                        <ds-button variant="ghost" size="sm" (click)="abrirCancelarVenta(fila)">Cancelar</ds-button>
+                      }
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </ds-table>
+        }
+      }
+    </section>
+  }
+
+  <section class="caja-section">
+    <div class="caja-section__header">
+      <h2>Historial de turnos cerrados</h2>
+    </div>
+
+    @if (historial().length === 0) {
+      <ds-empty-state icon="cash-register" title="Aún no hay turnos cerrados" description="Aparecerán aquí después del primer cierre de caja." />
+    } @else {
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Apertura</th>
+            <th>Cierre</th>
+            <th>Fondo inicial</th>
+            <th>Esperado</th>
+            <th>Contado</th>
+            <th>Diferencia</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (turno of historial(); track turno.id) {
+            <tr>
+              <td>{{ turno.fechaApertura | date: 'short' }}</td>
+              <td>{{ turno.fechaCierre | date: 'short' }}</td>
+              <td>{{ formatMoney(turno.montoInicial) }}</td>
+              <td>{{ formatMoney(turno.montoEsperadoCierre ?? 0) }}</td>
+              <td>{{ formatMoney(turno.montoContadoCierre ?? 0) }}</td>
+              <td>
+                @if (turno.descuadrePagado) {
+                  <ds-badge tone="success">Pagado</ds-badge>
+                } @else {
+                  <ds-badge [tone]="diferenciaNum(turno) === 0 ? 'success' : 'warning'">
+                    {{ formatMoney(diferenciaNum(turno)) }}
+                  </ds-badge>
+                }
+              </td>
+              <td class="caja-historial-actions">
+                <ds-button variant="glass" size="sm" (click)="verDetalleTurno(turno)">Ver</ds-button>
+                @if (!turno.descuadrePagado && diferenciaNum(turno) !== 0) {
+                  <ds-button variant="glass" size="sm" (click)="abrirPagarDescuadre(turno)">Pagar descuadre</ds-button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+    }
+  </section>
+}
+
+@if (showMovimiento()) {
+  <ds-modal title="Registrar movimiento de caja" size="sm" (close)="showMovimiento.set(false)">
+    <div class="movimiento-form">
+      <ds-form-field label="Tipo">
+        <ds-select [ngModel]="tipoMovimiento()" (ngModelChange)="tipoMovimiento.set($event)">
+          <option value="INGRESO">Ingreso</option>
+          <option value="EGRESO">Egreso</option>
+          <option value="RETIRO">Retiro</option>
+        </ds-select>
+      </ds-form-field>
+
+      <ds-form-field label="Monto">
+        <ds-input type="number" icon="banknote" [ngModel]="montoMovimiento()" (ngModelChange)="montoMovimiento.set($event)" />
+      </ds-form-field>
+
+      <ds-form-field label="Concepto (opcional)">
+        <ds-input [ngModel]="conceptoMovimiento()" (ngModelChange)="conceptoMovimiento.set($event)" placeholder="Ej. Pago a proveedor" />
+      </ds-form-field>
+    </div>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showMovimiento.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="guardando()" (click)="registrarMovimiento()">Registrar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showFactura()) {
+  <ds-modal title="Factura de venta" size="md" (close)="showFactura.set(false)">
+    @if (ventaFactura(); as venta) {
+      <div class="factura-header">
+        <span class="factura-header__id">Venta #{{ venta.id.slice(0, 8) }}</span>
+        <span class="factura-header__fecha">{{ venta.createdAt | date: 'medium' }}</span>
+      </div>
+      <p class="factura-cliente">{{ venta.nombreCliente }}</p>
+
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cant.</th>
+            <th>Precio</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of venta.items; track item.id) {
+            <tr>
+              <td>{{ item.nombreProducto }}</td>
+              <td>{{ item.cantidad }}</td>
+              <td>{{ formatMoney(item.precioUnitario) }}</td>
+              <td>{{ formatMoney(item.subtotal) }}</td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+
+      <div class="factura-totales">
+        <div class="factura-totales__row"><span>Subtotal</span><span>{{ formatMoney(venta.subtotal) }}</span></div>
+        @if (venta.descuentoTotal > 0) {
+          <div class="factura-totales__row"><span>Descuento</span><span>-{{ formatMoney(venta.descuentoTotal) }}</span></div>
+        }
+        <div class="factura-totales__row"><span>IVA</span><span>{{ formatMoney(venta.impuestoTotal) }}</span></div>
+        <div class="factura-totales__row factura-totales__row--total"><span>Total</span><span>{{ formatMoney(venta.total) }}</span></div>
+      </div>
+
+      @if (venta.pagos.length > 0) {
+        <div class="factura-pagos">
+          <span class="factura-pagos__titulo">Pagos</span>
+          @for (pago of venta.pagos; track pago.id) {
+            <div class="factura-totales__row"><span>{{ pago.metodoPago }}</span><span>{{ formatMoney(pago.monto) }}</span></div>
+          }
+        </div>
+      }
+    }
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showFactura.set(false)">Cerrar</ds-button>
+      @if (ventaFactura(); as venta) {
+        <ds-button variant="primary" icon="printer" (click)="printAgent.imprimirReciboNavegador('', venta)">
+          Imprimir
+        </ds-button>
+      }
+    </div>
+  </ds-modal>
+}
+
+@if (showDetalleTurno()) {
+  <ds-modal title="Detalle del turno" size="md" (close)="showDetalleTurno.set(false)">
+    @if (turnoDetalle(); as turno) {
+      <p class="detalle-turno__meta">
+        {{ turno.fechaApertura | date: 'medium' }} — {{ turno.fechaCierre | date: 'medium' }}
+      </p>
+
+      @if (turno.arqueoMetodos && turno.arqueoMetodos.length > 0) {
+        <ds-table>
+          <thead>
+            <tr>
+              <th>Método</th>
+              <th>Esperado</th>
+              <th>Contado</th>
+              <th>Diferencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (arqueo of turno.arqueoMetodos; track arqueo.metodoPago) {
+              <tr>
+                <td>{{ etiquetaMetodoPago(arqueo.metodoPago) }}</td>
+                <td>{{ formatMoney(arqueo.montoEsperado) }}</td>
+                <td>{{ formatMoney(arqueo.montoContado) }}</td>
+                <td>
+                  <ds-badge [tone]="arqueo.diferencia === 0 ? 'success' : 'warning'">
+                    {{ formatMoney(arqueo.diferencia) }}
+                  </ds-badge>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </ds-table>
+      }
+
+      <h3 class="detalle-turno__subtitulo">Ventas del turno</h3>
+      @if (cargandoDetalleTurno()) {
+        <div class="caja-loading">
+          <ds-icon name="layers" [size]="22" />
+          <span>Cargando ventas...</span>
+        </div>
+      } @else if (ventasDetalleTurno().length === 0) {
+        <ds-empty-state icon="cash-register" title="Sin ventas" description="Este turno no registró ventas." />
+      } @else {
+        <ds-table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Fecha</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (venta of ventasDetalleTurno(); track venta.id) {
+              <tr>
+                <td>{{ venta.nombreCliente }}</td>
+                <td>{{ venta.createdAt | date: 'short' }}</td>
+                <td>{{ formatMoney(venta.total) }}</td>
+              </tr>
+            }
+          </tbody>
+        </ds-table>
+      }
+    }
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showDetalleTurno.set(false)">Cerrar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showPagarDescuadre()) {
+  <ds-modal title="Pagar descuadre" size="sm" (close)="showPagarDescuadre.set(false)">
+    @if (turnoPagarDescuadre(); as turno) {
+      <p class="detalle-turno__meta">
+        Diferencia del turno: {{ formatMoney(turno.diferencia ?? 0) }}
+      </p>
+    }
+    <ds-form-field label="Monto pagado para cuadrar">
+      <ds-input
+        type="number"
+        icon="banknote"
+        [ngModel]="montoPagarDescuadre()"
+        (ngModelChange)="montoPagarDescuadre.set($event)"
+      />
+    </ds-form-field>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showPagarDescuadre.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="pagandoDescuadre()" (click)="confirmarPagarDescuadre()">
+        Confirmar pago
+      </ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showCancelarVenta()) {
+  <ds-modal title="Cancelar venta" size="sm" (close)="showCancelarVenta.set(false)">
+    <p class="detalle-turno__meta">
+      Esta acción revierte el stock y el dinero en caja de esta venta. No se puede deshacer.
+    </p>
+    <ds-form-field label="Motivo de la cancelación">
+      <ds-input
+        [ngModel]="motivoCancelarVenta()"
+        (ngModelChange)="motivoCancelarVenta.set($event)"
+        placeholder="Ej. Producto equivocado"
+      />
+    </ds-form-field>
+    <div class="caja-cancelar-switch">
+      <ds-switch
+        label="Devolver stock al inventario"
+        [ngModel]="devolverStockCancelar()"
+        (ngModelChange)="devolverStockCancelar.set($event)"
+      />
+    </div>
+    @if (requierePin()) {
+      <ds-form-field label="PIN de un administrador" hint="Tu usuario no tiene permisos para cancelar directamente">
+        <ds-input
+          type="password"
+          icon="lock"
+          [ngModel]="pinCancelarVenta()"
+          (ngModelChange)="pinCancelarVenta.set($event)"
+          placeholder="••••"
+        />
+      </ds-form-field>
+    }
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showCancelarVenta.set(false)">Volver</ds-button>
+      <ds-button variant="primary" [loading]="cancelandoVenta()" (click)="confirmarCancelarVenta()">
+        Confirmar cancelación
+      </ds-button>
+    </div>
+  </ds-modal>
+}

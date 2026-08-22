@@ -1,0 +1,124 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  color: var(--text-primary);
+  background: var(--bg-void);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+/*
+ * Las <option> de ds-select llegan por ng-content — pertenecen a la vista de
+ * quien las declara, no a select.component, así que el encapsulation propio
+ * del componente nunca las alcanza. Se estilan acá, globalmente, en su lugar.
+ */
+.ds-select__field option {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* Fondo "aurora" fijo: manchas de luz difusas detrás de los paneles de vidrio. */
+.app-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--bg-void);
+}
+
+.app-aurora::before,
+.app-aurora::after {
+  content: '';
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.35;
+  animation: aurora-drift 22s var(--ease-standard) infinite alternate;
+}
+
+.app-aurora::before {
+  top: -20vmax;
+  left: -10vmax;
+  background: radial-gradient(circle, var(--accent-primary), transparent 70%);
+}
+
+.app-aurora::after {
+  bottom: -25vmax;
+  right: -15vmax;
+  background: radial-gradient(circle, var(--accent-secondary), transparent 70%);
+  animation-delay: -11s;
+}
+
+.app-aurora__spot {
+  position: absolute;
+  top: 30%;
+  right: 20%;
+  width: 45vmax;
+  height: 45vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-cyan), transparent 70%);
+  filter: blur(130px);
+  opacity: 0.18;
+}
+
+@keyframes aurora-drift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(4vmax, 3vmax) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-aurora::before,
+  .app-aurora::after {
+    animation: none;
+  }
+}

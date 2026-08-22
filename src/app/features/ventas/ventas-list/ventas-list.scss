@@ -1,0 +1,110 @@
+.ventas-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-tertiary);
+  padding: var(--space-10) 0;
+}
+
+.ventas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+
+  ds-search-bar {
+    flex: 1;
+    min-width: 240px;
+  }
+
+  ds-select {
+    min-width: 180px;
+  }
+}
+
+.ventas-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.factura-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-1);
+}
+
+.factura-header__id {
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+.factura-header__fecha {
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+}
+
+.factura-cliente {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+
+.ventas-cancelada-aviso {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  background: rgba(var(--accent-danger-rgb), 0.12);
+  color: var(--accent-danger);
+  font-size: var(--fs-sm);
+}
+
+.factura-totales {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--glass-border);
+}
+
+.factura-totales__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  padding: var(--space-1) 0;
+
+  &--total {
+    font-weight: var(--fw-semibold);
+    color: var(--text-primary);
+    font-size: var(--fs-base);
+    padding-top: var(--space-2);
+    margin-top: var(--space-1);
+    border-top: 1px solid var(--glass-border);
+  }
+}
+
+.factura-pagos {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--glass-border);
+}
+
+.factura-pagos__titulo {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-tertiary);
+}
+
+.ventas-cancelar__texto {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  padding-bottom: var(--space-4);
+}
+
+.ventas-cancelar__switch {
+  margin-top: var(--space-4);
+}

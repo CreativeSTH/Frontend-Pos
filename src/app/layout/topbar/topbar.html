@@ -1,0 +1,21 @@
+<header class="topbar">
+  <button
+    type="button"
+    class="topbar__menu-btn"
+    [class.topbar__menu-btn--visible]="hamburgerMode()"
+    (click)="mobileNav.toggle()"
+    aria-label="Abrir menú"
+  >
+    <ds-icon name="menu" [size]="22" />
+  </button>
+
+  <div class="topbar__titles">
+    <h1>{{ title() }}</h1>
+    @if (subtitle()) {
+      <p>{{ subtitle() }}</p>
+    }
+  </div>
+  <div class="topbar__actions">
+    <ng-content />
+  </div>
+</header>

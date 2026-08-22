@@ -1,0 +1,20 @@
+<div class="ds-input" [class.ds-input--invalid]="invalid()" [class.ds-input--disabled]="disabled()">
+  @if (icon()) {
+    <ds-icon class="ds-input__icon" [name]="icon()!" [size]="18" />
+  }
+  <input
+    class="ds-input__field"
+    [type]="resolvedType"
+    [placeholder]="placeholder()"
+    [autocomplete]="autocomplete()"
+    [disabled]="disabled()"
+    [value]="value()"
+    (input)="handleInput($event)"
+    (blur)="handleBlur()"
+  />
+  @if (type() === 'password') {
+    <button type="button" class="ds-input__toggle" (click)="toggleShowPassword()" tabindex="-1">
+      <ds-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="18" />
+    </button>
+  }
+</div>

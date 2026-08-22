@@ -1,0 +1,22 @@
+<div class="lock-screen">
+  <div class="lock-screen__panel">
+    <ds-icon name="lock" [size]="28" />
+    <ds-avatar [name]="auth.usuario()?.nombre ?? ''" />
+    <h2 class="lock-screen__titulo">Caja en pausa</h2>
+    <p class="lock-screen__meta">{{ auth.usuario()?.nombre }}</p>
+    <p class="lock-screen__hint">Ingresa tu PIN para reanudar (o el de otro cajero para entregar el turno).</p>
+
+    <ds-input
+      type="password"
+      icon="lock"
+      placeholder="PIN"
+      [ngModel]="pin()"
+      (ngModelChange)="pin.set($event)"
+      (keydown.enter)="desbloquear()"
+    />
+
+    <ds-button variant="primary" [fullWidth]="true" [loading]="desbloqueando()" (click)="desbloquear()">
+      Reanudar
+    </ds-button>
+  </div>
+</div>

@@ -1,0 +1,64 @@
+.ds-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  transition:
+    border-color var(--duration-base) var(--ease-standard),
+    background var(--duration-base) var(--ease-standard);
+
+  &:focus-within {
+    background: var(--glass-bg-hover);
+    border-color: rgba(var(--accent-primary-rgb), 0.55);
+    box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.18);
+  }
+
+  &--invalid {
+    border-color: rgba(var(--accent-danger-rgb), 0.6);
+
+    &:focus-within {
+      box-shadow: 0 0 0 3px rgba(var(--accent-danger-rgb), 0.18);
+    }
+  }
+
+  &--disabled {
+    opacity: 0.5;
+  }
+}
+
+.ds-select__icon {
+  flex-shrink: 0;
+  margin-right: var(--space-2);
+  color: var(--text-tertiary);
+}
+
+.ds-select__field {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  padding-right: var(--space-5);
+  border: none;
+  outline: none;
+  background: transparent;
+  appearance: none;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+
+  /* Estilo de <option> global en styles/_base.scss — ver comentario ahí. */
+}
+
+.ds-select__chevron {
+  position: absolute;
+  right: var(--space-4);
+  flex-shrink: 0;
+  pointer-events: none;
+  color: var(--text-tertiary);
+}

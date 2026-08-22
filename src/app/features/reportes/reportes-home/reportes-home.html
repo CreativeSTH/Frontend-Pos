@@ -1,0 +1,185 @@
+<app-topbar title="Reportes" subtitle="Ventas, márgenes y cierres de caja" />
+
+<div class="reportes-filtros">
+  <ds-form-field label="Desde">
+    <input type="date" class="reportes-date" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+  </ds-form-field>
+
+  <ds-form-field label="Hasta">
+    <input type="date" class="reportes-date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+  </ds-form-field>
+
+  <ds-form-field label="Sucursal">
+    <ds-select [ngModel]="sucursalId()" (ngModelChange)="sucursalId.set($event)">
+      <option value="">Todas</option>
+      @for (s of sucursales(); track s.id) {
+        <option [value]="s.id">{{ s.nombre }}</option>
+      }
+    </ds-select>
+  </ds-form-field>
+
+  <ds-button variant="primary" icon="search" [loading]="loading()" (click)="aplicarFiltros()">Aplicar</ds-button>
+</div>
+
+<div class="reportes-tabs">
+  <button type="button" class="reportes-tab" [class.reportes-tab--active]="tab() === 'ventas'" (click)="cambiarTab('ventas')">
+    Ventas
+  </button>
+  <button type="button" class="reportes-tab" [class.reportes-tab--active]="tab() === 'margenes'" (click)="cambiarTab('margenes')">
+    Márgenes
+  </button>
+  <button type="button" class="reportes-tab" [class.reportes-tab--active]="tab() === 'cierres'" (click)="cambiarTab('cierres')">
+    Cierres de caja
+  </button>
+</div>
+
+@if (loading()) {
+  <div class="reportes-loading">
+    <ds-icon name="bar-chart" [size]="28" />
+    <span>Cargando reportes...</span>
+  </div>
+} @else {
+  @if (tab() === 'ventas' && reporteVentas(); as r) {
+    <div class="reportes-stats">
+      <ds-stat-card icon="banknote" label="Ingresos" [value]="formatMoney(r.totalIngresos)" accent="primary" />
+      <ds-stat-card icon="shopping-bag" label="Ventas" [value]="r.totalVentas.toString()" accent="cyan" />
+      <ds-stat-card icon="wallet" label="Ticket promedio" [value]="formatMoney(r.ticketPromedio)" accent="secondary" />
+      <ds-stat-card icon="alert-triangle" label="Descuentos" [value]="formatMoney(r.totalDescuentos)" accent="warning" />
+    </div>
+
+    <div class="reportes-grid">
+      <div class="reportes-panel">
+        <h3 class="reportes-panel__title">Contado vs. crédito</h3>
+        <ds-table>
+          <thead>
+            <tr><th>Tipo</th><th>Cantidad</th><th>Total</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Contado</td><td>{{ r.ventasContado }}</td><td>{{ formatMoney(r.totalContado) }}</td></tr>
+            <tr><td>Crédito</td><td>{{ r.ventasCredito }}</td><td>{{ formatMoney(r.totalCredito) }}</td></tr>
+          </tbody>
+        </ds-table>
+      </div>
+
+      <div class="reportes-panel">
+        <h3 class="reportes-panel__title">Por método de pago</h3>
+        @if (r.porMetodoPago.length === 0) {
+          <ds-empty-state icon="wallet" title="Sin pagos" description="No hay pagos registrados en este rango." />
+        } @else {
+          <ds-table>
+            <thead>
+              <tr><th>Método</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+              @for (m of r.porMetodoPago; track m.metodoPago) {
+                <tr><td>{{ etiquetaMetodoPago(m.metodoPago) }}</td><td>{{ formatMoney(m.total) }}</td></tr>
+              }
+            </tbody>
+          </ds-table>
+        }
+      </div>
+    </div>
+
+    <div class="reportes-panel">
+      <h3 class="reportes-panel__title">Ventas por día</h3>
+      @if (r.porDia.length === 0) {
+        <ds-empty-state icon="bar-chart" title="Sin ventas" description="No hay ventas registradas en este rango." />
+      } @else {
+        <ds-table>
+          <thead>
+            <tr><th>Fecha</th><th>Cantidad</th><th>Total</th></tr>
+          </thead>
+          <tbody>
+            @for (d of r.porDia; track d.fecha) {
+              <tr><td>{{ d.fecha | date: 'mediumDate' }}</td><td>{{ d.cantidad }}</td><td>{{ formatMoney(d.total) }}</td></tr>
+            }
+          </tbody>
+        </ds-table>
+      }
+    </div>
+  }
+
+  @if (tab() === 'margenes' && reporteMargenes(); as r) {
+    <div class="reportes-stats">
+      <ds-stat-card icon="arrow-up-right" label="Margen bruto" [value]="formatMoney(r.margenBrutoTotal)" accent="success" />
+      <ds-stat-card icon="bar-chart" label="% de margen" [value]="r.porcentajeMargen.toFixed(1) + '%'" accent="cyan" />
+      <ds-stat-card icon="box" label="Costo total" [value]="formatMoney(r.costoTotal)" accent="secondary" />
+      <ds-stat-card icon="banknote" label="Ingreso total" [value]="formatMoney(r.ingresoTotal)" accent="primary" />
+    </div>
+
+    <div class="reportes-panel">
+      <h3 class="reportes-panel__title">Top productos por margen</h3>
+      @if (r.topProductos.length === 0) {
+        <ds-empty-state icon="box" title="Sin datos" description="No hay productos vendidos en este rango." />
+      } @else {
+        <ds-table>
+          <thead>
+            <tr><th>Producto</th><th>Cantidad</th><th>Ingreso</th><th>Margen</th></tr>
+          </thead>
+          <tbody>
+            @for (p of r.topProductos; track p.productoId) {
+              <tr>
+                <td>{{ p.nombreProducto }}</td>
+                <td>{{ p.cantidadVendida }}</td>
+                <td>{{ formatMoney(p.ingreso) }}</td>
+                <td>{{ formatMoney(p.margen) }}</td>
+              </tr>
+            }
+          </tbody>
+        </ds-table>
+      }
+    </div>
+  }
+
+  @if (tab() === 'cierres' && reporteCierres(); as r) {
+    <div class="reportes-stats">
+      <ds-stat-card icon="cash-register" label="Turnos cerrados" [value]="r.totalTurnos.toString()" accent="primary" />
+      <ds-stat-card icon="alert-triangle" label="Con descuadre" [value]="r.turnosConDescuadre.toString()" accent="warning" />
+      <ds-stat-card
+        icon="wallet"
+        label="Diferencia acumulada"
+        [value]="formatMoney(r.totalDiferencia)"
+        [accent]="r.totalDiferencia < 0 ? 'danger' : 'success'"
+      />
+    </div>
+
+    @if (r.turnos.length === 0) {
+      <ds-empty-state icon="cash-register" title="Sin cierres" description="No hay turnos cerrados en este rango." />
+    } @else {
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Sucursal</th>
+            <th>Cierre</th>
+            <th>Cajero apertura</th>
+            <th>Cajero cierre</th>
+            <th>Esperado</th>
+            <th>Contado</th>
+            <th>Diferencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of r.turnos; track t.id) {
+            <tr>
+              <td>{{ t.sucursalNombre }}</td>
+              <td>{{ t.fechaCierre | date: 'medium' }}</td>
+              <td>{{ t.usuarioAperturaNombre }}</td>
+              <td>{{ t.usuarioCierreNombre }}</td>
+              <td>{{ t.montoEsperadoCierre != null ? formatMoney(t.montoEsperadoCierre) : '—' }}</td>
+              <td>{{ t.montoContadoCierre != null ? formatMoney(t.montoContadoCierre) : '—' }}</td>
+              <td>
+                @if (t.descuadrePagado) {
+                  <ds-badge tone="success">Pagado</ds-badge>
+                } @else if (t.diferencia != null && t.diferencia !== 0) {
+                  <ds-badge [tone]="t.diferencia < 0 ? 'danger' : 'warning'">{{ formatMoney(t.diferencia) }}</ds-badge>
+                } @else {
+                  {{ t.diferencia != null ? formatMoney(t.diferencia) : '—' }}
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+    }
+  }
+}

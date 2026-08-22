@@ -1,0 +1,69 @@
+<app-topbar title="Categorías" subtitle="Organiza tu catálogo de productos">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nueva categoría</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="categorias-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando categorías...</span>
+  </div>
+} @else if (categorias().length === 0) {
+  <ds-empty-state icon="layers" title="Aún no hay categorías" description="Crea la primera para organizar tus productos.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nueva categoría</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (categoria of categoriasOrdenadas(); track categoria.id) {
+        <tr>
+          <td [class.categorias-sub]="esSubCategoria(categoria)">
+            @if (esSubCategoria(categoria)) {
+              <span class="categorias-sub__prefix">—</span>
+            }
+            {{ categoria.nombre }}
+          </td>
+          <td class="categorias-actions">
+            <button type="button" class="categorias-actions__btn" (click)="openEdit(categoria)">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            <button type="button" class="categorias-actions__btn categorias-actions__btn--danger" (click)="eliminar(categoria)">
+              <ds-icon name="trash" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar categoría' : 'Nueva categoría'" size="sm" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="categoria-form" (ngSubmit)="save()">
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Alimento para perros" />
+      </ds-form-field>
+
+      <ds-form-field label="Categoría padre (opcional)" hint="Déjalo vacío si es una categoría principal">
+        <ds-select formControlName="categoriaPadreId">
+          <option value="">Ninguna — es una categoría principal</option>
+          @for (principal of categoriasPrincipales(); track principal.id) {
+            @if (principal.id !== editingId()) {
+              <option [value]="principal.id">{{ principal.nombre }}</option>
+            }
+          }
+        </ds-select>
+      </ds-form-field>
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}

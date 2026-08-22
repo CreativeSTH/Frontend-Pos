@@ -1,0 +1,25 @@
+<div class="login-card">
+  <div class="login-card__brand">
+    <span class="login-card__mark">POS</span>
+    <span>System</span>
+  </div>
+
+  <div class="login-card__intro">
+    <h1>Bienvenido de nuevo</h1>
+    <p>Inicia sesión para continuar en tu punto de venta.</p>
+  </div>
+
+  <form class="login-card__form" [formGroup]="form" (ngSubmit)="submit()">
+    <ds-form-field label="Correo electrónico" [error]="emailError">
+      <ds-input type="email" icon="mail" placeholder="tucorreo@negocio.com" formControlName="email" autocomplete="username" />
+    </ds-form-field>
+
+    <ds-form-field label="Contraseña" [error]="passwordError">
+      <ds-input type="password" icon="lock" placeholder="••••••••" formControlName="password" autocomplete="current-password" />
+    </ds-form-field>
+
+    <ds-button type="submit" variant="primary" size="lg" [fullWidth]="true" [loading]="submitting()">
+      Iniciar sesión
+    </ds-button>
+  </form>
+</div>

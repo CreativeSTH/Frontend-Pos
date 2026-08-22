@@ -1,0 +1,63 @@
+<app-topbar title="Sucursales" subtitle="Puntos físicos de tu negocio">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nueva sucursal</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="sucursales-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando sucursales...</span>
+  </div>
+} @else if (sucursales().length === 0) {
+  <ds-empty-state icon="store" title="Aún no hay sucursales" description="Crea la primera para empezar a operar.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nueva sucursal</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Dirección</th>
+        <th>Teléfono</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (sucursal of sucursales(); track sucursal.id) {
+        <tr>
+          <td>{{ sucursal.nombre }}</td>
+          <td>{{ sucursal.direccion || '—' }}</td>
+          <td>{{ sucursal.telefono || '—' }}</td>
+          <td class="sucursales-actions">
+            <button type="button" class="sucursales-actions__btn" (click)="openEdit(sucursal)">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            <button type="button" class="sucursales-actions__btn sucursales-actions__btn--danger" (click)="eliminar(sucursal)">
+              <ds-icon name="trash" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar sucursal' : 'Nueva sucursal'" size="sm" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="sucursal-form" (ngSubmit)="save()">
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Sede Principal" />
+      </ds-form-field>
+      <ds-form-field label="Dirección">
+        <ds-input formControlName="direccion" placeholder="Cra 1 # 2-3" />
+      </ds-form-field>
+      <ds-form-field label="Teléfono">
+        <ds-input formControlName="telefono" placeholder="3001234567" />
+      </ds-form-field>
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}

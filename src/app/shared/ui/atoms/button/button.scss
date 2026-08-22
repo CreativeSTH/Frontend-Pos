@@ -1,0 +1,115 @@
+@use 'mixins' as mix;
+
+.ds-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    background var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard);
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    @include mix.focus-ring;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+/* Tamaños */
+.ds-btn--sm {
+  height: 34px;
+  padding: 0 var(--space-3);
+  font-size: var(--fs-sm);
+}
+.ds-btn--md {
+  height: 42px;
+  padding: 0 var(--space-5);
+  font-size: var(--fs-base);
+}
+.ds-btn--lg {
+  height: 50px;
+  padding: 0 var(--space-6);
+  font-size: var(--fs-md);
+}
+
+.ds-btn--full {
+  width: 100%;
+}
+
+/* Variante primaria: degradado con glow, sin bordes de color plano */
+.ds-btn--primary {
+  color: var(--text-on-accent);
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  box-shadow: 0 8px 24px rgba(var(--accent-primary-rgb), 0.35);
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 10px 30px rgba(var(--accent-primary-rgb), 0.5);
+  }
+}
+
+/* Variante vidrio: superficie glass estándar */
+.ds-btn--glass {
+  color: var(--text-primary);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  border-color: var(--glass-border);
+
+  &:hover:not(:disabled) {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-strong);
+  }
+}
+
+/* Variante fantasma: sin fondo, solo texto */
+.ds-btn--ghost {
+  color: var(--text-secondary);
+  background: transparent;
+
+  &:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: var(--glass-bg);
+  }
+}
+
+/* Variante peligro */
+.ds-btn--danger {
+  color: var(--text-primary);
+  background: rgba(var(--accent-danger-rgb), 0.16);
+  border-color: rgba(var(--accent-danger-rgb), 0.3);
+
+  &:hover:not(:disabled) {
+    background: rgba(var(--accent-danger-rgb), 0.24);
+  }
+}
+
+.ds-btn__spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: currentColor;
+  animation: ds-btn-spin 0.7s linear infinite;
+}
+
+@keyframes ds-btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,73 @@
+@use 'mixins' as mix;
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-6);
+
+  @include mix.mobile-down {
+    flex-wrap: wrap;
+  }
+}
+
+.topbar__menu-btn {
+  display: none;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+  }
+
+  @include mix.tablet-down {
+    display: inline-flex;
+  }
+
+  &--visible {
+    display: inline-flex;
+  }
+}
+
+.topbar__titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+
+  h1 {
+    font-size: var(--fs-2xl);
+    color: var(--text-primary);
+
+    @include mix.mobile-down {
+      font-size: var(--fs-xl);
+    }
+  }
+
+  p {
+    font-size: var(--fs-sm);
+    color: var(--text-tertiary);
+  }
+}
+
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+
+  @include mix.mobile-down {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+}

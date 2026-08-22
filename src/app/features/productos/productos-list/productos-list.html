@@ -1,0 +1,190 @@
+<app-topbar title="Productos" subtitle="Catálogo e inventario base de tu negocio">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nuevo producto</ds-button>
+</app-topbar>
+
+<div class="productos-toolbar">
+  <ds-search-bar placeholder="Buscar por nombre o código de barras..." [(value)]="search" />
+</div>
+
+@if (loading()) {
+  <div class="productos-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando productos...</span>
+  </div>
+} @else if (filtrados().length === 0) {
+  <ds-empty-state icon="box" title="Aún no hay productos" description="Crea el primero para empezar a vender.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nuevo producto</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Producto</th>
+        <th>Categoría</th>
+        <th>Marca</th>
+        <th>Código de barras</th>
+        <th>Stock</th>
+        <th>Precio</th>
+        <th>Costo</th>
+        <th>IVA</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (producto of filtrados(); track producto.id) {
+        <tr>
+          <td><ds-thumbnail [src]="imageUrl(producto.imagenUrl)" [alt]="producto.nombre" [size]="40" /></td>
+          <td>{{ producto.nombre }}</td>
+          <td>{{ nombreCategoria(producto.categoriaId) }}</td>
+          <td>{{ nombreMarca(producto.marcaId) }}</td>
+          <td>
+            @if (producto.codigoBarras) {
+              <ds-badge tone="info">{{ producto.codigoBarras }}</ds-badge>
+            } @else {
+              —
+            }
+          </td>
+          <td>
+            @if (stockDe(producto.id); as stock) {
+              {{ stock }}
+            } @else if (stockDe(producto.id) === 0) {
+              <ds-badge tone="warning">0</ds-badge>
+            } @else {
+              <ds-badge tone="neutral">Sin registrar</ds-badge>
+            }
+          </td>
+          <td>{{ formatMoney(producto.precioVenta) }}</td>
+          <td>{{ formatMoney(producto.costo) }}</td>
+          <td>{{ etiquetaImpuesto(producto) }}</td>
+          <td class="productos-actions">
+            <button type="button" class="productos-actions__btn" (click)="openEdit(producto)">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            <button type="button" class="productos-actions__btn productos-actions__btn--danger" (click)="eliminar(producto)">
+              <ds-icon name="trash" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar producto' : 'Nuevo producto'" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="producto-form" (ngSubmit)="save()">
+      <ds-image-upload
+        [existingUrl]="editingImagenUrl()"
+        (fileSelected)="selectedImage.set($event)"
+      />
+
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Croquetas Perro Adulto 3kg" />
+      </ds-form-field>
+
+      <ds-form-field label="Código de barras">
+        <ds-input icon="barcode" formControlName="codigoBarras" placeholder="7701234567890" />
+      </ds-form-field>
+
+      <div class="producto-form__row">
+        <ds-form-field label="Precio de venta">
+          <ds-input type="number" icon="banknote" formControlName="precioVenta" />
+        </ds-form-field>
+        <ds-form-field label="Costo">
+          <ds-input type="number" icon="banknote" formControlName="costo" />
+        </ds-form-field>
+      </div>
+
+      <div class="producto-form__row">
+        <ds-form-field label="Categoría">
+          <ds-select formControlName="categoriaId">
+            <option value="">Sin categoría</option>
+            @for (categoria of categorias(); track categoria.id) {
+              <option [value]="categoria.id">{{ categoria.nombre }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+        <ds-form-field label="Marca">
+          <ds-select formControlName="marcaId">
+            <option value="">Sin marca</option>
+            @for (marca of marcasOrdenadas(); track marca.id) {
+              <option [value]="marca.id">{{ marca.marcaPadreId ? '— ' : '' }}{{ marca.nombre }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+      </div>
+
+      <div class="producto-form__row">
+        <ds-form-field label="Línea">
+          <ds-select formControlName="lineaId">
+            <option value="">Sin línea</option>
+            @for (linea of lineasDeMarca(); track linea.id) {
+              <option [value]="linea.id">{{ linea.nombre }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+      </div>
+
+      <div class="producto-form__row">
+        <ds-form-field label="IVA">
+          <ds-select formControlName="tipoImpuesto">
+            <option value="GRAVADO">Gravado (con IVA)</option>
+            <option value="EXCLUIDO">Excluido (no aplica IVA)</option>
+            <option value="EXENTO">Exento de IVA</option>
+          </ds-select>
+        </ds-form-field>
+        @if (esGravado()) {
+          <ds-form-field label="% IVA">
+            <ds-input type="number" formControlName="porcentajeImpuesto" />
+          </ds-form-field>
+        }
+      </div>
+
+      @if (!editingId()) {
+        <div class="producto-form__stock">
+          <div class="producto-form__stock-header">
+            <span>Stock inicial por bodega (opcional)</span>
+            <button type="button" class="producto-form__stock-add" (click)="agregarFilaStock()">
+              <ds-icon name="plus" [size]="14" />
+              Agregar bodega
+            </button>
+          </div>
+
+          @if (stockInicial().length === 0) {
+            <p class="producto-form__stock-empty">Sin stock inicial — el producto queda en 0 en todas las bodegas.</p>
+          } @else {
+            @for (fila of stockInicial(); track $index) {
+              <div class="producto-form__stock-row">
+                <ds-select
+                  [ngModel]="fila.bodegaId"
+                  [ngModelOptions]="{ standalone: true }"
+                  (ngModelChange)="actualizarFilaStock($index, { bodegaId: $event })"
+                >
+                  @for (bodega of bodegas(); track bodega.id) {
+                    <option [value]="bodega.id">{{ bodega.nombre }}</option>
+                  }
+                </ds-select>
+                <ds-input
+                  type="number"
+                  icon="box"
+                  [ngModel]="fila.cantidad"
+                  [ngModelOptions]="{ standalone: true }"
+                  (ngModelChange)="actualizarFilaStock($index, { cantidad: $event })"
+                />
+                <button type="button" class="producto-form__stock-remove" (click)="quitarFilaStock($index)">
+                  <ds-icon name="x" [size]="16" />
+                </button>
+              </div>
+            }
+          }
+        </div>
+      }
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}
