@@ -7,6 +7,11 @@
         <ds-icon name="box" [size]="36" />
       </div>
     }
+    @if (stock() !== undefined && stock() !== null) {
+      <span class="product-card__stock" [class.product-card__stock--empty]="stock()! <= 0">
+        {{ stock()! <= 0 ? 'Sin stock' : stock() + ' disp.' }}
+      </span>
+    }
   </div>
 
   <div class="product-card__footer">

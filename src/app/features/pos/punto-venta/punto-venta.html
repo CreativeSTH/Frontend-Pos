@@ -1,4 +1,8 @@
 <app-topbar title="Punto de venta" subtitle="Escanea, busca y cobra en segundos">
+  <div class="pos-usuario-activo" title="Usuario conectado">
+    <ds-avatar [name]="auth.usuario()?.nombre ?? ''" />
+    <span>{{ auth.usuario()?.nombre }}</span>
+  </div>
   @if (sucursales().length > 1) {
     <ds-select [ngModel]="sucursal()?.id" (ngModelChange)="cambiarSucursal($event)">
       @for (s of sucursales(); track s.id) {
@@ -25,20 +29,28 @@
   </div>
 } @else if (!turno()) {
   <ds-empty-state
-    icon="lock"
+    icon="cash-register"
     title="No hay un turno de caja abierto"
-    description="Ve al Dashboard y abre un turno antes de vender."
+    description="Abrí un turno de caja para empezar a vender."
   >
-    <ds-button variant="glass" icon="cash-register" routerLink="/dashboard">Ir al Dashboard</ds-button>
+    <ds-button variant="glass" icon="cash-register" (click)="showAbrirTurno.set(true)">Abrir caja</ds-button>
   </ds-empty-state>
 } @else {
   <div class="pos-layout">
     <section class="pos-catalog">
-      <ds-search-bar
-        placeholder="Escanea el código de barras o busca por nombre..."
-        [(value)]="search"
-        (submit)="onScanSubmit($event)"
-      />
+      <div class="pos-catalog-filtros">
+        <ds-search-bar
+          placeholder="Escanea el código de barras o busca por nombre..."
+          [(value)]="search"
+          (submit)="onScanSubmit($event)"
+        />
+        <ds-select [ngModel]="filtroCategoriaId()" (ngModelChange)="filtroCategoriaId.set($event)">
+          <option value="">Todas las categorías</option>
+          @for (categoria of categoriasOrdenadas(); track categoria.id) {
+            <option [value]="categoria.id">{{ categoria.categoriaPadreId ? '— ' : '' }}{{ categoria.nombre }}</option>
+          }
+        </ds-select>
+      </div>
 
       @if (productosFiltrados().length === 0) {
         <ds-empty-state icon="box" title="Sin resultados" description="Prueba con otro nombre o código." />
@@ -49,6 +61,7 @@
               [imageSrc]="imageUrl(producto.imagenUrl)"
               [name]="producto.nombre"
               [priceLabel]="formatMoney(producto.precioVenta)"
+              [stock]="stockDe(producto.id)"
               (click)="agregarAlCarrito(producto)"
             />
           }
@@ -120,6 +133,23 @@
       <span>Cerrar caja</span>
     </button>
   </div>
+}
+
+@if (showAbrirTurno()) {
+  <ds-modal title="Abrir turno de caja" size="sm" (close)="showAbrirTurno.set(false)">
+    <ds-form-field label="Fondo inicial en efectivo">
+      <ds-input
+        type="number"
+        icon="banknote"
+        [ngModel]="montoInicialTurno()"
+        (ngModelChange)="montoInicialTurno.set($event)"
+      />
+    </ds-form-field>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showAbrirTurno.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="abriendoTurno()" (click)="abrirTurnoDesdePos()">Abrir caja</ds-button>
+    </div>
+  </ds-modal>
 }
 
 @if (showConfirmarPausarCaja()) {
@@ -325,6 +355,15 @@
           <ds-form-field label="Nombre">
             <ds-input [ngModel]="nuevoClienteNombre()" (ngModelChange)="nuevoClienteNombre.set($event)" placeholder="Nombre del cliente" />
           </ds-form-field>
+          <ds-button
+            class="cobro-guardar-cliente"
+            variant="glass"
+            [fullWidth]="true"
+            [loading]="creandoClienteVenta()"
+            (click)="guardarClienteVenta()"
+          >
+            Guardar cliente
+          </ds-button>
         } @else if (clienteVentaSeleccionado(); as cliente) {
           <div class="cobro-aviso cobro-aviso--success">
             <span>{{ cliente.nombre }} — {{ cliente.telefono }}</span>

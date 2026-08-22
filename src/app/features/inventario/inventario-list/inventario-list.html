@@ -64,7 +64,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (item of inventarioFiltrado(); track item.id) {
+        @for (item of inventarioPaginado(); track item.id) {
           <tr>
             <td><ds-thumbnail [src]="imageUrl(item.producto?.imagenUrl)" [alt]="item.producto?.nombre ?? ''" [size]="40" /></td>
             <td>{{ item.producto?.nombre ?? '—' }}</td>
@@ -92,6 +92,7 @@
         }
       </tbody>
     </ds-table>
+    <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
     }
   }
 }

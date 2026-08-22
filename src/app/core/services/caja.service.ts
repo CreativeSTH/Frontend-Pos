@@ -1,19 +1,48 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, effect, inject, signal } from '@angular/core';
 import { tap } from 'rxjs';
 import { ApiService } from './api.service';
+import { AuthService } from './auth.service';
+import { SucursalContextService } from './sucursal-context.service';
 import { ResumenTurno, TurnoCaja } from '../models/caja.model';
 import { MovimientoCaja, TipoMovimientoCaja } from '../models/movimiento-caja.model';
 
 @Injectable({ providedIn: 'root' })
 export class CajaService {
   private readonly api = inject(ApiService);
+  private readonly sucursalContext = inject(SucursalContextService);
+  private readonly auth = inject(AuthService);
 
   /** Fuente de verdad global de "¿hay un turno de caja abierto?" — usada por el layout (landing, sidebar en modo hamburguesa). */
   private readonly _turnoAbierto = signal<TurnoCaja | null>(null);
   readonly turnoAbierto = this._turnoAbierto.asReadonly();
 
-  findAllTurnos() {
-    return this.api.get<TurnoCaja[]>('/caja/turnos');
+  constructor() {
+    /**
+     * Este signal es un singleton `providedIn: 'root'` — sobrevive a cambios de
+     * sesión sin recrearse (a diferencia de un componente de ruta), así que se
+     * refresca solo cada vez que cambia el usuario logueado (login, pin-switch,
+     * "entrar como negocio", "salir de modo soporte"). Sin esto, cambiar de
+     * negocio con "entrar como" dejaba el turno del negocio ANTERIOR visible —
+     * cerrar ese turno fallaba con 404 porque ya no pertenecía al negocio activo.
+     */
+    effect(() => {
+      const usuario = this.auth.usuario();
+      if (!usuario || usuario.rolTier === 'SISTEMA') {
+        this._turnoAbierto.set(null);
+        return;
+      }
+      this.refrescarTurnoAbierto().subscribe();
+    });
+  }
+
+  /**
+   * Sin `sucursalId`, trae todos los turnos del negocio — lo usa `landingGuard`
+   * a propósito, antes de que el usuario haya elegido sucursal. Con el context
+   * ya resuelto (cajero con sucursal fija, o admin que ya eligió), se filtra.
+   */
+  findAllTurnos(sucursalId?: string) {
+    const filtro = sucursalId ?? this.sucursalContext.sucursalId() ?? undefined;
+    return this.api.get<TurnoCaja[]>('/caja/turnos', filtro ? { sucursalId: filtro } : undefined);
   }
 
   /** Refresca `turnoAbierto` desde el backend — llamar al entrar al layout protegido o tras deep links. */

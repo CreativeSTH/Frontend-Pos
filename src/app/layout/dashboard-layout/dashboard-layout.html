@@ -15,6 +15,13 @@
   </main>
 </div>
 
+@if (mostrarVolverPos()) {
+  <a routerLink="/punto-venta" class="volver-pos-fab">
+    <ds-icon name="shopping-bag" [size]="18" />
+    <span>Volver a punto de venta</span>
+  </a>
+}
+
 @if (auth.locked()) {
   <app-lock-screen />
 }

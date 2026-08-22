@@ -116,6 +116,32 @@ export class CajaHome {
   protected readonly turnoAbierto = computed(() => this.turnos().find((t) => t.estado === 'ABIERTO') ?? null);
   protected readonly historial = computed(() => this.turnos().filter((t) => t.estado === 'CERRADO'));
 
+  protected readonly filtroDesde = signal('');
+  protected readonly filtroHasta = signal('');
+  protected readonly filtroUsuarioId = signal('');
+
+  /** Usuarios (apertura o cierre) que aparecen en el historial — para poblar el filtro sin pegarle a `/usuarios`. */
+  protected readonly usuariosHistorial = computed(() => {
+    const mapa = new Map<string, string>();
+    for (const turno of this.historial()) {
+      if (turno.usuarioApertura) mapa.set(turno.usuarioApertura.id, turno.usuarioApertura.nombre);
+      if (turno.usuarioCierre) mapa.set(turno.usuarioCierre.id, turno.usuarioCierre.nombre);
+    }
+    return Array.from(mapa, ([id, nombre]) => ({ id, nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  });
+
+  protected readonly historialFiltrado = computed(() => {
+    const desde = this.filtroDesde();
+    const hasta = this.filtroHasta();
+    const usuarioId = this.filtroUsuarioId();
+    return this.historial().filter((turno) => {
+      if (desde && turno.fechaApertura.slice(0, 10) < desde) return false;
+      if (hasta && turno.fechaApertura.slice(0, 10) > hasta) return false;
+      if (usuarioId && turno.usuarioAperturaId !== usuarioId && turno.usuarioCierreId !== usuarioId) return false;
+      return true;
+    });
+  });
+
   protected readonly movimientosFiltrados = computed(() => {
     const term = this.search().toLowerCase().trim();
     if (!term) return this.movimientos();

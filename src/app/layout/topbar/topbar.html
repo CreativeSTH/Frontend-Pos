@@ -16,6 +16,38 @@
     }
   </div>
   <div class="topbar__actions">
+    @if (mostrarCampana()) {
+      <div class="topbar__notif-wrapper">
+        <button type="button" class="topbar__bell" (click)="alternarNotificaciones()" aria-label="Notificaciones">
+          <ds-icon name="bell" [size]="20" />
+          @if (alertasService.noLeidas() > 0) {
+            <span class="topbar__bell-badge">{{ alertasService.noLeidas() }}</span>
+          }
+        </button>
+        @if (showNotificaciones()) {
+          <div class="topbar__notif-backdrop" (click)="showNotificaciones.set(false)"></div>
+          <div class="topbar__notif-panel">
+            <div class="topbar__notif-panel__header">Notificaciones</div>
+            @if (cargandoNotificaciones()) {
+              <div class="topbar__notif-empty">Cargando...</div>
+            } @else if (ultimasAlertas().length === 0) {
+              <div class="topbar__notif-empty">Sin alertas recientes</div>
+            } @else {
+              @for (alerta of ultimasAlertas(); track alerta.id) {
+                <div class="topbar__notif-item" [class.topbar__notif-item--leida]="alerta.leida">
+                  <ds-badge [tone]="tonoSeveridad(alerta.severidad)">{{ alerta.severidad }}</ds-badge>
+                  <div class="topbar__notif-item__info">
+                    <span class="topbar__notif-item__mensaje">{{ alerta.mensaje }}</span>
+                    <span class="topbar__notif-item__fecha">{{ alerta.createdAt | date: 'short' }}</span>
+                  </div>
+                </div>
+              }
+            }
+            <button type="button" class="topbar__notif-vertodas" (click)="irAAlertas()">Ver todas</button>
+          </div>
+        }
+      </div>
+    }
     <ng-content />
   </div>
 </header>

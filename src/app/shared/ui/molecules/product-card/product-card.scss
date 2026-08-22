@@ -61,6 +61,24 @@
   }
 }
 
+.product-card__stock {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  color: var(--text-primary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+
+  &--empty {
+    background: var(--accent-danger);
+    color: white;
+  }
+}
+
 .product-card__placeholder {
   width: 100%;
   height: 100%;

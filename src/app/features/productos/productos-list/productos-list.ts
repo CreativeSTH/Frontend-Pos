@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
@@ -13,12 +13,13 @@ import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { ImageUpload } from '../../../shared/ui/molecules/image-upload/image-upload';
 import { Thumbnail } from '../../../shared/ui/atoms/thumbnail/thumbnail';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { forkJoin } from 'rxjs';
 import { ProductosService } from '../../../core/services/productos.service';
 import { CategoriasService } from '../../../core/services/categorias.service';
 import { MarcasService } from '../../../core/services/marcas.service';
 import { LineasService } from '../../../core/services/lineas.service';
-import { InventarioService } from '../../../core/services/inventario.service';
+import { InventarioItem, InventarioService } from '../../../core/services/inventario.service';
 import { BodegasService } from '../../../core/services/bodegas.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Producto, StockInicialPayload, TipoImpuesto } from '../../../core/models/producto.model';
@@ -45,6 +46,7 @@ import { environment } from '../../../../environments/environment';
     EmptyState,
     ImageUpload,
     Thumbnail,
+    Paginator,
     ReactiveFormsModule,
     FormsModule,
   ],
@@ -69,7 +71,12 @@ export class ProductosList {
   protected readonly lineas = signal<Linea[]>([]);
   protected readonly bodegas = signal<Bodega[]>([]);
   protected readonly stockInicial = signal<StockInicialPayload[]>([]);
+  protected readonly inventario = signal<InventarioItem[]>([]);
   protected readonly stockPorProducto = signal<Map<string, number>>(new Map());
+  protected readonly categoriaIdsSeleccionadas = signal<string[]>([]);
+
+  /** Bodega + cantidad actual/nueva al editar un producto ya existente — ver `guardarAjustesStock()`. */
+  protected readonly stockEdicion = signal<{ bodegaId: string; cantidadActual: number; cantidadNueva: number }[]>([]);
   protected readonly search = signal('');
   protected readonly showForm = signal(false);
   protected readonly editingId = signal<string | null>(null);
@@ -80,7 +87,6 @@ export class ProductosList {
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
     codigoBarras: [''],
-    categoriaId: [''],
     marcaId: [''],
     lineaId: [''],
     unidadMedida: ['UNIDAD', Validators.required],
@@ -104,6 +110,28 @@ export class ProductosList {
     return resultado;
   };
 
+  /** Sub-categorías justo debajo de su categoría padre, para mostrarlas indentadas — mismo patrón que `marcasOrdenadas`. */
+  protected readonly categoriasOrdenadas = () => {
+    const todas = this.categorias();
+    const principales = todas.filter((c) => !c.categoriaPadreId);
+    const resultado: Categoria[] = [];
+    for (const principal of principales) {
+      resultado.push(principal);
+      resultado.push(...todas.filter((c) => c.categoriaPadreId === principal.id));
+    }
+    return resultado;
+  };
+
+  protected categoriaSeleccionada(id: string): boolean {
+    return this.categoriaIdsSeleccionadas().includes(id);
+  }
+
+  protected alternarCategoria(id: string, seleccionada: boolean): void {
+    this.categoriaIdsSeleccionadas.update((actuales) =>
+      seleccionada ? [...actuales, id] : actuales.filter((c) => c !== id),
+    );
+  }
+
   protected readonly lineasDeMarca = () => {
     const marcaId = this.form.controls.marcaId.value;
     if (!marcaId) return [];
@@ -117,6 +145,15 @@ export class ProductosList {
       (p) => p.nombre.toLowerCase().includes(term) || p.codigoBarras?.includes(term),
     );
   };
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.filtrados().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly productosPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.filtrados().slice(inicio, inicio + this.pageSize);
+  });
 
   constructor() {
     this.load();
@@ -136,6 +173,7 @@ export class ProductosList {
     }).subscribe({
       next: ({ productos, inventario }) => {
         this.productos.set(productos);
+        this.inventario.set(inventario);
         const stockMap = new Map<string, number>();
         for (const item of inventario) {
           stockMap.set(item.productoId, (stockMap.get(item.productoId) ?? 0) + Number(item.cantidad));
@@ -171,11 +209,6 @@ export class ProductosList {
     this.stockInicial.update((filas) => filas.filter((_, i) => i !== index));
   }
 
-  protected nombreCategoria(id?: string): string {
-    if (!id) return '—';
-    return this.categorias().find((c) => c.id === id)?.nombre ?? '—';
-  }
-
   protected nombreMarca(id?: string): string {
     if (!id) return '—';
     return this.marcas().find((m) => m.id === id)?.nombre ?? '—';
@@ -197,10 +230,11 @@ export class ProductosList {
     this.editingImagenUrl.set(null);
     this.selectedImage.set(null);
     this.stockInicial.set([]);
+    this.stockEdicion.set([]);
+    this.categoriaIdsSeleccionadas.set([]);
     this.form.reset({
       nombre: '',
       codigoBarras: '',
-      categoriaId: '',
       marcaId: '',
       lineaId: '',
       unidadMedida: 'UNIDAD',
@@ -217,10 +251,18 @@ export class ProductosList {
     this.editingImagenUrl.set(this.imageUrl(producto.imagenUrl));
     this.selectedImage.set(null);
     this.stockInicial.set([]);
+    this.categoriaIdsSeleccionadas.set(producto.categorias.map((c) => c.id));
+    this.stockEdicion.set(
+      this.bodegas().map((bodega) => {
+        const cantidadActual = Number(
+          this.inventario().find((i) => i.productoId === producto.id && i.bodegaId === bodega.id)?.cantidad ?? 0,
+        );
+        return { bodegaId: bodega.id, cantidadActual, cantidadNueva: cantidadActual };
+      }),
+    );
     this.form.reset({
       nombre: producto.nombre,
       codigoBarras: producto.codigoBarras ?? '',
-      categoriaId: producto.categoriaId ?? '',
       marcaId: producto.marcaId ?? '',
       lineaId: producto.lineaId ?? '',
       unidadMedida: producto.unidadMedida,
@@ -230,6 +272,14 @@ export class ProductosList {
       porcentajeImpuesto: producto.porcentajeImpuesto,
     });
     this.showForm.set(true);
+  }
+
+  protected actualizarStockEdicion(index: number, cantidadNueva: number): void {
+    this.stockEdicion.update((filas) => filas.map((f, i) => (i === index ? { ...f, cantidadNueva } : f)));
+  }
+
+  protected nombreBodega(bodegaId: string): string {
+    return this.bodegas().find((b) => b.id === bodegaId)?.nombre ?? '—';
   }
 
   protected save(): void {
@@ -244,7 +294,7 @@ export class ProductosList {
     const payload = {
       nombre: raw.nombre,
       codigoBarras: raw.codigoBarras || undefined,
-      categoriaId: raw.categoriaId || undefined,
+      categoriaIds: this.categoriaIdsSeleccionadas(),
       marcaId: raw.marcaId || undefined,
       lineaId: raw.lineaId || undefined,
       unidadMedida: raw.unidadMedida,
@@ -261,16 +311,50 @@ export class ProductosList {
 
     request$.subscribe({
       next: () => {
-        this.saving.set(false);
-        this.showForm.set(false);
-        this.toast.success(editingId ? 'Producto actualizado' : 'Producto creado');
-        this.load();
+        if (editingId) {
+          this.guardarAjustesStock(editingId);
+        } else {
+          this.finalizarGuardado(editingId);
+        }
       },
       error: (err) => {
         this.saving.set(false);
         this.toast.error(err.error?.message ?? 'No se pudo guardar el producto');
       },
     });
+  }
+
+  /** Solo dispara `AJUSTE` para las bodegas cuya cantidad realmente cambió — evita ruido en el kardex. */
+  private guardarAjustesStock(productoId: string): void {
+    const cambiadas = this.stockEdicion().filter((f) => f.cantidadNueva !== f.cantidadActual);
+    if (cambiadas.length === 0) {
+      this.finalizarGuardado(productoId);
+      return;
+    }
+    forkJoin(
+      cambiadas.map((f) =>
+        this.inventarioService.ajustar({
+          productoId,
+          bodegaId: f.bodegaId,
+          tipo: 'AJUSTE',
+          cantidad: f.cantidadNueva,
+          motivo: 'Editado desde ficha de producto',
+        }),
+      ),
+    ).subscribe({
+      next: () => this.finalizarGuardado(productoId),
+      error: (err) => {
+        this.saving.set(false);
+        this.toast.error(err.error?.message ?? 'Producto guardado, pero no se pudo actualizar el stock');
+      },
+    });
+  }
+
+  private finalizarGuardado(editingId: string | null): void {
+    this.saving.set(false);
+    this.showForm.set(false);
+    this.toast.success(editingId ? 'Producto actualizado' : 'Producto creado');
+    this.load();
   }
 
   protected eliminar(producto: Producto): void {

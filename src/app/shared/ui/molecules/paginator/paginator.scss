@@ -1,0 +1,39 @@
+.paginator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+}
+
+.paginator__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.paginator__icon--prev {
+  transform: rotate(180deg);
+}
+
+.paginator__label {
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+}

@@ -15,6 +15,7 @@ import { ProductosService } from '../../../core/services/productos.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { CajaService } from '../../../core/services/caja.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
+import { SucursalContextService } from '../../../core/services/sucursal-context.service';
 import { InventarioService } from '../../../core/services/inventario.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -42,6 +43,7 @@ export class DashboardHome {
   private readonly ventasService = inject(VentasService);
   private readonly cajaService = inject(CajaService);
   private readonly sucursalesService = inject(SucursalesService);
+  private readonly sucursalContext = inject(SucursalContextService);
   private readonly inventarioService = inject(InventarioService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
@@ -117,7 +119,10 @@ export class DashboardHome {
   }
 
   protected abrirTurno(): void {
-    const sucursal = this.sucursales()[0];
+    const sucursalId = this.sucursalContext.sucursalId();
+    const sucursal = sucursalId
+      ? this.sucursales().find((s) => s.id === sucursalId)
+      : this.sucursales()[0];
     if (!sucursal) {
       this.toast.error('Primero crea una sucursal');
       return;

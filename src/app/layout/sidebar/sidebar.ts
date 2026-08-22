@@ -35,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Clientes', icon: 'users', route: '/clientes', modulo: 'CLIENTES' },
   { label: 'Cobros', icon: 'wallet', route: '/cobros', modulo: 'COBROS' },
   { label: 'Reportes', icon: 'bar-chart', route: '/reportes', modulo: 'REPORTES' },
+  { label: 'Alertas', icon: 'bell', route: '/alertas', modulo: 'ALERTAS' },
   { label: 'Sucursales', icon: 'store', route: '/sucursales', modulo: 'SUCURSALES' },
   { label: 'Usuarios', icon: 'users', route: '/usuarios', modulo: 'USUARIOS' },
   { label: 'Roles', icon: 'tag', route: '/roles', modulo: 'ROLES' },

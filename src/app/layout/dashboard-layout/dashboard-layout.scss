@@ -32,6 +32,38 @@
   min-height: 100vh;
 }
 
+.volver-pos-fab {
+  position: fixed;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: var(--text-on-accent);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+  box-shadow: var(--glass-shadow-lg);
+  transition: transform var(--duration-base) var(--ease-emphasized);
+
+  &:hover {
+    transform: translateX(-50%) translateY(-2px);
+  }
+
+  @include mix.mobile-down {
+    bottom: var(--space-4);
+
+    span {
+      display: none;
+    }
+  }
+}
+
 .dashboard-shell__content {
   flex: 1;
   min-width: 0;

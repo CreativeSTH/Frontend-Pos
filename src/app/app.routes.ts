@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, landingGuard, soloNegocioGuard } from './core/guards/auth.guard';
 import { permisoGuard } from './core/guards/permiso.guard';
+import { sucursalGuard } from './core/guards/sucursal.guard';
 
 export const routes: Routes = [
   // landingGuard siempre resuelve a un UrlTree (login, dashboard o punto-venta
@@ -21,8 +22,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       {
+        path: 'seleccionar-sucursal',
+        loadComponent: () =>
+          import('./features/sucursal-selector/sucursal-selector').then((m) => m.SucursalSelector),
+      },
+      {
         path: 'dashboard',
-        canActivate: [soloNegocioGuard],
+        canActivate: [soloNegocioGuard, sucursalGuard],
         loadComponent: () =>
           import('./features/dashboard/dashboard-home/dashboard-home').then((m) => m.DashboardHome),
       },
@@ -34,7 +40,7 @@ export const routes: Routes = [
       },
       {
         path: 'punto-venta',
-        canActivate: [soloNegocioGuard],
+        canActivate: [soloNegocioGuard, sucursalGuard],
         loadComponent: () =>
           import('./features/pos/punto-venta/punto-venta').then((m) => m.PuntoVenta),
       },
@@ -75,7 +81,7 @@ export const routes: Routes = [
       },
       {
         path: 'caja',
-        canActivate: [permisoGuard('CAJA')],
+        canActivate: [permisoGuard('CAJA'), sucursalGuard],
         loadComponent: () => import('./features/caja/caja-home/caja-home').then((m) => m.CajaHome),
       },
       {
@@ -111,6 +117,11 @@ export const routes: Routes = [
         canActivate: [permisoGuard('REPORTES')],
         loadComponent: () =>
           import('./features/reportes/reportes-home/reportes-home').then((m) => m.ReportesHome),
+      },
+      {
+        path: 'alertas',
+        canActivate: [permisoGuard('ALERTAS')],
+        loadComponent: () => import('./features/alertas/alertas-list/alertas-list').then((m) => m.AlertasList),
       },
     ],
   },

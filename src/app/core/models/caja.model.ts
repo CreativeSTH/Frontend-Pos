@@ -5,14 +5,21 @@ export interface ArqueoMetodoPago {
   diferencia: number;
 }
 
+export interface UsuarioTurnoResumen {
+  id: string;
+  nombre: string;
+}
+
 export interface TurnoCaja {
   id: string;
   negocioId: string;
   sucursalId: string;
   usuarioAperturaId: string;
+  usuarioApertura?: UsuarioTurnoResumen;
   fechaApertura: string;
   montoInicial: number;
   usuarioCierreId?: string;
+  usuarioCierre?: UsuarioTurnoResumen;
   fechaCierre?: string;
   montoContadoCierre?: number;
   montoEsperadoCierre?: number;

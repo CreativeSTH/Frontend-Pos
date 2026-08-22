@@ -25,6 +25,46 @@
   gap: var(--space-5);
 }
 
+.pos-usuario-activo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+
+  ds-avatar {
+    width: 28px;
+    height: 28px;
+
+    ::ng-deep .ds-avatar {
+      width: 28px;
+      height: 28px;
+      font-size: var(--fs-xs);
+    }
+  }
+
+  span {
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+    color: var(--text-secondary);
+  }
+}
+
+.pos-catalog-filtros {
+  display: flex;
+  gap: var(--space-3);
+
+  ds-search-bar {
+    flex: 1;
+    min-width: 0;
+  }
+
+  ds-select {
+    max-width: 220px;
+  }
+}
+
 .pos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -291,6 +331,11 @@
 .cobro-cliente-switch {
   margin-top: var(--space-4);
   margin-bottom: var(--space-3);
+}
+
+.cobro-guardar-cliente {
+  display: block;
+  margin-top: var(--space-3);
 }
 
 

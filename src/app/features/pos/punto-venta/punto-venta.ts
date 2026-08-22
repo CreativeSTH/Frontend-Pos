@@ -1,11 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Icon } from '../../../shared/ui/atoms/icon/icon';
 import { Badge } from '../../../shared/ui/atoms/badge/badge';
+import { Avatar } from '../../../shared/ui/atoms/avatar/avatar';
 import { Thumbnail } from '../../../shared/ui/atoms/thumbnail/thumbnail';
 import { ProductCard } from '../../../shared/ui/molecules/product-card/product-card';
 import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
@@ -16,9 +17,12 @@ import { Select } from '../../../shared/ui/atoms/select/select';
 import { Switch } from '../../../shared/ui/atoms/switch/switch';
 import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { ProductosService } from '../../../core/services/productos.service';
+import { CategoriasService } from '../../../core/services/categorias.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
+import { SucursalContextService } from '../../../core/services/sucursal-context.service';
 import { BodegasService } from '../../../core/services/bodegas.service';
 import { CajaService } from '../../../core/services/caja.service';
+import { InventarioService } from '../../../core/services/inventario.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { ClientesService } from '../../../core/services/clientes.service';
 import { PrintAgentService } from '../../../core/services/print-agent.service';
@@ -26,6 +30,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { VentasSuspendidasService, VentaSuspendida } from '../../../core/services/ventas-suspendidas.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Producto } from '../../../core/models/producto.model';
+import { Categoria } from '../../../core/models/categoria.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { Bodega } from '../../../core/models/bodega.model';
 import { TurnoCaja } from '../../../core/models/caja.model';
@@ -64,6 +69,7 @@ const METODOS_PAGO: { value: MetodoPago; label: string }[] = [
     Button,
     Icon,
     Badge,
+    Avatar,
     Thumbnail,
     ProductCard,
     SearchBar,
@@ -74,7 +80,6 @@ const METODOS_PAGO: { value: MetodoPago; label: string }[] = [
     Switch,
     Modal,
     FormsModule,
-    RouterLink,
   ],
   templateUrl: './punto-venta.html',
   styleUrl: './punto-venta.scss',
@@ -82,24 +87,44 @@ const METODOS_PAGO: { value: MetodoPago; label: string }[] = [
 })
 export class PuntoVenta {
   private readonly productosService = inject(ProductosService);
+  private readonly categoriasService = inject(CategoriasService);
   private readonly sucursalesService = inject(SucursalesService);
+  private readonly sucursalContext = inject(SucursalContextService);
   private readonly bodegasService = inject(BodegasService);
   private readonly cajaService = inject(CajaService);
+  private readonly inventarioService = inject(InventarioService);
   private readonly ventasService = inject(VentasService);
   private readonly clientesService = inject(ClientesService);
   protected readonly printAgent = inject(PrintAgentService);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly ventasSuspendidasService = inject(VentasSuspendidasService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   protected readonly loading = signal(true);
   protected readonly productos = signal<Producto[]>([]);
+  protected readonly categorias = signal<Categoria[]>([]);
+  protected readonly filtroCategoriaId = signal('');
   protected readonly sucursales = signal<Sucursal[]>([]);
-  protected readonly sucursal = signal<Sucursal | null>(null);
   protected readonly bodegas = signal<Bodega[]>([]);
-  protected readonly bodega = signal<Bodega | null>(null);
   protected readonly turno = signal<TurnoCaja | null>(null);
+  protected readonly stockPorProducto = signal<Map<string, number>>(new Map());
+
+  /** Sucursal activa: la fija del usuario (cajero) o la elegida por un admin — ver `SucursalContextService`. */
+  protected readonly sucursal = computed<Sucursal | null>(
+    () =>
+      this.sucursales().find((s) => s.id === this.sucursalContext.sucursalId()) ??
+      this.sucursales()[0] ??
+      null,
+  );
+  protected readonly bodega = computed<Bodega | null>(
+    () =>
+      this.bodegas().find((b) => b.sucursalId === this.sucursal()?.id) ?? this.bodegas()[0] ?? null,
+  );
+
+  protected readonly showAbrirTurno = signal(false);
+  protected readonly montoInicialTurno = signal<number>(100000);
+  protected readonly abriendoTurno = signal(false);
 
   protected readonly search = signal('');
   protected readonly carrito = signal<LineaCarrito[]>([]);
@@ -148,12 +173,26 @@ export class PuntoVenta {
   protected readonly ventaSuspendidaARetomar = signal<VentaSuspendida | null>(null);
   protected readonly showConfirmarRetomar = signal(false);
 
+  /** Categorías con cada sub-categoría justo debajo de su padre — mismo patrón que `productos-list`. */
+  protected readonly categoriasOrdenadas = computed(() => {
+    const todas = this.categorias();
+    const principales = todas.filter((c) => !c.categoriaPadreId);
+    const resultado: Categoria[] = [];
+    for (const principal of principales) {
+      resultado.push(principal);
+      resultado.push(...todas.filter((c) => c.categoriaPadreId === principal.id));
+    }
+    return resultado;
+  });
+
   protected readonly productosFiltrados = computed(() => {
     const term = this.search().toLowerCase().trim();
-    if (!term) return this.productos();
-    return this.productos().filter(
-      (p) => p.nombre.toLowerCase().includes(term) || p.codigoBarras?.includes(term),
-    );
+    const categoriaId = this.filtroCategoriaId();
+    return this.productos().filter((p) => {
+      if (categoriaId && !p.categorias.some((c) => c.id === categoriaId)) return false;
+      if (!term) return true;
+      return p.nombre.toLowerCase().includes(term) || p.codigoBarras?.includes(term);
+    });
   });
 
   protected readonly subtotal = computed(() =>
@@ -194,25 +233,50 @@ export class PuntoVenta {
 
   constructor() {
     this.load();
+
+    /** Turno y stock dependen de la sucursal/bodega activa — se recargan solos cuando cambian. */
+    effect(() => {
+      const sucursalId = this.sucursal()?.id;
+      if (!sucursalId) {
+        this.turno.set(null);
+        return;
+      }
+      this.cajaService.findAllTurnos(sucursalId).subscribe({
+        next: (turnos) => this.turno.set(turnos.find((t) => t.estado === 'ABIERTO') ?? null),
+        error: () => this.turno.set(null),
+      });
+    });
+
+    effect(() => {
+      const bodegaId = this.bodega()?.id;
+      if (!bodegaId) {
+        this.stockPorProducto.set(new Map());
+        return;
+      }
+      this.inventarioService.findAll(bodegaId).subscribe({
+        next: (items) => {
+          const mapa = new Map<string, number>();
+          for (const item of items) mapa.set(item.productoId, Number(item.cantidad));
+          this.stockPorProducto.set(mapa);
+        },
+      });
+    });
   }
 
   private load(): void {
     this.loading.set(true);
     forkJoin({
       productos: this.productosService.findAll(),
+      categorias: this.categoriasService.findAll(),
       sucursales: this.sucursalesService.findAll(),
       bodegas: this.bodegasService.findAll(),
-      turnos: this.cajaService.findAllTurnos(),
       clientes: this.clientesService.findAll(),
     }).subscribe({
-      next: ({ productos, sucursales, bodegas, turnos, clientes }) => {
+      next: ({ productos, categorias, sucursales, bodegas, clientes }) => {
         this.productos.set(productos);
+        this.categorias.set(categorias);
         this.sucursales.set(sucursales);
         this.bodegas.set(bodegas);
-        const sucursal = sucursales[0] ?? null;
-        this.sucursal.set(sucursal);
-        this.bodega.set(bodegas.find((b) => b.sucursalId === sucursal?.id) ?? bodegas[0] ?? null);
-        this.turno.set(turnos.find((t) => t.estado === 'ABIERTO') ?? null);
         this.clientes.set(clientes);
         this.loading.set(false);
       },
@@ -223,21 +287,42 @@ export class PuntoVenta {
     });
   }
 
-  /**
-   * Cambiar de sucursal actualiza la bodega desde la que se descuenta stock.
-   * El turno de caja sigue tomando "el primero abierto" sin filtrar por
-   * sucursal (limitación ya existente en toda la app, no solo aquí) — con
-   * una sola sucursal no aplica; con varias, cada una abre su propio turno
-   * y esa parte del sistema no está preparada para elegir entre ellos.
-   */
   protected cambiarSucursal(sucursalId: string): void {
-    const sucursal = this.sucursales().find((s) => s.id === sucursalId);
-    if (!sucursal) return;
-    this.sucursal.set(sucursal);
-    this.bodega.set(this.bodegas().find((b) => b.sucursalId === sucursal.id) ?? this.bodegas()[0] ?? null);
+    this.sucursalContext.elegir(sucursalId);
+  }
+
+  protected stockDe(productoId: string): number | null {
+    return this.stockPorProducto().get(productoId) ?? null;
+  }
+
+  protected abrirTurnoDesdePos(): void {
+    const sucursalId = this.sucursal()?.id;
+    if (!sucursalId) {
+      this.toast.error('No hay una sucursal seleccionada');
+      return;
+    }
+    this.abriendoTurno.set(true);
+    this.cajaService.abrirTurno(sucursalId, this.montoInicialTurno()).subscribe({
+      next: (turno) => {
+        this.abriendoTurno.set(false);
+        this.showAbrirTurno.set(false);
+        this.turno.set(turno);
+        this.toast.success('Turno de caja abierto');
+      },
+      error: (err) => {
+        this.abriendoTurno.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo abrir el turno');
+      },
+    });
   }
 
   protected agregarAlCarrito(producto: Producto): void {
+    const stock = this.stockDe(producto.id);
+    const enCarrito = this.carrito().find((l) => l.productoId === producto.id)?.cantidad ?? 0;
+    if (stock !== null && enCarrito + 1 > stock) {
+      this.toast.error(stock <= 0 ? `"${producto.nombre}" está agotado` : `Solo queda ${stock} disponible(s) de "${producto.nombre}"`);
+      return;
+    }
     this.carrito.update((lineas) => {
       const existente = lineas.find((l) => l.productoId === producto.id);
       if (existente) {
@@ -271,6 +356,12 @@ export class PuntoVenta {
   }
 
   protected incrementar(productoId: string): void {
+    const stock = this.stockDe(productoId);
+    const linea = this.carrito().find((l) => l.productoId === productoId);
+    if (stock !== null && linea && linea.cantidad + 1 > stock) {
+      this.toast.error(`Solo queda ${stock} disponible(s) de "${linea.nombre}"`);
+      return;
+    }
     this.carrito.update((lineas) =>
       lineas.map((l) => (l.productoId === productoId ? { ...l, cantidad: l.cantidad + 1 } : l)),
     );
@@ -408,6 +499,38 @@ export class PuntoVenta {
     this.reiniciarClienteVenta();
   }
 
+  /**
+   * Crea el cliente nuevo de una vez (no al confirmar el pago) — así queda
+   * visible como "seleccionado" antes de cobrar, y sobre todo, la lista de
+   * `clientes()` en memoria se actualiza al toque: si no se hacía esto, una
+   * 2ª venta en la misma sesión de la página no encontraba el cliente recién
+   * creado al buscar por teléfono (la lista solo se cargaba una vez al abrir
+   * el punto de venta) y el backend terminaba rechazando el duplicado al
+   * confirmar el pago.
+   */
+  protected guardarClienteVenta(): void {
+    if (!this.nuevoClienteNombre().trim()) {
+      this.toast.error('Ingresa el nombre del nuevo cliente');
+      return;
+    }
+    this.creandoClienteVenta.set(true);
+    this.clientesService
+      .create({ nombre: this.nuevoClienteNombre().trim(), telefono: this.clienteVentaTelefono().trim() })
+      .subscribe({
+        next: (cliente) => {
+          this.creandoClienteVenta.set(false);
+          this.clientes.update((lista) => [...lista, cliente]);
+          this.clienteVentaSeleccionado.set(cliente);
+          this.clienteVentaEtapa.set('seleccionado');
+          this.toast.success('Cliente creado');
+        },
+        error: (err) => {
+          this.creandoClienteVenta.set(false);
+          this.toast.error(err.error?.message ?? 'No se pudo crear el cliente');
+        },
+      });
+  }
+
   private calcularFechaPorDefecto(): string {
     const fecha = new Date();
     fecha.setDate(fecha.getDate() + 30);
@@ -525,27 +648,9 @@ export class PuntoVenta {
         this.registrarVenta(sucursal.id, bodega.id, esCredito, cliente.id, cliente.nombre);
         return;
       }
-      if (etapa === 'nuevo') {
-        if (!this.nuevoClienteNombre().trim()) {
-          this.toast.error('Ingresa el nombre del nuevo cliente');
-          return;
-        }
-        this.creandoClienteVenta.set(true);
-        this.clientesService
-          .create({ nombre: this.nuevoClienteNombre().trim(), telefono: this.clienteVentaTelefono().trim() })
-          .subscribe({
-            next: (cliente) => {
-              this.creandoClienteVenta.set(false);
-              this.registrarVenta(sucursal.id, bodega.id, esCredito, cliente.id, cliente.nombre);
-            },
-            error: (err) => {
-              this.creandoClienteVenta.set(false);
-              this.toast.error(err.error?.message ?? 'No se pudo crear el cliente');
-            },
-          });
-        return;
-      }
-      this.toast.error('Busca o crea el cliente para la venta');
+      this.toast.error(
+        etapa === 'nuevo' ? 'Guarda el cliente antes de confirmar la compra' : 'Busca o crea el cliente para la venta',
+      );
       return;
     }
 

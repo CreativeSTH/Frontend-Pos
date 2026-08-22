@@ -1,9 +1,11 @@
+import { Categoria } from './categoria.model';
+
 export type TipoImpuesto = 'GRAVADO' | 'EXCLUIDO' | 'EXENTO';
 
 export interface Producto {
   id: string;
   negocioId: string;
-  categoriaId?: string;
+  categorias: Categoria[];
   marcaId?: string;
   lineaId?: string;
   nombre: string;
@@ -30,7 +32,7 @@ export interface CreateProductoPayload {
   descripcion?: string;
   sku?: string;
   codigoBarras?: string;
-  categoriaId?: string;
+  categoriaIds?: string[];
   marcaId?: string;
   lineaId?: string;
   unidadMedida: string;

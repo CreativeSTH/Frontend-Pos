@@ -14,6 +14,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import {
   InventarioItem,
   InventarioService,
@@ -47,6 +48,7 @@ import { environment } from '../../../../environments/environment';
     Select,
     SearchBar,
     EmptyState,
+    Paginator,
     FormsModule,
     DatePipe,
   ],
@@ -84,7 +86,7 @@ export class InventarioList {
     return this.inventario().filter((item) => {
       const producto = productosPorId.get(item.productoId);
       if (bodegaId && item.bodegaId !== bodegaId) return false;
-      if (categoriaId && producto?.categoriaId !== categoriaId) return false;
+      if (categoriaId && !producto?.categorias.some((c) => c.id === categoriaId)) return false;
       if (marcaId && producto?.marcaId !== marcaId) return false;
       if (term) {
         const nombre = item.producto?.nombre?.toLowerCase() ?? '';
@@ -93,6 +95,17 @@ export class InventarioList {
       }
       return true;
     });
+  });
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() =>
+    Math.max(1, Math.ceil(this.inventarioFiltrado().length / this.pageSize)),
+  );
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly inventarioPaginado = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.inventarioFiltrado().slice(inicio, inicio + this.pageSize);
   });
 
   protected readonly showAjuste = signal(false);

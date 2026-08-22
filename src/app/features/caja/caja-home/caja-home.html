@@ -79,11 +79,33 @@
     @if (historial().length === 0) {
       <ds-empty-state icon="cash-register" title="Aún no hay turnos cerrados" description="Aparecerán aquí después del primer cierre de caja." />
     } @else {
+      <div class="caja-historial-filtros">
+        <ds-form-field label="Desde">
+          <input type="date" class="pos-select" [ngModel]="filtroDesde()" (ngModelChange)="filtroDesde.set($event)" />
+        </ds-form-field>
+        <ds-form-field label="Hasta">
+          <input type="date" class="pos-select" [ngModel]="filtroHasta()" (ngModelChange)="filtroHasta.set($event)" />
+        </ds-form-field>
+        <ds-form-field label="Usuario">
+          <ds-select [ngModel]="filtroUsuarioId()" (ngModelChange)="filtroUsuarioId.set($event)">
+            <option value="">Todos</option>
+            @for (usuario of usuariosHistorial(); track usuario.id) {
+              <option [value]="usuario.id">{{ usuario.nombre }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+      </div>
+
+      @if (historialFiltrado().length === 0) {
+        <ds-empty-state icon="cash-register" title="Sin resultados" description="Nada coincide con esos filtros." />
+      } @else {
       <ds-table>
         <thead>
           <tr>
             <th>Apertura</th>
+            <th>Usuario apertura</th>
             <th>Cierre</th>
+            <th>Usuario cierre</th>
             <th>Fondo inicial</th>
             <th>Esperado</th>
             <th>Contado</th>
@@ -92,10 +114,12 @@
           </tr>
         </thead>
         <tbody>
-          @for (turno of historial(); track turno.id) {
+          @for (turno of historialFiltrado(); track turno.id) {
             <tr>
               <td>{{ turno.fechaApertura | date: 'short' }}</td>
+              <td>{{ turno.usuarioApertura?.nombre ?? '—' }}</td>
               <td>{{ turno.fechaCierre | date: 'short' }}</td>
+              <td>{{ turno.usuarioCierre?.nombre ?? '—' }}</td>
               <td>{{ formatMoney(turno.montoInicial) }}</td>
               <td>{{ formatMoney(turno.montoEsperadoCierre ?? 0) }}</td>
               <td>{{ formatMoney(turno.montoContadoCierre ?? 0) }}</td>
@@ -118,6 +142,7 @@
           }
         </tbody>
       </ds-table>
+      }
     }
   </section>
 }

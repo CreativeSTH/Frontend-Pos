@@ -1,0 +1,11 @@
+@if (totalPages() > 1) {
+  <nav class="paginator">
+    <button type="button" class="paginator__btn" [disabled]="!puedeAnterior()" (click)="anterior()" aria-label="Página anterior">
+      <ds-icon name="chevron-right" [size]="16" class="paginator__icon--prev" />
+    </button>
+    <span class="paginator__label">Página {{ page() }} de {{ totalPages() }}</span>
+    <button type="button" class="paginator__btn" [disabled]="!puedeSiguiente()" (click)="siguiente()" aria-label="Página siguiente">
+      <ds-icon name="chevron-right" [size]="16" />
+    </button>
+  </nav>
+}

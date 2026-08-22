@@ -32,11 +32,19 @@
       </tr>
     </thead>
     <tbody>
-      @for (producto of filtrados(); track producto.id) {
+      @for (producto of productosPaginados(); track producto.id) {
         <tr>
           <td><ds-thumbnail [src]="imageUrl(producto.imagenUrl)" [alt]="producto.nombre" [size]="40" /></td>
           <td>{{ producto.nombre }}</td>
-          <td>{{ nombreCategoria(producto.categoriaId) }}</td>
+          <td class="productos-categorias">
+            @if (producto.categorias.length === 0) {
+              —
+            } @else {
+              @for (categoria of producto.categorias; track categoria.id) {
+                <ds-badge tone="neutral">{{ categoria.nombre }}</ds-badge>
+              }
+            }
+          </td>
           <td>{{ nombreMarca(producto.marcaId) }}</td>
           <td>
             @if (producto.codigoBarras) {
@@ -69,6 +77,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showForm()) {
@@ -96,15 +105,26 @@
         </ds-form-field>
       </div>
 
-      <div class="producto-form__row">
-        <ds-form-field label="Categoría">
-          <ds-select formControlName="categoriaId">
-            <option value="">Sin categoría</option>
-            @for (categoria of categorias(); track categoria.id) {
-              <option [value]="categoria.id">{{ categoria.nombre }}</option>
+      <ds-form-field label="Categorías (puede elegir varias)">
+        @if (categoriasOrdenadas().length === 0) {
+          <p class="producto-form__stock-empty">No hay categorías creadas todavía.</p>
+        } @else {
+          <div class="producto-form__categorias">
+            @for (categoria of categoriasOrdenadas(); track categoria.id) {
+              <label class="producto-form__categoria-item" [class.producto-form__categoria-item--sub]="categoria.categoriaPadreId">
+                <input
+                  type="checkbox"
+                  [checked]="categoriaSeleccionada(categoria.id)"
+                  (change)="alternarCategoria(categoria.id, $any($event.target).checked)"
+                />
+                {{ categoria.categoriaPadreId ? '— ' : '' }}{{ categoria.nombre }}
+              </label>
             }
-          </ds-select>
-        </ds-form-field>
+          </div>
+        }
+      </ds-form-field>
+
+      <div class="producto-form__row">
         <ds-form-field label="Marca">
           <ds-select formControlName="marcaId">
             <option value="">Sin marca</option>
@@ -175,6 +195,28 @@
                 <button type="button" class="producto-form__stock-remove" (click)="quitarFilaStock($index)">
                   <ds-icon name="x" [size]="16" />
                 </button>
+              </div>
+            }
+          }
+        </div>
+      } @else {
+        <div class="producto-form__stock">
+          <div class="producto-form__stock-header">
+            <span>Stock por bodega</span>
+          </div>
+          @if (stockEdicion().length === 0) {
+            <p class="producto-form__stock-empty">No hay bodegas creadas todavía.</p>
+          } @else {
+            @for (fila of stockEdicion(); track fila.bodegaId; let i = $index) {
+              <div class="producto-form__stock-row">
+                <span class="producto-form__stock-bodega">{{ nombreBodega(fila.bodegaId) }}</span>
+                <ds-input
+                  type="number"
+                  icon="box"
+                  [ngModel]="fila.cantidadNueva"
+                  [ngModelOptions]="{ standalone: true }"
+                  (ngModelChange)="actualizarStockEdicion(i, $event)"
+                />
               </div>
             }
           }

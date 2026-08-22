@@ -1,0 +1,23 @@
+<app-topbar title="Elegí una sucursal" subtitle="Tu usuario supervisa varias sucursales — elegí con cuál trabajar ahora" />
+
+@if (loading()) {
+  <div class="selector-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando sucursales...</span>
+  </div>
+} @else if (sucursales().length === 0) {
+  <ds-empty-state icon="store" title="No hay sucursales" description="Creá al menos una sucursal para poder operar." />
+} @else {
+  <div class="selector-grid">
+    @for (sucursal of sucursales(); track sucursal.id) {
+      <button type="button" class="selector-card" (click)="elegir(sucursal)">
+        <ds-icon name="store" [size]="24" />
+        <div class="selector-card__info">
+          <strong>{{ sucursal.nombre }}</strong>
+          <span>{{ sucursal.direccion || 'Sin dirección registrada' }}</span>
+        </div>
+        <ds-icon name="chevron-right" [size]="18" />
+      </button>
+    }
+  </div>
+}

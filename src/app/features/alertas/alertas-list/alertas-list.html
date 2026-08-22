@@ -1,0 +1,82 @@
+<app-topbar title="Alertas" subtitle="Stock bajo, cuotas por vencer/vencidas, límite de crédito y ventas en mora">
+  <ds-button variant="glass" icon="alert-triangle" [loading]="generando()" (click)="generar()">Actualizar</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="alertas-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando alertas...</span>
+  </div>
+} @else {
+  @if (resumen(); as r) {
+    <div class="stats-grid">
+      <ds-stat-card icon="alert-triangle" label="Activas" [value]="r.activas.toString()" accent="warning" />
+      <ds-stat-card icon="check" label="Resueltas" [value]="r.resueltas.toString()" accent="success" />
+      <ds-stat-card icon="alert-triangle" label="Críticas" [value]="r.porSeveridad.CRITICA.toString()" accent="danger" />
+      <ds-stat-card icon="alert-triangle" label="Altas" [value]="r.porSeveridad.ALTA.toString()" accent="warning" />
+    </div>
+  }
+
+  <div class="alertas-toolbar">
+    <ds-select [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event)">
+      <option value="">Todos los tipos</option>
+      @for (tipo of tiposAlerta; track tipo) {
+        <option [value]="tipo">{{ etiquetasTipo[tipo] }}</option>
+      }
+    </ds-select>
+    <ds-select [ngModel]="filtroSeveridad()" (ngModelChange)="filtroSeveridad.set($event)">
+      <option value="">Todas las severidades</option>
+      <option value="CRITICA">Crítica</option>
+      <option value="ALTA">Alta</option>
+      <option value="MEDIA">Media</option>
+      <option value="BAJA">Baja</option>
+    </ds-select>
+    <ds-select [ngModel]="filtroResuelta()" (ngModelChange)="filtroResuelta.set($event)">
+      <option value="false">Activas</option>
+      <option value="true">Resueltas</option>
+      <option value="">Todas</option>
+    </ds-select>
+  </div>
+
+  @if (alertasFiltradas().length === 0) {
+    <ds-empty-state icon="alert-triangle" title="Sin alertas" description="Nada coincide con esos filtros." />
+  } @else {
+    <ds-table>
+      <thead>
+        <tr>
+          <th>Severidad</th>
+          <th>Tipo</th>
+          <th>Mensaje</th>
+          <th>Fecha</th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (alerta of alertasFiltradas(); track alerta.id) {
+          <tr [class.alertas-row--leida]="alerta.leida">
+            <td><ds-badge [tone]="tonoSeveridad(alerta.severidad)">{{ alerta.severidad }}</ds-badge></td>
+            <td>{{ etiquetasTipo[alerta.tipo] }}</td>
+            <td>{{ alerta.mensaje }}</td>
+            <td>{{ alerta.createdAt | date: 'short' }}</td>
+            <td>
+              @if (alerta.resuelta) {
+                <ds-badge tone="success">Resuelta</ds-badge>
+              } @else if (!alerta.leida) {
+                <ds-badge tone="info">Nueva</ds-badge>
+              }
+            </td>
+            <td class="alertas-actions">
+              @if (!alerta.leida) {
+                <ds-button variant="glass" size="sm" (click)="marcarLeida(alerta)">Marcar leída</ds-button>
+              }
+              @if (!alerta.resuelta) {
+                <ds-button variant="glass" size="sm" (click)="resolver(alerta)">Resolver</ds-button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </ds-table>
+  }
+}
