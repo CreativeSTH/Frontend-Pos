@@ -158,6 +158,12 @@ export const routes: Routes = [
             (m) => m.ConfiguracionList,
           ),
       },
+      {
+        path: 'configuracion/dispositivos',
+        canActivate: [permisoGuard('CAJA')],
+        loadComponent: () =>
+          import('./features/configuracion/dispositivos/dispositivos').then((m) => m.Dispositivos),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

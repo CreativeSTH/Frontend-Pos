@@ -1,0 +1,106 @@
+<app-topbar title="Dispositivos" subtitle="Impresora, cajón monedero y lector de código de barras de esta caja" />
+
+@if (cargando()) {
+  <div class="dispositivos-loading">
+    <ds-icon name="printer" [size]="28" />
+    <span>Consultando el agente de impresión...</span>
+  </div>
+} @else {
+  <div class="dispositivos-grid">
+    <section class="ds-panel">
+      <header class="ds-panel__header">
+        <div>
+          <h2>Impresora y cajón monedero</h2>
+          <p>Se configura por PC — cada caja puede tener su propia impresora conectada.</p>
+        </div>
+        @if (agenteConectado()) {
+          <ds-badge tone="success">Agente conectado</ds-badge>
+        } @else {
+          <ds-badge tone="danger">Agente no disponible</ds-badge>
+        }
+      </header>
+
+      @if (!agenteConectado()) {
+        <div class="dispositivos-aviso">
+          <ds-icon name="printer" [size]="20" />
+          <div>
+            <p>No se pudo conectar con <strong>pos-agent</strong> en esta PC (<code>localhost:9100</code>).</p>
+            <p>Instalá y ejecutá pos-agent en la computadora donde está conectada la impresora, y volvé a intentar.</p>
+          </div>
+        </div>
+        <ds-button variant="glass" (click)="reintentar()">Reintentar</ds-button>
+      } @else {
+        @if (errorImpresoras()) {
+          <div class="dispositivos-aviso dispositivos-aviso--warning">
+            <ds-icon name="printer" [size]="18" />
+            <p>{{ errorImpresoras() }}</p>
+          </div>
+        }
+
+        <ds-form-field label="Impresora">
+          <ds-select [ngModel]="printerName()" (ngModelChange)="printerName.set($event)">
+            <option value="">Usar la predeterminada de Windows</option>
+            @for (nombre of impresoras(); track nombre) {
+              <option [value]="nombre">{{ nombre }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+
+        <ds-form-field label="Tipo de impresora" hint="La mayoría de las térmicas genéricas de 58/80mm son compatibles con el protocolo Epson.">
+          <ds-select [ngModel]="printerType()" (ngModelChange)="printerType.set($event)">
+            <option value="epson">Epson (ESC/POS estándar)</option>
+            <option value="star">Star</option>
+          </ds-select>
+        </ds-form-field>
+
+        <div class="dispositivos-acciones">
+          <ds-button variant="primary" [loading]="guardando()" (click)="guardarConfig()">Guardar</ds-button>
+          <ds-button variant="glass" icon="printer" [loading]="probandoImpresion()" (click)="probarImpresion()">
+            Imprimir ticket de prueba
+          </ds-button>
+        </div>
+
+        <p class="dispositivos-nota">
+          El cajón monedero no se configura aparte: se abre solo junto con la impresora térmica (va conectado a
+          ella por cable). Si la impresora imprime bien, el cajón debería abrir igual al cobrar.
+        </p>
+      }
+    </section>
+
+    <section class="ds-panel">
+      <header class="ds-panel__header">
+        <div>
+          <h2>Lector de código de barras</h2>
+          <p>No hay nada que instalar ni elegir — para la PC es un teclado más.</p>
+        </div>
+      </header>
+
+      <p class="dispositivos-nota">
+        Hacé clic en el campo de abajo y escaneá cualquier producto. Si el lector está bien conectado, el código
+        va a aparecer solo en el historial ni bien termine de leer.
+      </p>
+
+      <ds-search-bar
+        #campoEscaneo
+        placeholder="Hacé clic acá y escaneá un código..."
+        [(value)]="codigoEscaneado"
+        (submit)="onEscaneoSubmit($event)"
+      />
+
+      @if (historialEscaneos().length === 0) {
+        <p class="dispositivos-nota dispositivos-nota--muted">Todavía no escaneaste nada acá.</p>
+      } @else {
+        <ul class="dispositivos-historial">
+          @for (item of historialEscaneos(); track item.hora + item.codigo) {
+            <li>
+              <ds-icon name="barcode" [size]="16" />
+              <span class="dispositivos-historial__codigo">{{ item.codigo }}</span>
+              <span class="dispositivos-historial__hora">{{ item.hora }}</span>
+            </li>
+          }
+        </ul>
+        <ds-button variant="ghost" (click)="limpiarHistorial()">Limpiar historial</ds-button>
+      }
+    </section>
+  </div>
+}

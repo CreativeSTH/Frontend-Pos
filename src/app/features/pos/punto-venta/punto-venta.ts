@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -107,6 +116,9 @@ export class PuntoVenta {
   private readonly confirmService = inject(ConfirmService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+
+  /** Referencia al buscador para devolverle el foco tras cada acción — así el lector de código de barras (que solo "escribe" donde esté el cursor) siempre tiene dónde caer. */
+  private readonly buscador = viewChild<SearchBar>('buscador');
 
   protected readonly loading = signal(true);
   protected readonly productos = signal<Producto[]>([]);
@@ -297,6 +309,13 @@ export class PuntoVenta {
       });
     });
 
+    /** Reenfoca el buscador cada vez que vuelve a ser el elemento "de turno" (recién abierta la caja, o al cerrarse el modal de cobro) — sin esto, un clic en cualquier otro lado deja al lector de código de barras escribiendo en el vacío. */
+    effect(() => {
+      if (this.turno() && !this.showCobro()) {
+        setTimeout(() => this.buscador()?.focus());
+      }
+    });
+
     effect(() => {
       const bodegaId = this.bodega()?.id;
       if (!bodegaId) {
@@ -395,12 +414,53 @@ export class PuntoVenta {
         },
       ];
     });
+    this.buscador()?.focus();
+  }
+
+  /** Buffer del escaneo global (ver `onKeydownGlobal`) — bookkeeping puro, no es estado de UI. */
+  private bufferEscaneoGlobal = '';
+  private ultimoTecleoGlobal = 0;
+
+  /**
+   * Un lector de código de barras USB escribe cada carácter en ~1-20ms; una persona nunca teclea así
+   * de rápido. Usamos esa diferencia de velocidad para detectar un escaneo esté o no el foco puesto
+   * en el buscador — así el cajero no tiene que clickearlo antes de cada lectura. Se ignora mientras
+   * hay un modal abierto (no queremos que un escaneo agregue algo al carrito por detrás de un diálogo)
+   * o si el foco está en otro campo de texto donde el cajero está escribiendo a propósito.
+   */
+  @HostListener('document:keydown', ['$event'])
+  protected onKeydownGlobal(event: KeyboardEvent): void {
+    if (!this.turno()) return;
+    if (document.querySelector('ds-modal')) return;
+
+    const target = event.target as HTMLElement;
+    if (target.closest('ds-search-bar')) return; // el propio buscador ya maneja su Enter
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
+
+    const ahora = Date.now();
+    const esVelocidadDeEscaner = ahora - this.ultimoTecleoGlobal < 40;
+    this.ultimoTecleoGlobal = ahora;
+
+    if (event.key === 'Enter') {
+      const codigo = this.bufferEscaneoGlobal;
+      this.bufferEscaneoGlobal = '';
+      if (esVelocidadDeEscaner && codigo.length >= 4) {
+        event.preventDefault();
+        this.onScanSubmit(codigo);
+      }
+      return;
+    }
+
+    if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      this.bufferEscaneoGlobal = esVelocidadDeEscaner ? this.bufferEscaneoGlobal + event.key : event.key;
+    }
   }
 
   protected onScanSubmit(codigo: string): void {
     const producto = this.productos().find((p) => p.codigoBarras === codigo || p.sku === codigo);
     if (!producto) {
       this.toast.error(`Sin coincidencias para "${codigo}"`);
+      this.buscador()?.focus();
       return;
     }
     this.agregarAlCarrito(producto);

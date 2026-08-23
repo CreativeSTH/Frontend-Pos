@@ -9,9 +9,50 @@ interface PrintResult {
   error?: string;
 }
 
+export interface AgentStatus {
+  ok: boolean;
+  agente?: string;
+  version?: string;
+}
+
+export interface AgentPrinterConfig {
+  printerType?: 'epson' | 'star';
+  printerName?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PrintAgentService {
   private readonly http = inject(HttpClient);
+
+  /** Estado del pos-agent en ESTA pc — no hay nada que consultar en el backend, es puramente local. */
+  estado() {
+    return this.http
+      .get<AgentStatus>(`${environment.agentUrl}/status`)
+      .pipe(catchError(() => of<AgentStatus>({ ok: false })));
+  }
+
+  /** Impresoras instaladas en esta PC (requiere Windows) — para el selector de Configuración > Dispositivos. */
+  listarImpresoras() {
+    return this.http
+      .get<{ impresoras: string[]; error?: string }>(`${environment.agentUrl}/printers`)
+      .pipe(catchError(() => of({ impresoras: [] as string[], error: 'Agente de impresión no disponible' })));
+  }
+
+  obtenerConfig() {
+    return this.http
+      .get<AgentPrinterConfig>(`${environment.agentUrl}/config`)
+      .pipe(catchError(() => of<AgentPrinterConfig>({})));
+  }
+
+  guardarConfig(config: AgentPrinterConfig) {
+    return this.http.post<AgentPrinterConfig>(`${environment.agentUrl}/config`, config);
+  }
+
+  imprimirPrueba() {
+    return this.http
+      .post<PrintResult>(`${environment.agentUrl}/print-test`, {})
+      .pipe(catchError(() => of<PrintResult>({ impreso: false, error: 'Agente de impresión no disponible' })));
+  }
 
   /**
    * Best-effort: si el pos-agent no está corriendo en esta PC, no debe

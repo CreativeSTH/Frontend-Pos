@@ -1,0 +1,113 @@
+.dispositivos-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  color: var(--text-secondary);
+}
+
+.dispositivos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: var(--space-5);
+  padding: var(--space-5);
+}
+
+.ds-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+
+    h2 {
+      margin: 0 0 var(--space-1);
+      font-size: var(--fs-md);
+      font-weight: var(--fw-semibold);
+      color: var(--text-primary);
+    }
+
+    p {
+      margin: 0;
+      font-size: var(--fs-sm);
+      color: var(--text-secondary);
+    }
+  }
+}
+
+.dispositivos-aviso {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4);
+  background: var(--glass-bg-hover);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+
+  p {
+    margin: 0 0 var(--space-1);
+  }
+
+  code {
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+  }
+
+  &--warning {
+    color: var(--accent-warning);
+  }
+}
+
+.dispositivos-acciones {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.dispositivos-nota {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+
+  &--muted {
+    color: var(--text-tertiary);
+  }
+}
+
+.dispositivos-historial {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: var(--glass-bg-hover);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+  }
+
+  &__codigo {
+    font-family: var(--font-mono);
+    flex: 1;
+  }
+
+  &__hora {
+    font-size: var(--fs-xs);
+    color: var(--text-tertiary);
+  }
+}

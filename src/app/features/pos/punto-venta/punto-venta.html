@@ -40,6 +40,7 @@
     <section class="pos-catalog">
       <div class="pos-catalog-filtros">
         <ds-search-bar
+          #buscador
           placeholder="Escanea el código de barras o busca por nombre..."
           [(value)]="search"
           (submit)="onScanSubmit($event)"
