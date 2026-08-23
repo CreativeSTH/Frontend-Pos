@@ -20,7 +20,10 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Venta } from '../../../core/models/venta.model';
 
-const ETIQUETAS_ESTADO: Record<string, string> = {
+// `Partial<Record<...>>` a propósito: `Venta.estado` es `string` (no un union acotado), así que
+// un valor que no esté en este mapa es una posibilidad real, no solo una formalidad de tipos —
+// el `??` de abajo depende de que el indexado pueda devolver `undefined`.
+const ETIQUETAS_ESTADO: Partial<Record<string, string>> = {
   ACTIVA: 'Activa',
   PARCIALMENTE_PAGADA: 'Parcialmente pagada',
   COMPLETADA: 'Completada',
@@ -29,7 +32,7 @@ const ETIQUETAS_ESTADO: Record<string, string> = {
   CANCELADA: 'Cancelada',
 };
 
-const TONOS_ESTADO: Record<string, BadgeTone> = {
+const TONOS_ESTADO: Partial<Record<string, BadgeTone>> = {
   ACTIVA: 'info',
   PARCIALMENTE_PAGADA: 'warning',
   COMPLETADA: 'success',

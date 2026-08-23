@@ -460,6 +460,8 @@
         <p class="venta-ok__meta">Venta #{{ venta.id.slice(0, 8) }}</p>
         <p class="venta-ok__pregunta">¿Imprimir factura?</p>
       </div>
+    }
+    @if (!imprimiendo()) {
       <div modal-footer>
         <ds-button variant="ghost" (click)="nuevaVenta()">No, gracias</ds-button>
         <ds-button variant="primary" [fullWidth]="true" icon="printer" (click)="imprimirFactura(venta)">
