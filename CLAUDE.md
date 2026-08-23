@@ -48,7 +48,7 @@ src/app/
 - `inject()` en vez de inyección por constructor.
 - Multi-tenant: el backend ya filtra por negocio vía JWT — el frontend nunca envía `negocioId` manualmente.
 
-## Estado (Fases 1–4 completas + extensiones)
+## Estado (Fases 1–4.5 completas + extensiones)
 
 Implementado: Login, Dashboard, Punto de venta (POS), Productos (multi-categoría vía selector modal, proveedores vinculados), Categorías, Marcas/Líneas, **Proveedores** (`/proveedores`), Inventario (con vista de Kardex por producto/bodega), Bodegas, **Lista de pedidos** (`/lista-pedidos` — flujo Pendientes/Pedidos/Historial, ver abajo), **Domicilios** (`/domicilios`, ver abajo), Caja, Clientes, Cobros, **Métodos de pago** (`/metodos-pago` — catálogo editable por negocio, ver abajo), Reportes (ventas/márgenes/cierres de caja), Sucursales, Usuarios, Alertas (con panel dedicado y notificaciones en vivo, ver abajo), y **Roles y permisos** (`/roles`). El menú principal quedó reducido a Dashboard/Punto de venta/Caja/**Configuración** (`/configuracion`, hub de cards agrupadas — ver abajo) — todo lo demás se navega desde ahí.
 
@@ -57,6 +57,19 @@ Pendiente (ver Roadmap en el doc de arquitectura): devoluciones/facturación ele
 ## Lista de pedidos y proveedores
 
 `features/lista-pedidos/` tiene tres pestañas (Pendientes/Pedidos/Historial) siguiendo el estado de `ItemPedido`. "Realizar pedido" muestra el catálogo completo de proveedores (no solo los ya vinculados al producto — se puede vincular uno existente al vuelo) y precarga el costo si ya había un vínculo previo. "Confirmar ingreso" pide la bodega de destino y, si el costo pactado difiere del costo actual del producto, abre un sub-diálogo para decidir si también se actualiza el precio de venta — esa decisión se resuelve en el frontend antes de llamar al backend, en una sola petición. `features/productos/productos-list/` permite vincular proveedores tanto al crear (filas repetibles, patrón igual a `stockInicial`) como al editar (altas/bajas en vivo contra la API, sin pasar por el guardado general del form).
+
+## Punto de venta (POS)
+
+`features/pos/punto-venta/` empezó a partirse en componentes más chicos (primer split de este tipo en el código — no hay otro precedente de padre/hijo con `input()`/`output()` en `features/`). Se extrajeron los clusters menos acoplados a `carrito`/`turno`, dejando el diálogo de cobro/cliente/domicilio (el más grande e interconectado) en `PuntoVenta` para una ronda futura:
+
+- `catalogo-grid-pos/` — grilla de productos, presentacional (`input()` de productos ya filtrados + stock, `output()` de selección).
+- `panel-domicilios-pos/` — panel rápido de domicilios, casi autónomo (solo servicios `providedIn: 'root'`).
+- `turno-caja-pos/` — FAB de pausar/cerrar caja, sin inputs (cada acción es independiente).
+- `ventas-suspendidas-pos/` — suspender/listar/retomar venta. El botón "Suspender venta" vive en `PuntoVenta` (es parte del carrito) y llama a un método público del hijo vía `viewChild` — mismo patrón que ya usaba el buscador para recuperar el foco. **Cuidado con nombres**: la variable de plantilla (`#panelVentasSuspendidas`) y la propiedad `viewChild` de la clase (`suspendidasPanel`) tienen que ser distintas — si coinciden, Angular resuelve el nombre dentro del template como la referencia local (no invocable) en vez de la señal, y `tsc --noEmit` no lo detecta (hace falta `ng build` o el compilador de templates).
+
+`pos-shared.util.ts` unifica `calcularSubtotal`/`calcularImpuesto`/`formatMoney`/`imageUrl`, usado tanto por `PuntoVenta` (carrito activo) como por `ventas-suspendidas-pos` (total de una venta en espera) — antes esa cuenta vivía duplicada.
+
+El escaneo de código de barras (`onKeydownGlobal` en `PuntoVenta`) detecta por velocidad de tecleo, no por foco — ver sección 11 de `../docs/ARQUITECTURA.md`.
 
 ## Domicilios
 
