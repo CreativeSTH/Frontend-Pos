@@ -417,6 +417,24 @@ export class PuntoVenta {
     this.buscador()?.focus();
   }
 
+  /**
+   * La sesión expiró (JWT vencido, 12h) mientras había una venta en curso — `auth.interceptor.ts`
+   * dispara este evento antes de redirigir a /login. Sin esto, el carrito desaparecía sin rastro
+   * al perder la pantalla; ahora queda guardado como cualquier otra venta suspendida, recuperable
+   * al volver a loguearse. El toast se ve igual en la pantalla de login (`ds-toast-container`
+   * también está montado en `AuthLayout`).
+   */
+  @HostListener('window:pos:sesion-expirada')
+  protected onSesionExpirada(): void {
+    if (this.carrito().length === 0) return;
+    this.ventasSuspendidasService.suspender(
+      this.carrito(),
+      this.descuentoVenta(),
+      'Auto-guardada (sesión expirada)',
+    );
+    this.toast.info('Tu sesión expiró — la venta en curso quedó guardada en Ventas suspendidas.');
+  }
+
   /** Buffer del escaneo global (ver `onKeydownGlobal`) — bookkeeping puro, no es estado de UI. */
   private bufferEscaneoGlobal = '';
   private ultimoTecleoGlobal = 0;
