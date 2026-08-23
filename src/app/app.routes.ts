@@ -27,6 +27,13 @@ export const routes: Routes = [
           import('./features/sucursal-selector/sucursal-selector').then((m) => m.SucursalSelector),
       },
       {
+        // Sin sucursalGuard a propósito: ese guard redirige acá cuando sucursales.length === 0 —
+        // si esta ruta también lo tuviera, se generaría un loop de redirección infinito.
+        path: 'asistente',
+        canActivate: [soloNegocioGuard, permisoGuard('SUCURSALES', 'CREAR')],
+        loadComponent: () => import('./features/asistente/asistente').then((m) => m.Asistente),
+      },
+      {
         path: 'dashboard',
         canActivate: [soloNegocioGuard, sucursalGuard],
         loadComponent: () =>

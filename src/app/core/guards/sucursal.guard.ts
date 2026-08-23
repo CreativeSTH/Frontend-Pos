@@ -27,6 +27,11 @@ export const sucursalGuard: CanActivateFn = (_route, state) => {
 
   return sucursalesService.findAll().pipe(
     map((sucursales) => {
+      // Mismo caso que landingGuard, para un deep-link o refresh directo a una pantalla
+      // operativa que no pasa por la ruta '' (donde vive landingGuard).
+      if (sucursales.length === 0 && authService.tienePermiso('SUCURSALES', 'CREAR')) {
+        return router.createUrlTree(['/asistente']);
+      }
       if (sucursales.length <= 1) {
         if (sucursales.length === 1) {
           sucursalContext.elegir(sucursales[0].id);

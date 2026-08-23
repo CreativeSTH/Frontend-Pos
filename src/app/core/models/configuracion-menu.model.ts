@@ -1,4 +1,4 @@
-import { ModuloPermiso } from './auth.model';
+import { AccionPermiso, ModuloPermiso } from './auth.model';
 
 export interface ConfiguracionCard {
   label: string;
@@ -6,6 +6,8 @@ export interface ConfiguracionCard {
   icon: string;
   route: string;
   modulo: ModuloPermiso;
+  /** Default 'VER' — algunas cards (el asistente) necesitan un permiso más fuerte para que valga la pena mostrarlas. */
+  accion?: AccionPermiso;
 }
 
 export interface ConfiguracionGroup {
@@ -47,6 +49,7 @@ export const CONFIG_GROUPS: ConfiguracionGroup[] = [
     titulo: 'Negocio',
     items: [
       { label: 'Sucursales', description: 'Sucursales y metas de venta', icon: 'store', route: '/sucursales', modulo: 'SUCURSALES' },
+      { label: 'Asistente de configuración', description: 'Guía paso a paso para dejar una sucursal lista: bodega y productos', icon: 'layers', route: '/asistente', modulo: 'SUCURSALES', accion: 'CREAR' },
       { label: 'Usuarios', description: 'Usuarios y asignación de roles', icon: 'users', route: '/usuarios', modulo: 'USUARIOS' },
       { label: 'Roles', description: 'Roles y permisos por módulo', icon: 'tag', route: '/roles', modulo: 'ROLES' },
       { label: 'Métodos de pago', description: 'Formas de cobro disponibles en el POS', icon: 'credit-card', route: '/metodos-pago', modulo: 'METODOS_PAGO' },

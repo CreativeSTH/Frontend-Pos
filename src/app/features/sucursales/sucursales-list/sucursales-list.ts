@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Icon } from '../../../shared/ui/atoms/icon/icon';
@@ -27,6 +28,7 @@ export class SucursalesList {
   private readonly toast = inject(ToastService);
   private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
 
   protected readonly loading = signal(true);
   protected readonly sucursales = signal<Sucursal[]>([]);
@@ -105,17 +107,33 @@ export class SucursalesList {
       : this.sucursalesService.create(payload);
 
     request$.subscribe({
-      next: () => {
+      next: async (sucursal) => {
         this.saving.set(false);
         this.showForm.set(false);
         this.toast.success(editingId ? 'Sucursal actualizada' : 'Sucursal creada');
         this.load();
+        if (!editingId) {
+          await this.ofrecerConfigurarAhora(sucursal.id);
+        }
       },
       error: (err) => {
         this.saving.set(false);
         this.toast.error(err.error?.message ?? 'No se pudo guardar la sucursal');
       },
     });
+  }
+
+  /** Solo tras crear (no editar) una sucursal nueva — ofrece continuar directo con el asistente. */
+  private async ofrecerConfigurarAhora(sucursalId: string): Promise<void> {
+    const configurarAhora = await this.confirmService.ask({
+      title: 'Sucursal creada',
+      message: '¿Querés dejarla lista ahora con su bodega y stock?',
+      confirmLabel: 'Sí, configurar',
+      cancelLabel: 'Más tarde',
+    });
+    if (configurarAhora) {
+      this.router.navigate(['/asistente'], { queryParams: { sucursalId } });
+    }
   }
 
   protected async eliminar(sucursal: Sucursal): Promise<void> {

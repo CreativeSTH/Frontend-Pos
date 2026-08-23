@@ -38,6 +38,12 @@ export const landingGuard: CanActivateFn = () => {
 
   return sucursalesService.findAll().pipe(
     switchMap((sucursales) => {
+      // Negocio recién creado, sin ninguna sucursal todavía: en vez de un Dashboard vacío,
+      // arranca el asistente de configuración guiada — solo si el usuario puede crear una
+      // (evita atrapar a alguien sin ese permiso en una ruta que no puede usar).
+      if (sucursales.length === 0 && authService.tienePermiso('SUCURSALES', 'CREAR')) {
+        return of(router.createUrlTree(['/asistente']));
+      }
       if (sucursales.length <= 1) {
         if (sucursales.length === 1) {
           sucursalContext.elegir(sucursales[0].id);

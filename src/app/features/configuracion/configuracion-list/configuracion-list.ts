@@ -20,7 +20,7 @@ export class ConfiguracionList {
   protected readonly grupos = computed(() =>
     CONFIG_GROUPS.map((grupo) => ({
       ...grupo,
-      items: grupo.items.filter((item) => this.auth.tienePermiso(item.modulo, 'VER')),
+      items: grupo.items.filter((item) => this.auth.tienePermiso(item.modulo, item.accion ?? 'VER')),
     })).filter((grupo) => grupo.items.length > 0),
   );
 }
