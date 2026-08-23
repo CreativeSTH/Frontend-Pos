@@ -191,7 +191,7 @@
       @if (!editingId()) {
         <div class="producto-form__stock">
           <div class="producto-form__stock-header">
-            <span>Stock inicial por bodega (opcional)</span>
+            <span>Stock inicial por bodega</span>
             <button type="button" class="producto-form__stock-add" (click)="agregarFilaStock()">
               <ds-icon name="plus" [size]="14" />
               Agregar bodega
@@ -199,7 +199,7 @@
           </div>
 
           @if (stockInicial().length === 0) {
-            <p class="producto-form__stock-empty">Sin stock inicial — el producto queda en 0 en todas las bodegas.</p>
+            <p class="producto-form__stock-empty">Agregá al menos una bodega — podés dejarla en 0 si todavía no hay stock, pero tiene que estar asignada para que el producto se vea en el punto de venta de esa bodega.</p>
           } @else {
             @for (fila of stockInicial(); track $index) {
               <div class="producto-form__stock-row">

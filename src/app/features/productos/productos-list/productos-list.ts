@@ -346,6 +346,10 @@ export class ProductosList {
   }
 
   protected agregarFilaStock(): void {
+    if (this.bodegas().length === 0) {
+      this.toast.error('Creá una bodega antes de asignar stock a un producto');
+      return;
+    }
     const bodegaLibre = this.bodegas().find((b) => !this.stockInicial().some((s) => s.bodegaId === b.id));
     if (!bodegaLibre) {
       this.toast.info('Ya agregaste todas las bodegas disponibles');
@@ -452,10 +456,14 @@ export class ProductosList {
       this.form.markAllAsTouched();
       return;
     }
+    const editingId = this.editingId();
+    const stockInicial = this.stockInicial().filter((s) => s.bodegaId && s.cantidad >= 0);
+    if (!editingId && stockInicial.length === 0) {
+      this.toast.error('Asigná al menos una bodega con stock inicial — puede ser 0');
+      return;
+    }
     this.saving.set(true);
     const raw = this.form.getRawValue();
-    const editingId = this.editingId();
-    const stockInicial = this.stockInicial().filter((s) => s.bodegaId && s.cantidad > 0);
     const proveedores: ProveedorInicialPayload[] = this.proveedoresInicial()
       .filter((f) => f.proveedorId && f.costo > 0 && (f.proveedorId !== NUEVO_PROVEEDOR || f.nombreNuevo.trim()))
       .map((f) => ({
