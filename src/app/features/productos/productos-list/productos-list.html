@@ -52,6 +52,9 @@
             } @else {
               —
             }
+            @if (producto.sku) {
+              <ds-badge tone="info">{{ producto.sku }}</ds-badge>
+            }
           </td>
           <td>
             @if (stockDe(producto.id); as stock) {
@@ -94,6 +97,10 @@
 
       <ds-form-field label="Código de barras">
         <ds-input icon="barcode" formControlName="codigoBarras" placeholder="7701234567890" />
+      </ds-form-field>
+
+      <ds-form-field label="Código de producto (SKU)" hint="Código corto para teclear a mano si falla el lector de código de barras">
+        <ds-input icon="tag" formControlName="sku" placeholder="Ej. 1234" />
       </ds-form-field>
 
       <div class="producto-form__row">

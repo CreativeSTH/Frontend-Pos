@@ -22,7 +22,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (rol of roles(); track rol.id) {
+      @for (rol of rolesPaginados(); track rol.id) {
         <tr>
           <td class="roles-name-cell">
             {{ rol.nombre }}
@@ -51,6 +51,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showForm()) {

@@ -21,7 +21,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (marca of marcasOrdenadas(); track marca.id) {
+      @for (marca of marcasPaginadas(); track marca.id) {
         <tr>
           <td [class.marcas-sub]="esSubMarca(marca)">
             @if (esSubMarca(marca)) {
@@ -47,6 +47,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showForm()) {

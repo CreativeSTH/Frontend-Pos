@@ -7,47 +7,46 @@ import { Table } from '../../../shared/ui/organisms/data-table/table';
 import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
+import { Switch } from '../../../shared/ui/atoms/switch/switch';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
-import { SucursalesService } from '../../../core/services/sucursales.service';
+import { MetodosPagoService } from '../../../core/services/metodos-pago.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
-import { Sucursal } from '../../../core/models/sucursal.model';
+import { MetodoPago } from '../../../core/models/metodo-pago.model';
 
 @Component({
-  selector: 'app-sucursales-list',
+  selector: 'app-metodos-pago-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, EmptyState, Paginator, ReactiveFormsModule],
-  templateUrl: './sucursales-list.html',
-  styleUrl: './sucursales-list.scss',
+  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Switch, EmptyState, Paginator, ReactiveFormsModule],
+  templateUrl: './metodos-pago-list.html',
+  styleUrl: './metodos-pago-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SucursalesList {
-  private readonly sucursalesService = inject(SucursalesService);
+export class MetodosPagoList {
+  private readonly metodosPagoService = inject(MetodosPagoService);
   private readonly toast = inject(ToastService);
   private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly loading = signal(true);
-  protected readonly sucursales = signal<Sucursal[]>([]);
+  protected readonly metodos = signal<MetodoPago[]>([]);
   protected readonly showForm = signal(false);
   protected readonly editingId = signal<string | null>(null);
   protected readonly saving = signal(false);
 
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
-    direccion: [''],
-    telefono: [''],
-    metaVentasDiaria: [0],
+    esEfectivo: [false],
   });
 
   private readonly pageSize = 20;
   protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.sucursales().length / this.pageSize)));
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.metodos().length / this.pageSize)));
   protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly sucursalesPaginadas = computed(() => {
+  protected readonly metodosPaginados = computed(() => {
     const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.sucursales().slice(inicio, inicio + this.pageSize);
+    return this.metodos().slice(inicio, inicio + this.pageSize);
   });
 
   constructor() {
@@ -56,32 +55,27 @@ export class SucursalesList {
 
   private load(): void {
     this.loading.set(true);
-    this.sucursalesService.findAll().subscribe({
+    this.metodosPagoService.findAll().subscribe({
       next: (data) => {
-        this.sucursales.set(data);
+        this.metodos.set(data);
         this.loading.set(false);
       },
       error: () => {
         this.loading.set(false);
-        this.toast.error('No se pudieron cargar las sucursales');
+        this.toast.error('No se pudieron cargar los métodos de pago');
       },
     });
   }
 
   protected openCreate(): void {
     this.editingId.set(null);
-    this.form.reset({ nombre: '', direccion: '', telefono: '', metaVentasDiaria: 0 });
+    this.form.reset({ nombre: '', esEfectivo: false });
     this.showForm.set(true);
   }
 
-  protected openEdit(sucursal: Sucursal): void {
-    this.editingId.set(sucursal.id);
-    this.form.reset({
-      nombre: sucursal.nombre,
-      direccion: sucursal.direccion ?? '',
-      telefono: sucursal.telefono ?? '',
-      metaVentasDiaria: sucursal.metaVentasDiaria ?? 0,
-    });
+  protected openEdit(metodo: MetodoPago): void {
+    this.editingId.set(metodo.id);
+    this.form.reset({ nombre: metodo.nombre, esEfectivo: metodo.esEfectivo });
     this.showForm.set(true);
   }
 
@@ -91,41 +85,34 @@ export class SucursalesList {
       return;
     }
     this.saving.set(true);
-    const raw = this.form.getRawValue();
-    const payload = {
-      nombre: raw.nombre,
-      direccion: raw.direccion || undefined,
-      telefono: raw.telefono || undefined,
-      metaVentasDiaria: raw.metaVentasDiaria || undefined,
-    };
-
+    const payload = this.form.getRawValue();
     const editingId = this.editingId();
     const request$ = editingId
-      ? this.sucursalesService.update(editingId, payload)
-      : this.sucursalesService.create(payload);
+      ? this.metodosPagoService.update(editingId, payload)
+      : this.metodosPagoService.create(payload);
 
     request$.subscribe({
       next: () => {
         this.saving.set(false);
         this.showForm.set(false);
-        this.toast.success(editingId ? 'Sucursal actualizada' : 'Sucursal creada');
+        this.toast.success(editingId ? 'Método de pago actualizado' : 'Método de pago creado');
         this.load();
       },
       error: (err) => {
         this.saving.set(false);
-        this.toast.error(err.error?.message ?? 'No se pudo guardar la sucursal');
+        this.toast.error(err.error?.message ?? 'No se pudo guardar el método de pago');
       },
     });
   }
 
-  protected async eliminar(sucursal: Sucursal): Promise<void> {
-    if (!(await this.confirmService.ask({ message: `¿Eliminar "${sucursal.nombre}"?`, danger: true }))) return;
-    this.sucursalesService.remove(sucursal.id).subscribe({
+  protected async eliminar(metodo: MetodoPago): Promise<void> {
+    if (!(await this.confirmService.ask({ message: `¿Eliminar "${metodo.nombre}"?`, danger: true }))) return;
+    this.metodosPagoService.remove(metodo.id).subscribe({
       next: () => {
-        this.toast.success('Sucursal eliminada');
+        this.toast.success('Método de pago eliminado');
         this.load();
       },
-      error: () => this.toast.error('No se pudo eliminar la sucursal'),
+      error: () => this.toast.error('No se pudo eliminar el método de pago'),
     });
   }
 }

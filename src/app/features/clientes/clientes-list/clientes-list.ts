@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
@@ -11,6 +11,7 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { ClientesService } from '../../../core/services/clientes.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Cliente } from '../../../core/models/cliente.model';
@@ -30,6 +31,7 @@ import { Cliente } from '../../../core/models/cliente.model';
     Input,
     SearchBar,
     EmptyState,
+    Paginator,
     ReactiveFormsModule,
   ],
   templateUrl: './clientes-list.html',
@@ -64,6 +66,15 @@ export class ClientesList {
       (c) => c.nombre.toLowerCase().includes(term) || c.telefono.includes(term),
     );
   };
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.filtrados().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly clientesPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.filtrados().slice(inicio, inicio + this.pageSize);
+  });
 
   constructor() {
     this.load();

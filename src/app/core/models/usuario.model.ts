@@ -21,4 +21,4 @@ export interface CreateUsuarioPayload {
   pin?: string;
 }
 
-export type UpdateUsuarioPayload = Partial<Omit<CreateUsuarioPayload, 'password'>>;
+export type UpdateUsuarioPayload = Partial<CreateUsuarioPayload>;

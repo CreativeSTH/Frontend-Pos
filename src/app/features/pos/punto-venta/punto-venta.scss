@@ -416,7 +416,7 @@
   position: fixed;
   left: var(--space-6);
   bottom: var(--space-6);
-  z-index: var(--z-modal);
+  z-index: 60;
 }
 
 .pos-domicilios-btn {
@@ -548,7 +548,7 @@
   position: fixed;
   right: var(--space-6);
   bottom: var(--space-6);
-  z-index: var(--z-modal);
+  z-index: 60;
   display: flex;
   gap: var(--space-3);
 }

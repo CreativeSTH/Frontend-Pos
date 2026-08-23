@@ -13,6 +13,7 @@ import { Select } from '../../../shared/ui/atoms/select/select';
 import { Switch } from '../../../shared/ui/atoms/switch/switch';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { CajaService } from '../../../core/services/caja.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { PrintAgentService } from '../../../core/services/print-agent.service';
@@ -27,15 +28,6 @@ const ETIQUETAS_TIPO: Record<string, string> = {
   INGRESO: 'Ingreso',
   EGRESO: 'Egreso',
   RETIRO: 'Retiro',
-};
-
-const ETIQUETAS_METODO_PAGO: Record<string, string> = {
-  EFECTIVO: 'Efectivo',
-  TARJETA: 'Tarjeta',
-  TRANSFERENCIA: 'Transferencia',
-  NEQUI: 'Nequi',
-  DAVIPLATA: 'Daviplata',
-  OTRO: 'Otro',
 };
 
 interface FilaCaja {
@@ -64,6 +56,7 @@ interface FilaCaja {
     Switch,
     EmptyState,
     SearchBar,
+    Paginator,
     FormsModule,
     DatePipe,
   ],
@@ -191,6 +184,31 @@ export class CajaHome {
     return rows;
   });
 
+  private readonly pageSize = 20;
+  protected readonly paginaMovimientos = signal(1);
+  protected readonly totalPaginasMovimientos = computed(() =>
+    Math.max(1, Math.ceil(this.filasCaja().length / this.pageSize)),
+  );
+  protected readonly paginaActualMovimientos = computed(() =>
+    Math.min(this.paginaMovimientos(), this.totalPaginasMovimientos()),
+  );
+  protected readonly filasCajaPaginadas = computed(() => {
+    const inicio = (this.paginaActualMovimientos() - 1) * this.pageSize;
+    return this.filasCaja().slice(inicio, inicio + this.pageSize);
+  });
+
+  protected readonly paginaHistorial = signal(1);
+  protected readonly totalPaginasHistorial = computed(() =>
+    Math.max(1, Math.ceil(this.historialFiltrado().length / this.pageSize)),
+  );
+  protected readonly paginaActualHistorial = computed(() =>
+    Math.min(this.paginaHistorial(), this.totalPaginasHistorial()),
+  );
+  protected readonly historialPaginado = computed(() => {
+    const inicio = (this.paginaActualHistorial() - 1) * this.pageSize;
+    return this.historialFiltrado().slice(inicio, inicio + this.pageSize);
+  });
+
   protected metodosTexto(fila: FilaCaja): string {
     return fila.metodos.map((m) => m.metodoPago || '—').join(' + ');
   }
@@ -245,10 +263,6 @@ export class CajaHome {
       },
       error: () => this.toast.error('No se pudo cargar la factura'),
     });
-  }
-
-  protected etiquetaMetodoPago(metodoPago: string): string {
-    return ETIQUETAS_METODO_PAGO[metodoPago] ?? metodoPago;
   }
 
   protected abrirCancelarVenta(fila: FilaCaja): void {

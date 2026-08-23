@@ -10,6 +10,7 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { ListaPedidosService } from '../../../core/services/lista-pedidos.service';
 import { ProveedoresService } from '../../../core/services/proveedores.service';
 import { BodegasService } from '../../../core/services/bodegas.service';
@@ -37,7 +38,7 @@ const TABS: TabInfo[] = [
 @Component({
   selector: 'app-lista-pedidos-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Select, EmptyState, FormsModule, DatePipe, DecimalPipe],
+  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Select, EmptyState, Paginator, FormsModule, DatePipe, DecimalPipe],
   templateUrl: './lista-pedidos-list.html',
   styleUrl: './lista-pedidos-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,6 +59,15 @@ export class ListaPedidosList {
   protected readonly itemsFiltrados = computed(() =>
     this.items().filter((i) => i.estado === this.tabActual()),
   );
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.itemsFiltrados().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly itemsPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.itemsFiltrados().slice(inicio, inicio + this.pageSize);
+  });
 
   // --- Realizar pedido ---
   protected readonly showPedidoModal = signal(false);

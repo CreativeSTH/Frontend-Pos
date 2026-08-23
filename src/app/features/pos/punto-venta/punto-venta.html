@@ -289,8 +289,8 @@
               [ngModel]="pago.metodoPago"
               (ngModelChange)="actualizarMetodoPago($index, $event)"
             >
-              @for (m of metodosPago; track m.value) {
-                <option [value]="m.value">{{ m.label }}</option>
+              @for (m of metodosPago(); track m.id) {
+                <option [value]="m.nombre">{{ m.nombre }}</option>
               }
             </ds-select>
             <ds-input

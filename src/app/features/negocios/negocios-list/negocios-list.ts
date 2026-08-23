@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Topbar } from '../../../layout/topbar/topbar';
@@ -10,6 +10,7 @@ import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { NegociosService } from '../../../core/services/negocios.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -19,7 +20,7 @@ import { Negocio } from '../../../core/models/negocio.model';
 @Component({
   selector: 'app-negocios-list',
   standalone: true,
-  imports: [Topbar, Button, Badge, Icon, Table, Modal, FormField, Input, EmptyState, ReactiveFormsModule],
+  imports: [Topbar, Button, Badge, Icon, Table, Modal, FormField, Input, EmptyState, Paginator, ReactiveFormsModule],
   templateUrl: './negocios-list.html',
   styleUrl: './negocios-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,6 +39,15 @@ export class NegociosList {
   protected readonly editingId = signal<string | null>(null);
   protected readonly saving = signal(false);
   protected readonly entrando = signal<string | null>(null);
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.negocios().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly negociosPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.negocios().slice(inicio, inicio + this.pageSize);
+  });
 
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],

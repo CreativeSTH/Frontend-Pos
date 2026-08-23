@@ -45,7 +45,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (domicilio of itemsFiltrados(); track domicilio.id) {
+      @for (domicilio of itemsPaginados(); track domicilio.id) {
         <tr>
           <td>{{ domicilio.nombreCliente }}</td>
           <td>
@@ -74,6 +74,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showEnCaminoModal()) {

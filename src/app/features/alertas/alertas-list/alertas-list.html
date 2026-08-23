@@ -56,7 +56,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (alerta of alertasFiltradas(); track alerta.id) {
+        @for (alerta of alertasPaginadas(); track alerta.id) {
           <tr [class.alertas-row--leida]="alerta.leida" [class.alertas-row--inactiva]="!alerta.activa">
             <td><ds-badge [tone]="tonoSeveridad(alerta.severidad)">{{ alerta.severidad }}</ds-badge></td>
             <td>{{ etiquetasTipo[alerta.tipo] }}</td>
@@ -95,6 +95,7 @@
         }
       </tbody>
     </ds-table>
+    <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
   }
 }
 

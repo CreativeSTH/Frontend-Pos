@@ -30,7 +30,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (cliente of filtrados(); track cliente.id) {
+      @for (cliente of clientesPaginados(); track cliente.id) {
         <tr>
           <td class="clientes-name-cell">
             <ds-avatar [name]="cliente.nombre" />
@@ -60,6 +60,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showForm()) {

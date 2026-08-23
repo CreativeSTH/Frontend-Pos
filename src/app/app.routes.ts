@@ -143,6 +143,21 @@ export const routes: Routes = [
         canActivate: [permisoGuard('ALERTAS')],
         loadComponent: () => import('./features/alertas/alertas-list/alertas-list').then((m) => m.AlertasList),
       },
+      {
+        path: 'metodos-pago',
+        canActivate: [permisoGuard('METODOS_PAGO')],
+        loadComponent: () =>
+          import('./features/metodos-pago/metodos-pago-list/metodos-pago-list').then(
+            (m) => m.MetodosPagoList,
+          ),
+      },
+      {
+        path: 'configuracion',
+        loadComponent: () =>
+          import('./features/configuracion/configuracion-list/configuracion-list').then(
+            (m) => m.ConfiguracionList,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

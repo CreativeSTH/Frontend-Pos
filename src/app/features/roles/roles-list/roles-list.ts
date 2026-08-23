@@ -10,6 +10,7 @@ import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { RolesService } from '../../../core/services/roles.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
@@ -37,6 +38,7 @@ const ETIQUETAS_MODULO: Record<ModuloPermiso, string> = {
   DOMICILIOS: 'Domicilios',
   ALERTAS: 'Alertas',
   REPORTES: 'Reportes',
+  METODOS_PAGO: 'Métodos de pago',
 };
 
 const ETIQUETAS_ACCION: Record<AccionPermiso, string> = {
@@ -55,7 +57,7 @@ interface FilaMatriz {
 @Component({
   selector: 'app-roles-list',
   standalone: true,
-  imports: [Topbar, Button, Badge, Icon, Table, Modal, FormField, Input, EmptyState, ReactiveFormsModule],
+  imports: [Topbar, Button, Badge, Icon, Table, Modal, FormField, Input, EmptyState, Paginator, ReactiveFormsModule],
   templateUrl: './roles-list.html',
   styleUrl: './roles-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -86,6 +88,15 @@ export class RolesList {
   protected readonly rolPermisos = signal<Rol | null>(null);
   protected readonly seleccionados = signal<Set<string>>(new Set());
   protected readonly savingPermisos = signal(false);
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.roles().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly rolesPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.roles().slice(inicio, inicio + this.pageSize);
+  });
 
   protected readonly filasMatriz = computed<FilaMatriz[]>(() => {
     const porModulo = new Map<ModuloPermiso, Permiso[]>();

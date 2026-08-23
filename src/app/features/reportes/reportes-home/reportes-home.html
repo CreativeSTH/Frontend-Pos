@@ -72,7 +72,7 @@
             </thead>
             <tbody>
               @for (m of r.porMetodoPago; track m.metodoPago) {
-                <tr><td>{{ etiquetaMetodoPago(m.metodoPago) }}</td><td>{{ formatMoney(m.total) }}</td></tr>
+                <tr><td>{{ m.metodoPago }}</td><td>{{ formatMoney(m.total) }}</td></tr>
               }
             </tbody>
           </ds-table>

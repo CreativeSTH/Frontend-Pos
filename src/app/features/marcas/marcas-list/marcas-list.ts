@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { Topbar } from '../../../layout/topbar/topbar';
@@ -10,6 +10,7 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { MarcasService } from '../../../core/services/marcas.service';
 import { LineasService } from '../../../core/services/lineas.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -20,7 +21,7 @@ import { Linea } from '../../../core/models/linea.model';
 @Component({
   selector: 'app-marcas-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Select, EmptyState, ReactiveFormsModule, FormsModule],
+  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Select, EmptyState, Paginator, ReactiveFormsModule, FormsModule],
   templateUrl: './marcas-list.html',
   styleUrl: './marcas-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,6 +58,17 @@ export class MarcasList {
     }
     return resultado;
   };
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() =>
+    Math.max(1, Math.ceil(this.marcasOrdenadas().length / this.pageSize)),
+  );
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly marcasPaginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.marcasOrdenadas().slice(inicio, inicio + this.pageSize);
+  });
 
   protected readonly showLineas = signal(false);
   protected readonly marcaLineas = signal<Marca | null>(null);

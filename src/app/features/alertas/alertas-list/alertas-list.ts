@@ -13,6 +13,7 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { StatCard } from '../../../shared/ui/molecules/stat-card/stat-card';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { AlertasService } from '../../../core/services/alertas.service';
 import { ListaPedidosService } from '../../../core/services/lista-pedidos.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -92,6 +93,7 @@ const POLL_MS = 30_000;
     Input,
     StatCard,
     EmptyState,
+    Paginator,
     FormsModule,
     DatePipe,
   ],
@@ -143,6 +145,15 @@ export class AlertasList {
       if (resuelta && a.resuelta !== (resuelta === 'true')) return false;
       return true;
     });
+  });
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.alertasFiltradas().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly alertasPaginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.alertasFiltradas().slice(inicio, inicio + this.pageSize);
   });
 
   constructor() {

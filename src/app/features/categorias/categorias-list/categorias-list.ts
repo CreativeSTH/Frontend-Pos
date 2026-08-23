@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
@@ -9,6 +9,7 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { CategoriasService } from '../../../core/services/categorias.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
@@ -17,7 +18,7 @@ import { Categoria } from '../../../core/models/categoria.model';
 @Component({
   selector: 'app-categorias-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Select, EmptyState, ReactiveFormsModule],
+  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Select, EmptyState, Paginator, ReactiveFormsModule],
   templateUrl: './categorias-list.html',
   styleUrl: './categorias-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,6 +53,17 @@ export class CategoriasList {
     }
     return resultado;
   };
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() =>
+    Math.max(1, Math.ceil(this.categoriasOrdenadas().length / this.pageSize)),
+  );
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly categoriasPaginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.categoriasOrdenadas().slice(inicio, inicio + this.pageSize);
+  });
 
   constructor() {
     this.load();

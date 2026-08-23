@@ -31,6 +31,15 @@ export class CajaService {
         this._turnoAbierto.set(null);
         return;
       }
+      // Un admin multi-sucursal aún sin elegir sucursal no tiene forma de saber
+      // "el" turno abierto sin adivinar entre sucursales — se deja en null (sin
+      // FAB ni modo hamburguesa prematuro) hasta que sucursalGuard/landingGuard
+      // resuelvan la sucursal, momento en el que este effect se re-dispara solo.
+      const sucursalId = usuario.sucursalId ?? this.sucursalContext.sucursalId();
+      if (!sucursalId) {
+        this._turnoAbierto.set(null);
+        return;
+      }
       this.refrescarTurnoAbierto().subscribe();
     });
   }

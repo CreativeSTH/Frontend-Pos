@@ -30,15 +30,30 @@
     }
   </nav>
 
+  <div class="sidebar__bottom">
+    @if (configuracionVisible()) {
+      <a
+        class="sidebar__item"
+        routerLink="/configuracion"
+        routerLinkActive="sidebar__item--active"
+        (click)="mobileNav.close()"
+      >
+        <ds-icon name="settings" [size]="19" />
+        <span>Configuración</span>
+      </a>
+    }
+    <button type="button" class="sidebar__item sidebar__item--button" (click)="abrirCambioCajero()">
+      <ds-icon name="lock" [size]="19" />
+      <span>Cambiar de cajero</span>
+    </button>
+  </div>
+
   <div class="sidebar__user">
     <ds-avatar [name]="auth.usuario()?.nombre ?? ''" />
     <div class="sidebar__user-info">
       <span class="sidebar__user-name">{{ auth.usuario()?.nombre }}</span>
       <span class="sidebar__user-role">{{ auth.usuario()?.rolNombre }}</span>
     </div>
-    <button type="button" class="sidebar__pin-btn" (click)="abrirCambioCajero()" title="Cambiar de cajero (PIN)">
-      <ds-icon name="lock" [size]="18" />
-    </button>
     <button type="button" class="sidebar__logout" (click)="logout()" title="Cerrar sesión">
       <ds-icon name="log-out" [size]="18" />
     </button>

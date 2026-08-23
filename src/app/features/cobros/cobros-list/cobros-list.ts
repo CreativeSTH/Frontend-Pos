@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -13,18 +13,20 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { CobrosService } from '../../../core/services/cobros.service';
 import { VentasService } from '../../../core/services/ventas.service';
+import { MetodosPagoService } from '../../../core/services/metodos-pago.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { CobroItem, CobrosTotales } from '../../../core/models/cobro.model';
-import { MetodoPago } from '../../../core/models/venta.model';
+import { MetodoPago } from '../../../core/models/metodo-pago.model';
 
 type Filtro = 'pendientes' | 'vencidos' | 'proxima-quincena';
 
 @Component({
   selector: 'app-cobros-list',
   standalone: true,
-  imports: [Topbar, Button, Badge, Icon, StatCard, Table, Modal, FormField, Input, Select, EmptyState, FormsModule, DatePipe],
+  imports: [Topbar, Button, Badge, Icon, StatCard, Table, Modal, FormField, Input, Select, EmptyState, Paginator, FormsModule, DatePipe],
   templateUrl: './cobros-list.html',
   styleUrl: './cobros-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,6 +34,7 @@ type Filtro = 'pendientes' | 'vencidos' | 'proxima-quincena';
 export class CobrosList {
   private readonly cobrosService = inject(CobrosService);
   private readonly ventasService = inject(VentasService);
+  private readonly metodosPagoService = inject(MetodosPagoService);
   private readonly toast = inject(ToastService);
 
   protected readonly loading = signal(true);
@@ -42,16 +45,27 @@ export class CobrosList {
   protected readonly showAbono = signal(false);
   protected readonly cobroSeleccionado = signal<CobroItem | null>(null);
   protected readonly montoAbono = signal<number>(0);
-  protected readonly metodoPago = signal<MetodoPago>('EFECTIVO');
+  protected readonly metodoPago = signal<string>('');
   protected readonly guardando = signal(false);
-  protected readonly metodosPago: MetodoPago[] = ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'NEQUI', 'DAVIPLATA'];
+  protected readonly metodosPago = signal<MetodoPago[]>([]);
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.items().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly itemsPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.items().slice(inicio, inicio + this.pageSize);
+  });
 
   constructor() {
     this.load();
+    this.metodosPagoService.findAll().subscribe((metodos) => this.metodosPago.set(metodos));
   }
 
   protected cambiarFiltro(filtro: Filtro): void {
     this.filtro.set(filtro);
+    this.pagina.set(1);
     this.load();
   }
 
@@ -80,7 +94,7 @@ export class CobrosList {
   protected abrirAbono(item: CobroItem): void {
     this.cobroSeleccionado.set(item);
     this.montoAbono.set(item.cuota.montoTotalConMora);
-    this.metodoPago.set('EFECTIVO');
+    this.metodoPago.set(this.metodosPago()[0]?.nombre ?? '');
     this.showAbono.set(true);
   }
 

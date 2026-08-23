@@ -1,0 +1,21 @@
+<app-topbar title="Configuración" subtitle="Catálogo, clientes, ventas y negocio" />
+
+@for (grupo of grupos(); track grupo.titulo) {
+  <section class="config-group">
+    <h2 class="config-group__title">{{ grupo.titulo }}</h2>
+    <div class="config-grid">
+      @for (item of grupo.items; track item.route) {
+        <a class="config-card" [routerLink]="item.route">
+          <div class="config-card__icon">
+            <ds-icon [name]="item.icon" [size]="22" />
+          </div>
+          <div class="config-card__body">
+            <span class="config-card__label">{{ item.label }}</span>
+            <span class="config-card__description">{{ item.description }}</span>
+          </div>
+          <ds-icon class="config-card__chevron" name="chevron-right" [size]="18" />
+        </a>
+      }
+    </div>
+  </section>
+}

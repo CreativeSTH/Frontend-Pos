@@ -34,6 +34,8 @@ export interface TurnoCaja {
 export interface ResumenTurno {
   montoInicial: number;
   ventasEfectivo: number;
+  /** Nombre del método marcado como efectivo en el catálogo del negocio — puede no haber ninguno. */
+  nombreMetodoEfectivo?: string;
   ventasDigitales: { metodoPago: string; total: number }[];
   totalVentasDigitales: number;
   ingresos: number;

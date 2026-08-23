@@ -97,7 +97,7 @@
           <span>{{ formatMoney(resumen.montoInicial) }}</span>
         </div>
         <div class="resumen-turno__row">
-          <span>Ventas en efectivo</span>
+          <span>Ventas en {{ resumen.nombreMetodoEfectivo ?? 'efectivo' }}</span>
           <span>{{ formatMoney(resumen.ventasEfectivo) }}</span>
         </div>
         @if (resumen.ingresos > 0) {
@@ -119,7 +119,7 @@
           </div>
         }
         <div class="resumen-turno__row resumen-turno__row--highlight">
-          <span>Efectivo esperado en caja</span>
+          <span>{{ resumen.nombreMetodoEfectivo ?? 'Efectivo' }} esperado en caja</span>
           <span>{{ formatMoney(resumen.efectivoEsperado) }}</span>
         </div>
 
@@ -127,7 +127,7 @@
           <div class="resumen-turno__digital-title">Dinero esperado por medio de pago</div>
           @for (pago of resumen.ventasDigitales; track pago.metodoPago) {
             <div class="resumen-turno__row resumen-turno__row--muted">
-              <span>{{ etiquetaMetodoPago(pago.metodoPago) }}</span>
+              <span>{{ pago.metodoPago }}</span>
               <span>{{ formatMoney(pago.total) }}</span>
             </div>
           }
@@ -139,16 +139,18 @@
       </div>
 
       <div class="arqueo-contado">
-        <ds-form-field label="Efectivo contado físicamente">
-          <ds-input
-            type="number"
-            icon="banknote"
-            [ngModel]="montosContados()['EFECTIVO']"
-            (ngModelChange)="actualizarMontoContado('EFECTIVO', $event)"
-          />
-        </ds-form-field>
+        @if (resumen.nombreMetodoEfectivo; as nombreEfectivo) {
+          <ds-form-field [label]="nombreEfectivo + ' contado físicamente'">
+            <ds-input
+              type="number"
+              icon="banknote"
+              [ngModel]="montosContados()[nombreEfectivo]"
+              (ngModelChange)="actualizarMontoContado(nombreEfectivo, $event)"
+            />
+          </ds-form-field>
+        }
         @for (pago of resumen.ventasDigitales; track pago.metodoPago) {
-          <ds-form-field [label]="'Dinero contado en ' + etiquetaMetodoPago(pago.metodoPago)">
+          <ds-form-field [label]="'Dinero contado en ' + pago.metodoPago">
             <ds-input
               type="number"
               icon="banknote"

@@ -11,6 +11,7 @@ import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { DomiciliosService } from '../../../core/services/domicilios.service';
 import { RealtimeService } from '../../../core/services/realtime.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -36,7 +37,7 @@ const ETIQUETAS_ESTADO: Record<EstadoDomicilio, string> = {
 @Component({
   selector: 'app-domicilios-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Badge, Table, Modal, FormField, Input, EmptyState, FormsModule, RouterLink, DatePipe],
+  imports: [Topbar, Button, Icon, Badge, Table, Modal, FormField, Input, EmptyState, Paginator, FormsModule, RouterLink, DatePipe],
   templateUrl: './domicilios-list.html',
   styleUrl: './domicilios-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,6 +59,15 @@ export class DomiciliosList {
     return this.items().filter((d) =>
       tab === 'HISTORIAL' ? d.estado === 'ENTREGADO' || d.estado === 'CANCELADO' : d.estado === tab,
     );
+  });
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.itemsFiltrados().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly itemsPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.itemsFiltrados().slice(inicio, inicio + this.pageSize);
   });
 
   // --- Marcar en camino ---

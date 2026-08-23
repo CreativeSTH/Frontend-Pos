@@ -20,7 +20,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (categoria of categoriasOrdenadas(); track categoria.id) {
+      @for (categoria of categoriasPaginadas(); track categoria.id) {
         <tr>
           <td [class.categorias-sub]="esSubCategoria(categoria)">
             @if (esSubCategoria(categoria)) {
@@ -40,6 +40,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showForm()) {

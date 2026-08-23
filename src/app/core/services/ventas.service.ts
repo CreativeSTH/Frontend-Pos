@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
-import { CreateVentaPayload, MetodoPago, Venta } from '../models/venta.model';
+import { CreateVentaPayload, Venta } from '../models/venta.model';
 
 @Injectable({ providedIn: 'root' })
 export class VentasService {
@@ -24,7 +24,7 @@ export class VentasService {
 
   abonarCuota(
     ventaId: string,
-    payload: { numeroCuota: number; montoAbono: number; metodoPago: MetodoPago; referenciaPago?: string; notas?: string },
+    payload: { numeroCuota: number; montoAbono: number; metodoPago: string; referenciaPago?: string; notas?: string },
   ) {
     return this.api.patch(`/ventas/${ventaId}/abonar-cuota`, payload);
   }

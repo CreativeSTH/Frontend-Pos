@@ -22,14 +22,6 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ResumenTurno } from '../../../core/models/caja.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
 
-const ETIQUETAS_METODO_PAGO: Record<string, string> = {
-  TARJETA: 'Tarjeta',
-  TRANSFERENCIA: 'Transferencia',
-  NEQUI: 'Nequi',
-  DAVIPLATA: 'Daviplata',
-  OTRO: 'Otro',
-};
-
 @Component({
   selector: 'app-dashboard-home',
   standalone: true,
@@ -157,7 +149,10 @@ export class DashboardHome {
     this.cajaService.resumenTurno(turno.id).subscribe({
       next: (resumen) => {
         this.resumenTurno.set(resumen);
-        const iniciales: Record<string, number> = { EFECTIVO: resumen.efectivoEsperado };
+        const iniciales: Record<string, number> = {};
+        if (resumen.nombreMetodoEfectivo) {
+          iniciales[resumen.nombreMetodoEfectivo] = resumen.efectivoEsperado;
+        }
         for (const digital of resumen.ventasDigitales) {
           iniciales[digital.metodoPago] = digital.total;
         }
@@ -169,10 +164,6 @@ export class DashboardHome {
         this.toast.error('No se pudo cargar el resumen del turno');
       },
     });
-  }
-
-  protected etiquetaMetodoPago(metodoPago: string): string {
-    return ETIQUETAS_METODO_PAGO[metodoPago] ?? metodoPago;
   }
 
   protected actualizarMontoContado(metodoPago: string, monto: number): void {

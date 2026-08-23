@@ -43,7 +43,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (item of items(); track item.ventaId + '-' + item.cuota.numero) {
+      @for (item of itemsPaginados(); track item.ventaId + '-' + item.cuota.numero) {
         <tr>
           <td>{{ item.nombreCliente }}</td>
           <td>{{ item.telefonoCliente || '—' }}</td>
@@ -64,6 +64,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showAbono()) {
@@ -77,8 +78,8 @@
 
       <ds-form-field label="Método de pago">
         <ds-select [ngModel]="metodoPago()" (ngModelChange)="metodoPago.set($event)">
-          @for (m of metodosPago; track m) {
-            <option [value]="m">{{ m }}</option>
+          @for (m of metodosPago(); track m.id) {
+            <option [value]="m.nombre">{{ m.nombre }}</option>
           }
         </ds-select>
       </ds-form-field>

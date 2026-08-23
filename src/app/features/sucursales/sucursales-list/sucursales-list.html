@@ -23,7 +23,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (sucursal of sucursales(); track sucursal.id) {
+      @for (sucursal of sucursalesPaginadas(); track sucursal.id) {
         <tr>
           <td>{{ sucursal.nombre }}</td>
           <td>{{ sucursal.direccion || '—' }}</td>
@@ -41,6 +41,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showForm()) {

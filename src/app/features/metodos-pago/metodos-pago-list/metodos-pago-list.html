@@ -1,0 +1,70 @@
+<app-topbar title="Métodos de pago" subtitle="Formas de cobro disponibles en el punto de venta">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nuevo método</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="metodos-pago-loading">
+    <ds-icon name="credit-card" [size]="28" />
+    <span>Cargando métodos de pago...</span>
+  </div>
+} @else if (metodos().length === 0) {
+  <ds-empty-state icon="credit-card" title="Aún no hay métodos de pago" description="Crea el primero para poder cobrar en el punto de venta.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nuevo método</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Es efectivo</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (metodo of metodosPaginados(); track metodo.id) {
+        <tr>
+          <td>{{ metodo.nombre }}</td>
+          <td>
+            @if (metodo.esEfectivo) {
+              <span class="metodos-pago-badge">Sí — rige el vuelto</span>
+            } @else {
+              <span class="metodos-pago-badge metodos-pago-badge--muted">—</span>
+            }
+          </td>
+          <td class="metodos-pago-actions">
+            <button type="button" class="metodos-pago-actions__btn" (click)="openEdit(metodo)">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            <button type="button" class="metodos-pago-actions__btn metodos-pago-actions__btn--danger" (click)="eliminar(metodo)">
+              <ds-icon name="trash" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar método de pago' : 'Nuevo método de pago'" size="sm" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="metodo-pago-form" (ngSubmit)="save()">
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Ej. Bancolombia QR" />
+      </ds-form-field>
+
+      <div class="metodo-pago-form__switch">
+        <ds-switch label="Es el método en efectivo" formControlName="esEfectivo" />
+        <p class="metodo-pago-form__hint">
+          Solo puede haber uno — rige el cálculo de vuelto en el punto de venta y el conteo físico al cerrar caja.
+          Marcarlo desmarca automáticamente el anterior.
+        </p>
+      </div>
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}

@@ -21,7 +21,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (bodega of bodegas(); track bodega.id) {
+      @for (bodega of bodegasPaginadas(); track bodega.id) {
         <tr>
           <td>{{ bodega.nombre }}</td>
           <td>{{ nombreSucursal(bodega.sucursalId) }}</td>
@@ -40,6 +40,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showForm()) {

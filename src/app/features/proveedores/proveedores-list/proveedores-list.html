@@ -23,7 +23,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (proveedor of proveedores(); track proveedor.id) {
+      @for (proveedor of proveedoresPaginados(); track proveedor.id) {
         <tr>
           <td>{{ proveedor.nombre }}</td>
           <td>{{ proveedor.nit || '—' }}</td>
@@ -41,6 +41,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showForm()) {

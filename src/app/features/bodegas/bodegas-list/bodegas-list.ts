@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
@@ -9,6 +9,7 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { BodegasService } from '../../../core/services/bodegas.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { InventarioService, InventarioItem } from '../../../core/services/inventario.service';
@@ -20,7 +21,7 @@ import { Sucursal } from '../../../core/models/sucursal.model';
 @Component({
   selector: 'app-bodegas-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Select, EmptyState, ReactiveFormsModule],
+  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Select, EmptyState, Paginator, ReactiveFormsModule],
   templateUrl: './bodegas-list.html',
   styleUrl: './bodegas-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,6 +49,15 @@ export class BodegasList {
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
     sucursalId: ['', Validators.required],
+  });
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.bodegas().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly bodegasPaginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.bodegas().slice(inicio, inicio + this.pageSize);
   });
 
   constructor() {

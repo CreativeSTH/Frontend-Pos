@@ -12,6 +12,7 @@ import { MobileNavService } from '../../core/services/mobile-nav.service';
 import { CajaService } from '../../core/services/caja.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ModuloPermiso } from '../../core/models/auth.model';
+import { CONFIG_GROUPS } from '../../core/models/configuracion-menu.model';
 
 interface NavItem {
   label: string;
@@ -22,27 +23,13 @@ interface NavItem {
   soloNegocio?: boolean;
 }
 
+/** Módulos empaquetados en `/configuracion` (ver configuracion-menu.model.ts) — el botón de Configuración solo se oculta si ninguno es visible. */
+const MODULOS_CONFIGURACION = CONFIG_GROUPS.flatMap((grupo) => grupo.items.map((item) => item.modulo));
+
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', soloNegocio: true },
   { label: 'Punto de venta', icon: 'shopping-bag', route: '/punto-venta', soloNegocio: true },
-  { label: 'Productos', icon: 'box', route: '/productos', modulo: 'PRODUCTOS' },
-  { label: 'Categorías', icon: 'layers', route: '/categorias', modulo: 'CATEGORIAS' },
-  { label: 'Marcas', icon: 'tag', route: '/marcas', modulo: 'MARCAS' },
-  { label: 'Proveedores', icon: 'truck', route: '/proveedores', modulo: 'PROVEEDORES' },
-  { label: 'Inventario', icon: 'archive', route: '/inventario', modulo: 'INVENTARIO' },
-  { label: 'Bodegas', icon: 'layers', route: '/bodegas', modulo: 'BODEGAS' },
-  { label: 'Lista de pedidos', icon: 'clipboard', route: '/lista-pedidos', modulo: 'INVENTARIO' },
   { label: 'Caja', icon: 'cash-register', route: '/caja', modulo: 'CAJA' },
-  { label: 'Ventas', icon: 'receipt', route: '/ventas', modulo: 'VENTAS' },
-  { label: 'Clientes', icon: 'users', route: '/clientes', modulo: 'CLIENTES' },
-  { label: 'Domicilios', icon: 'map-pin', route: '/domicilios', modulo: 'DOMICILIOS' },
-  { label: 'Cobros', icon: 'wallet', route: '/cobros', modulo: 'COBROS' },
-  { label: 'Reportes', icon: 'bar-chart', route: '/reportes', modulo: 'REPORTES' },
-  { label: 'Alertas', icon: 'bell', route: '/alertas', modulo: 'ALERTAS' },
-  { label: 'Sucursales', icon: 'store', route: '/sucursales', modulo: 'SUCURSALES' },
-  { label: 'Usuarios', icon: 'users', route: '/usuarios', modulo: 'USUARIOS' },
-  { label: 'Roles', icon: 'tag', route: '/roles', modulo: 'ROLES' },
-  { label: 'Negocios', icon: 'store', route: '/negocios', modulo: 'NEGOCIOS' },
 ];
 
 @Component({
@@ -65,6 +52,11 @@ export class Sidebar {
         (!item.modulo || this.auth.tienePermiso(item.modulo, 'VER')) &&
         (!item.soloNegocio || !this.auth.esSistema()),
     ),
+  );
+
+  /** El botón de Configuración vive aparte del loop de navItems (queda anclado abajo, sobre la card de usuario). */
+  protected readonly configuracionVisible = computed(() =>
+    MODULOS_CONFIGURACION.some((m) => this.auth.tienePermiso(m, 'VER')),
   );
 
   /** Con un turno de caja abierto, el sidebar pasa a modo off-canvas/hamburguesa en cualquier tamaño de pantalla. */

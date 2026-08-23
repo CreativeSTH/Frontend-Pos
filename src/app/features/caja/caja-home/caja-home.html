@@ -42,7 +42,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (fila of filasCaja(); track fila.id) {
+              @for (fila of filasCajaPaginadas(); track fila.id) {
                 <tr>
                   <td>{{ fila.createdAt | date: 'short' }}</td>
                   <td>
@@ -66,6 +66,11 @@
               }
             </tbody>
           </ds-table>
+          <ds-paginator
+            [page]="paginaActualMovimientos()"
+            [totalPages]="totalPaginasMovimientos()"
+            (pageChange)="paginaMovimientos.set($event)"
+          />
         }
       }
     </section>
@@ -114,7 +119,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (turno of historialFiltrado(); track turno.id) {
+          @for (turno of historialPaginado(); track turno.id) {
             <tr>
               <td>{{ turno.fechaApertura | date: 'short' }}</td>
               <td>{{ turno.usuarioApertura?.nombre ?? '—' }}</td>
@@ -142,6 +147,11 @@
           }
         </tbody>
       </ds-table>
+      <ds-paginator
+        [page]="paginaActualHistorial()"
+        [totalPages]="totalPaginasHistorial()"
+        (pageChange)="paginaHistorial.set($event)"
+      />
       }
     }
   </section>
@@ -254,7 +264,7 @@
           <tbody>
             @for (arqueo of turno.arqueoMetodos; track arqueo.metodoPago) {
               <tr>
-                <td>{{ etiquetaMetodoPago(arqueo.metodoPago) }}</td>
+                <td>{{ arqueo.metodoPago }}</td>
                 <td>{{ formatMoney(arqueo.montoEsperado) }}</td>
                 <td>{{ formatMoney(arqueo.montoContado) }}</td>
                 <td>

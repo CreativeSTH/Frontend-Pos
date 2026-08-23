@@ -129,6 +129,7 @@ export class ProductosList {
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
     codigoBarras: [''],
+    sku: [''],
     marcaId: [''],
     lineaId: [''],
     unidadMedida: ['UNIDAD', Validators.required],
@@ -391,6 +392,7 @@ export class ProductosList {
     this.form.reset({
       nombre: '',
       codigoBarras: '',
+      sku: '',
       marcaId: '',
       lineaId: '',
       unidadMedida: 'UNIDAD',
@@ -425,6 +427,7 @@ export class ProductosList {
     this.form.reset({
       nombre: producto.nombre,
       codigoBarras: producto.codigoBarras ?? '',
+      sku: producto.sku ?? '',
       marcaId: producto.marcaId ?? '',
       lineaId: producto.lineaId ?? '',
       unidadMedida: producto.unidadMedida,
@@ -464,6 +467,7 @@ export class ProductosList {
     const payload = {
       nombre: raw.nombre,
       codigoBarras: raw.codigoBarras || undefined,
+      sku: raw.sku || undefined,
       categoriaIds: this.categoriaIdsSeleccionadas(),
       marcaId: raw.marcaId || undefined,
       lineaId: raw.lineaId || undefined,

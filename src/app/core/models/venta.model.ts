@@ -37,12 +37,11 @@ export interface VentaItem {
 
 export interface VentaPago {
   id: string;
-  metodoPago: MetodoPago;
+  /** Nombre del método de pago tal cual estaba en el catálogo del negocio al momento de la venta. */
+  metodoPago: string;
   monto: number;
   referencia?: string;
 }
-
-export type MetodoPago = 'EFECTIVO' | 'TARJETA' | 'TRANSFERENCIA' | 'NEQUI' | 'DAVIPLATA' | 'OTRO';
 
 export interface CreateVentaPayload {
   sucursalId: string;
@@ -55,6 +54,6 @@ export interface CreateVentaPayload {
   omitirValidacionCredito?: boolean;
   descuentoVenta?: number;
   items: Array<{ productoId: string; cantidad: number; descuento?: number }>;
-  pagos?: Array<{ metodoPago: MetodoPago; monto: number; referencia?: string }>;
+  pagos?: Array<{ metodoPago: string; monto: number; referencia?: string }>;
   domicilio?: DomicilioVentaPayload;
 }

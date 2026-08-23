@@ -36,7 +36,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (venta of ventasFiltradas(); track venta.id) {
+        @for (venta of ventasPaginadas(); track venta.id) {
           <tr>
             <td>{{ venta.createdAt | date: 'short' }}</td>
             <td>{{ venta.nombreCliente }}</td>
@@ -55,6 +55,7 @@
         }
       </tbody>
     </ds-table>
+    <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
   }
 }
 

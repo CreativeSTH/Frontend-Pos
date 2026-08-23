@@ -13,6 +13,7 @@ import { Select } from '../../../shared/ui/atoms/select/select';
 import { Switch } from '../../../shared/ui/atoms/switch/switch';
 import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { VentasService } from '../../../core/services/ventas.service';
 import { PrintAgentService } from '../../../core/services/print-agent.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -53,6 +54,7 @@ const TONOS_ESTADO: Record<string, BadgeTone> = {
     Switch,
     SearchBar,
     EmptyState,
+    Paginator,
     FormsModule,
     DatePipe,
   ],
@@ -99,6 +101,15 @@ export class VentasList {
         return v.nombreCliente.toLowerCase().includes(term) || v.id.toLowerCase().includes(term) || enProductos;
       })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  });
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.ventasFiltradas().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly ventasPaginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.ventasFiltradas().slice(inicio, inicio + this.pageSize);
   });
 
   constructor() {

@@ -59,6 +59,7 @@ button {
 .ds-select__field option {
   background: var(--bg-elevated);
   color: var(--text-primary);
+  padding: var(--space-2) var(--space-3);
 }
 
 /* Fondo "aurora" fijo: manchas de luz difusas detrás de los paneles de vidrio. */

@@ -16,7 +16,8 @@ export type ModuloPermiso =
   | 'CLIENTES'
   | 'DOMICILIOS'
   | 'ALERTAS'
-  | 'REPORTES';
+  | 'REPORTES'
+  | 'METODOS_PAGO';
 
 export type AccionPermiso = 'VER' | 'CREAR' | 'EDITAR' | 'ELIMINAR';
 

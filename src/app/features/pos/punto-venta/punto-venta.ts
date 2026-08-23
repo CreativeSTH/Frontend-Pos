@@ -24,6 +24,7 @@ import { BodegasService } from '../../../core/services/bodegas.service';
 import { CajaService } from '../../../core/services/caja.service';
 import { InventarioService } from '../../../core/services/inventario.service';
 import { VentasService } from '../../../core/services/ventas.service';
+import { MetodosPagoService } from '../../../core/services/metodos-pago.service';
 import { ClientesService } from '../../../core/services/clientes.service';
 import { PrintAgentService } from '../../../core/services/print-agent.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -37,7 +38,8 @@ import { Categoria } from '../../../core/models/categoria.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { Bodega } from '../../../core/models/bodega.model';
 import { TurnoCaja } from '../../../core/models/caja.model';
-import { MetodoPago, Venta } from '../../../core/models/venta.model';
+import { Venta } from '../../../core/models/venta.model';
+import { MetodoPago } from '../../../core/models/metodo-pago.model';
 import { Cliente, VerificarCreditoResponse } from '../../../core/models/cliente.model';
 import { CreateDireccionClientePayload, DireccionCliente } from '../../../core/models/direccion-cliente.model';
 import { Domicilio } from '../../../core/models/domicilio.model';
@@ -47,7 +49,7 @@ import { environment } from '../../../../environments/environment';
 const NUEVA_DIRECCION = '__nueva__';
 
 interface LineaPago {
-  metodoPago: MetodoPago;
+  metodoPago: string;
   monto: number;
 }
 
@@ -60,14 +62,6 @@ interface LineaCarrito {
   costoUnitario: number;
   porcentajeImpuesto: number;
 }
-
-const METODOS_PAGO: { value: MetodoPago; label: string }[] = [
-  { value: 'EFECTIVO', label: 'Efectivo' },
-  { value: 'TARJETA', label: 'Tarjeta' },
-  { value: 'TRANSFERENCIA', label: 'Transferencia' },
-  { value: 'NEQUI', label: 'Nequi' },
-  { value: 'DAVIPLATA', label: 'Daviplata' },
-];
 
 @Component({
   selector: 'app-punto-venta',
@@ -102,6 +96,7 @@ export class PuntoVenta {
   private readonly cajaService = inject(CajaService);
   private readonly inventarioService = inject(InventarioService);
   private readonly ventasService = inject(VentasService);
+  private readonly metodosPagoService = inject(MetodosPagoService);
   private readonly clientesService = inject(ClientesService);
   protected readonly printAgent = inject(PrintAgentService);
   protected readonly auth = inject(AuthService);
@@ -146,7 +141,9 @@ export class PuntoVenta {
   protected readonly pagos = signal<LineaPago[]>([]);
   protected readonly descuentoActivo = signal(false);
   protected readonly descuentoVenta = signal<number>(0);
-  protected readonly metodosPago = METODOS_PAGO;
+  protected readonly metodosPago = signal<MetodoPago[]>([]);
+  /** Nombre del método marcado esEfectivo en el catálogo del negocio — puede no haber ninguno. */
+  protected readonly nombreEfectivo = computed(() => this.metodosPago().find((m) => m.esEfectivo)?.nombre);
 
   protected readonly tipoVenta = signal<'CONTADO' | 'CREDITO'>('CONTADO');
   protected readonly clientes = signal<Cliente[]>([]);
@@ -227,7 +224,11 @@ export class PuntoVenta {
     return this.productos().filter((p) => {
       if (categoriaId && !p.categorias.some((c) => c.id === categoriaId)) return false;
       if (!term) return true;
-      return p.nombre.toLowerCase().includes(term) || p.codigoBarras?.includes(term);
+      return (
+        p.nombre.toLowerCase().includes(term) ||
+        p.codigoBarras?.includes(term) ||
+        p.sku?.toLowerCase().includes(term)
+      );
     });
   });
 
@@ -251,12 +252,12 @@ export class PuntoVenta {
    */
   protected readonly efectivoTendido = computed(() =>
     this.pagos()
-      .filter((p) => p.metodoPago === 'EFECTIVO')
+      .filter((p) => p.metodoPago === this.nombreEfectivo())
       .reduce((sum, p) => sum + p.monto, 0),
   );
   protected readonly montoOtrosMetodos = computed(() =>
     this.pagos()
-      .filter((p) => p.metodoPago !== 'EFECTIVO')
+      .filter((p) => p.metodoPago !== this.nombreEfectivo())
       .reduce((sum, p) => sum + p.monto, 0),
   );
   protected readonly efectivoAplicado = computed(() =>
@@ -265,7 +266,7 @@ export class PuntoVenta {
   protected readonly cambio = computed(() => Math.max(0, this.efectivoTendido() - this.efectivoAplicado()));
   protected readonly totalPagado = computed(() => this.montoOtrosMetodos() + this.efectivoAplicado());
   protected readonly faltante = computed(() => Math.max(0, this.total() - this.totalPagado()));
-  protected readonly tieneEfectivo = computed(() => this.pagos().some((p) => p.metodoPago === 'EFECTIVO'));
+  protected readonly tieneEfectivo = computed(() => this.pagos().some((p) => p.metodoPago === this.nombreEfectivo()));
 
   constructor() {
     this.load();
@@ -320,13 +321,15 @@ export class PuntoVenta {
       sucursales: this.sucursalesService.findAll(),
       bodegas: this.bodegasService.findAll(),
       clientes: this.clientesService.findAll(),
+      metodosPago: this.metodosPagoService.findAll(),
     }).subscribe({
-      next: ({ productos, categorias, sucursales, bodegas, clientes }) => {
+      next: ({ productos, categorias, sucursales, bodegas, clientes, metodosPago }) => {
         this.productos.set(productos);
         this.categorias.set(categorias);
         this.sucursales.set(sucursales);
         this.bodegas.set(bodegas);
         this.clientes.set(clientes);
+        this.metodosPago.set(metodosPago);
         this.loading.set(false);
       },
       error: () => {
@@ -395,7 +398,7 @@ export class PuntoVenta {
   }
 
   protected onScanSubmit(codigo: string): void {
-    const producto = this.productos().find((p) => p.codigoBarras === codigo);
+    const producto = this.productos().find((p) => p.codigoBarras === codigo || p.sku === codigo);
     if (!producto) {
       this.toast.error(`Sin coincidencias para "${codigo}"`);
       return;
@@ -488,7 +491,7 @@ export class PuntoVenta {
     this.tipoVenta.set('CONTADO');
     this.descuentoActivo.set(false);
     this.descuentoVenta.set(0);
-    this.pagos.set([{ metodoPago: 'EFECTIVO', monto: this.total() }]);
+    this.pagos.set([{ metodoPago: this.nombreEfectivo() ?? this.metodosPago()[0]?.nombre ?? '', monto: this.total() }]);
     this.clienteId.set('');
     this.numeroCuotas.set(1);
     this.fechaPrimerPago.set(this.calcularFechaPorDefecto());
@@ -782,13 +785,15 @@ export class PuntoVenta {
   }
 
   protected agregarPago(): void {
+    const metodoPorDefecto =
+      this.metodosPago().find((m) => !m.esEfectivo)?.nombre ?? this.metodosPago()[0]?.nombre ?? '';
     this.pagos.update((lineas) => [
       ...lineas,
-      { metodoPago: 'TARJETA', monto: this.faltante() },
+      { metodoPago: metodoPorDefecto, monto: this.faltante() },
     ]);
   }
 
-  protected actualizarMetodoPago(index: number, metodoPago: MetodoPago): void {
+  protected actualizarMetodoPago(index: number, metodoPago: string): void {
     this.pagos.update((lineas) => lineas.map((l, i) => (i === index ? { ...l, metodoPago } : l)));
   }
 
@@ -802,12 +807,12 @@ export class PuntoVenta {
   }
 
   /** El backend espera que los pagos sumen exactamente el total — el efectivo va por lo aplicado, no lo entregado. */
-  private pagosParaEnviar(): { metodoPago: MetodoPago; monto: number }[] {
+  private pagosParaEnviar(): { metodoPago: string; monto: number }[] {
     const otros = this.pagos()
-      .filter((p) => p.metodoPago !== 'EFECTIVO')
+      .filter((p) => p.metodoPago !== this.nombreEfectivo())
       .map((p) => ({ metodoPago: p.metodoPago, monto: p.monto }));
     if (!this.tieneEfectivo()) return otros;
-    return [...otros, { metodoPago: 'EFECTIVO' as MetodoPago, monto: this.efectivoAplicado() }];
+    return [...otros, { metodoPago: this.nombreEfectivo()!, monto: this.efectivoAplicado() }];
   }
 
   protected confirmarCobro(): void {

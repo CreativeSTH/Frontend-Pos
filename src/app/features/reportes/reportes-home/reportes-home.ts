@@ -19,15 +19,6 @@ import { Sucursal } from '../../../core/models/sucursal.model';
 
 type Tab = 'ventas' | 'margenes' | 'cierres';
 
-const ETIQUETAS_METODO_PAGO: Record<string, string> = {
-  EFECTIVO: 'Efectivo',
-  TARJETA: 'Tarjeta',
-  TRANSFERENCIA: 'Transferencia',
-  NEQUI: 'Nequi',
-  DAVIPLATA: 'Daviplata',
-  OTRO: 'Otro',
-};
-
 function isoConOffset(offsetDias: number): string {
   const d = new Date();
   d.setDate(d.getDate() + offsetDias);
@@ -103,7 +94,4 @@ export class ReportesHome {
     );
   }
 
-  protected etiquetaMetodoPago(metodo: string): string {
-    return ETIQUETAS_METODO_PAGO[metodo] ?? metodo;
-  }
 }

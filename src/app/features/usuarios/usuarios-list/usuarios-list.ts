@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { Topbar } from '../../../layout/topbar/topbar';
@@ -12,6 +12,7 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { RolesService } from '../../../core/services/roles.service';
@@ -37,6 +38,7 @@ import { Sucursal } from '../../../core/models/sucursal.model';
     Input,
     Select,
     EmptyState,
+    Paginator,
     ReactiveFormsModule,
   ],
   templateUrl: './usuarios-list.html',
@@ -67,6 +69,15 @@ export class UsuariosList {
     pin: ['', Validators.pattern(/^\d{4,6}$/)],
     rolId: ['', Validators.required],
     sucursalId: [''],
+  });
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.usuarios().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly usuariosPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.usuarios().slice(inicio, inicio + this.pageSize);
   });
 
   constructor() {
@@ -120,7 +131,7 @@ export class UsuariosList {
       rolId: usuario.rolId,
       sucursalId: usuario.sucursalId ?? '',
     });
-    this.form.controls.password.clearValidators();
+    this.form.controls.password.setValidators([Validators.minLength(6)]);
     this.form.controls.password.updateValueAndValidity();
     this.showForm.set(true);
   }
@@ -138,6 +149,7 @@ export class UsuariosList {
       ? this.usuariosService.update(editingId, {
           nombre: raw.nombre,
           email: raw.email,
+          password: raw.password || undefined,
           pin: raw.pin || undefined,
           rolId: raw.rolId,
           sucursalId: raw.sucursalId || undefined,

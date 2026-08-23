@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
@@ -9,6 +9,7 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { DocumentUpload } from '../../../shared/ui/molecules/document-upload/document-upload';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { ProveedoresService } from '../../../core/services/proveedores.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
@@ -18,7 +19,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-proveedores-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, DocumentUpload, EmptyState, ReactiveFormsModule],
+  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, DocumentUpload, EmptyState, Paginator, ReactiveFormsModule],
   templateUrl: './proveedores-list.html',
   styleUrl: './proveedores-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,6 +38,15 @@ export class ProveedoresList {
   protected readonly saving = signal(false);
 
   protected readonly documentos: ProveedorDocumentos = {};
+
+  private readonly pageSize = 20;
+  protected readonly pagina = signal(1);
+  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.proveedores().length / this.pageSize)));
+  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
+  protected readonly proveedoresPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.pageSize;
+    return this.proveedores().slice(inicio, inicio + this.pageSize);
+  });
 
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],

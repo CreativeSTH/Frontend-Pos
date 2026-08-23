@@ -38,7 +38,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (item of itemsFiltrados(); track item.id) {
+      @for (item of itemsPaginados(); track item.id) {
         <tr>
           <td>{{ item.nombreProducto }}</td>
           @if (tabActual() !== 'PENDIENTE') {
@@ -60,6 +60,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showPedidoModal()) {

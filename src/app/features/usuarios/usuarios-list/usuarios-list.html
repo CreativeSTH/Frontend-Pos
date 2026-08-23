@@ -23,7 +23,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (usuario of usuarios(); track usuario.id) {
+      @for (usuario of usuariosPaginados(); track usuario.id) {
         <tr>
           <td class="usuarios-name-cell">
             <ds-avatar [name]="usuario.nombre" />
@@ -48,6 +48,7 @@
       }
     </tbody>
   </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
 }
 
 @if (showForm()) {
@@ -61,11 +62,12 @@
         <ds-input type="email" icon="mail" formControlName="email" placeholder="usuario@negocio.com" />
       </ds-form-field>
 
-      @if (!editingId()) {
-        <ds-form-field label="Contraseña">
-          <ds-input type="password" icon="lock" formControlName="password" placeholder="Mínimo 6 caracteres" />
-        </ds-form-field>
-      }
+      <ds-form-field
+        [label]="editingId() ? 'Nueva contraseña (opcional)' : 'Contraseña'"
+        [hint]="editingId() ? 'Dejar en blanco para no cambiarla' : undefined"
+      >
+        <ds-input type="password" icon="lock" formControlName="password" placeholder="Mínimo 6 caracteres" />
+      </ds-form-field>
 
       <ds-form-field
         label="PIN de cajero (opcional)"
