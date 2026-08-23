@@ -3,7 +3,7 @@
     <ds-avatar [name]="auth.usuario()?.nombre ?? ''" />
     <span>{{ auth.usuario()?.nombre }}</span>
   </div>
-  @if (sucursales().length > 1) {
+  @if (sucursales().length > 1 && !auth.usuario()?.sucursalId) {
     <ds-select [ngModel]="sucursal()?.id" (ngModelChange)="cambiarSucursal($event)">
       @for (s of sucursales(); track s.id) {
         <option [value]="s.id">{{ s.nombre }}</option>
