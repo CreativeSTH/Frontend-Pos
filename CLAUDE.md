@@ -27,6 +27,8 @@ organisms/    modal, data-table (ds-table shell), toast-container
 
 **Regla de oro:** ninguna página escribe estilos de superficie "a mano" (colores, blur, sombras). Todo pasa por los tokens (`var(--glass-bg)`, `var(--radius-lg)`, etc.) o por un componente del DS. Si una página necesita un patrón visual nuevo repetido, ese patrón se sube a `shared/ui`, no se copia.
 
+**`ds-select`** (`shared/ui/atoms/select/`) no usa el popup nativo de `<option>` — es imposible de estilar de forma consistente entre navegadores (sin padding, sin ancho propio, sin esquinas redondeadas). Dibuja su propio panel (portado a `document.body` con posición `fixed` calculada a mano, porque varios usos viven dentro de un `ds-modal` cuyo `overflow-y: auto` + `backdrop-filter` recortaría un panel posicionado normalmente). Sigue proyectando `<option>` tal cual las escribe cada página — se leen del DOM vía un `<select>` nativo oculto + `MutationObserver`, no por Angular content queries. **Limitación a tener en cuenta:** al ser 100% custom, se pierde algo de la semántica de accesibilidad nativa del `<select>` (lectores de pantalla) — tiene roles ARIA básicos (`listbox`/`option`) pero no es un reemplazo perfecto. Si la accesibilidad se vuelve una prioridad del proyecto, vale la pena revisar este componente con más cuidado.
+
 Los estilos de componente usan `@use 'mixins' as mix;` — el include path `src/styles` está configurado en `angular.json` (`stylePreprocessorOptions`), así que no hace falta ruta relativa.
 
 ## Estructura
