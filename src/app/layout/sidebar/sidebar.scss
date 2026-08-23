@@ -14,6 +14,12 @@
   border-bottom: none;
   border-left: none;
   flex-shrink: 0;
+  // Sin esto, el sidebar (normal-flow, sin position) queda SIEMPRE detrás de cualquier botón
+  // flotante position:fixed de la página (ej. el FAB de Domicilios o "Volver a punto de venta"
+  // en punto-venta.ts) sin importar el z-index de estos — un elemento posicionado con z-index
+  // pinta por encima de cualquier hermano en flujo normal, sea cual sea el número.
+  position: relative;
+  z-index: var(--z-sticky);
 
   @include mix.tablet-down {
     position: fixed;
