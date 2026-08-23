@@ -1,0 +1,15 @@
+@if (productos().length === 0) {
+  <ds-empty-state icon="box" title="Sin resultados" description="Prueba con otro nombre o código." />
+} @else {
+  <div class="pos-grid">
+    @for (producto of productos(); track producto.id) {
+      <ds-product-card
+        [imageSrc]="imageUrl(producto.imagenUrl)"
+        [name]="producto.nombre"
+        [priceLabel]="formatMoney(producto.precioVenta)"
+        [stock]="stockDe(producto.id)"
+        (click)="seleccionar.emit(producto)"
+      />
+    }
+  </div>
+}

@@ -1,0 +1,44 @@
+.pos-suspendidas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pos-suspendida-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+}
+
+.pos-suspendida-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.pos-suspendida-item__nota {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+.pos-suspendida-item__meta {
+  font-size: var(--fs-xs);
+  color: var(--text-tertiary);
+}
+
+.pos-suspendida-item__acciones {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.pos-confirmar-cierre__texto {
+  color: var(--text-secondary);
+  padding: var(--space-2) 0 var(--space-4);
+}

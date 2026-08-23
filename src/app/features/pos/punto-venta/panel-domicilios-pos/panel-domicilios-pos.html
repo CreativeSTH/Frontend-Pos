@@ -1,0 +1,64 @@
+@if (auth.tienePermiso('DOMICILIOS', 'VER')) {
+  <div class="pos-domicilios-wrapper">
+    <button type="button" class="pos-domicilios-btn" (click)="alternarPanelDomicilios()">
+      <ds-icon name="map-pin" [size]="20" />
+      <span>Domicilios</span>
+      @if (domiciliosService.activos().length > 0) {
+        <span class="pos-domicilios-btn__badge">{{ domiciliosService.activos().length }}</span>
+      }
+    </button>
+
+    @if (showPanelDomicilios()) {
+      <div class="pos-domicilios-backdrop" (click)="showPanelDomicilios.set(false)"></div>
+      <div class="pos-domicilios-panel">
+        <div class="pos-domicilios-panel__header">Domicilios activos</div>
+
+        @if (domiciliosService.activos().length === 0) {
+          <div class="pos-domicilios-empty">Sin domicilios activos</div>
+        } @else {
+          @for (domicilio of domiciliosService.activos(); track domicilio.id) {
+            <div class="pos-domicilios-item">
+              <div class="pos-domicilios-item__info">
+                <span class="pos-domicilios-item__cliente">{{ domicilio.nombreCliente }}</span>
+                <span class="pos-domicilios-item__direccion">{{ domicilio.direccionTexto }}</span>
+                <ds-badge [tone]="domicilio.estado === 'NUEVO' ? 'info' : 'warning'">
+                  {{ domicilio.estado === 'NUEVO' ? 'Nuevo' : 'En camino' }}
+                </ds-badge>
+              </div>
+              <div class="pos-domicilios-item__acciones">
+                @if (domicilio.estado === 'NUEVO') {
+                  <ds-button
+                    variant="glass"
+                    size="sm"
+                    [loading]="guardandoDomicilioPanel() === domicilio.id"
+                    (click)="marcarEnCaminoDesdePos(domicilio)"
+                  >
+                    En camino
+                  </ds-button>
+                } @else {
+                  <ds-button
+                    variant="glass"
+                    size="sm"
+                    [loading]="guardandoDomicilioPanel() === domicilio.id"
+                    (click)="marcarEntregadoDesdePos(domicilio)"
+                  >
+                    Entregado
+                  </ds-button>
+                }
+                <ds-button
+                  variant="ghost"
+                  size="sm"
+                  [loading]="guardandoDomicilioPanel() === domicilio.id"
+                  (click)="cancelarDesdePos(domicilio)"
+                >
+                  Cancelar
+                </ds-button>
+                <a class="pos-domicilios-item__vermas" routerLink="/domicilios">Ver más</a>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    }
+  </div>
+}

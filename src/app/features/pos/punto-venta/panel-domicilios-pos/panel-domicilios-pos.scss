@@ -1,0 +1,133 @@
+@use 'mixins' as mix;
+
+.pos-domicilios-wrapper {
+  position: fixed;
+  left: var(--space-6);
+  bottom: var(--space-6);
+  z-index: 60;
+}
+
+.pos-domicilios-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg-hover);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  box-shadow: var(--glass-shadow);
+  cursor: pointer;
+  transition: background var(--duration-base) var(--ease-standard);
+
+  &:hover {
+    background: var(--glass-bg-active);
+  }
+}
+
+.pos-domicilios-btn__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--accent-danger);
+  color: white;
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+}
+
+.pos-domicilios-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.pos-domicilios-panel {
+  position: absolute;
+  bottom: calc(100% + var(--space-3));
+  left: 0;
+  z-index: 41;
+  width: 360px;
+  max-width: calc(100vw - var(--space-6));
+  max-height: 60vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  @include mix.glass-panel-elevated;
+
+  @include mix.mobile-down {
+    position: fixed;
+    left: var(--space-3);
+    right: var(--space-3);
+    bottom: calc(var(--space-6) + 60px);
+    width: auto;
+    max-width: none;
+  }
+}
+
+.pos-domicilios-panel__header {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  padding: var(--space-2);
+}
+
+.pos-domicilios-empty {
+  padding: var(--space-5) var(--space-2);
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+}
+
+.pos-domicilios-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+}
+
+.pos-domicilios-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pos-domicilios-item__cliente {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+
+.pos-domicilios-item__direccion {
+  font-size: var(--fs-xs);
+  color: var(--text-tertiary);
+}
+
+.pos-domicilios-item__acciones {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pos-domicilios-item__vermas {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--accent-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

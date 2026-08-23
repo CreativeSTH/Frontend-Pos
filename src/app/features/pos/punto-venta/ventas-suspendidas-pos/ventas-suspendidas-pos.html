@@ -1,0 +1,60 @@
+@if (ventasSuspendidas().length > 0) {
+  <ds-button variant="glass" icon="history" (click)="showVentasSuspendidas.set(true)">
+    Ventas suspendidas ({{ ventasSuspendidas().length }})
+  </ds-button>
+}
+
+@if (showSuspenderVenta()) {
+  <ds-modal title="Suspender venta" size="sm" (close)="showSuspenderVenta.set(false)">
+    <p class="pos-confirmar-cierre__texto">
+      El carrito actual queda en espera — no se crea ninguna venta ni se descuenta stock.
+    </p>
+    <ds-form-field label="Nota (opcional)" hint="Ej. Mesa 3, o el nombre del cliente">
+      <ds-input [ngModel]="notaSuspension()" (ngModelChange)="notaSuspension.set($event)" placeholder="Nota" />
+    </ds-form-field>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showSuspenderVenta.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" (click)="confirmarSuspenderVenta()">Suspender</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showVentasSuspendidas()) {
+  <ds-modal title="Ventas suspendidas" size="md" (close)="showVentasSuspendidas.set(false)">
+    @if (ventasSuspendidas().length === 0) {
+      <ds-empty-state icon="history" title="Sin ventas suspendidas" description="Las ventas que suspendas aparecerán aquí." />
+    } @else {
+      <div class="pos-suspendidas-lista">
+        @for (venta of ventasSuspendidas(); track venta.id) {
+          <div class="pos-suspendida-item">
+            <div class="pos-suspendida-item__info">
+              <span class="pos-suspendida-item__nota">{{ venta.nota || 'Sin nota' }}</span>
+              <span class="pos-suspendida-item__meta">
+                {{ venta.carrito.length }} producto(s) · {{ formatMoney(totalVentaSuspendida(venta)) }}
+              </span>
+            </div>
+            <div class="pos-suspendida-item__acciones">
+              <ds-button variant="glass" size="sm" (click)="retomarVentaSuspendida(venta)">Retomar</ds-button>
+              <ds-button variant="ghost" size="sm" (click)="eliminarVentaSuspendida(venta)">Eliminar</ds-button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showVentasSuspendidas.set(false)">Cerrar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showConfirmarRetomar()) {
+  <ds-modal title="Retomar venta suspendida" size="sm" (close)="showConfirmarRetomar.set(false)">
+    <p class="pos-confirmar-cierre__texto">
+      Tu carrito actual tiene productos sin guardar — al retomar esta venta suspendida se reemplaza. ¿Continuar?
+    </p>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showConfirmarRetomar.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" (click)="confirmarRetomarVenta()">Sí, retomar</ds-button>
+    </div>
+  </ds-modal>
+}

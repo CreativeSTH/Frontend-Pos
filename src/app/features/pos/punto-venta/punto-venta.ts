@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
@@ -17,7 +17,6 @@ import { Icon } from '../../../shared/ui/atoms/icon/icon';
 import { Badge } from '../../../shared/ui/atoms/badge/badge';
 import { Avatar } from '../../../shared/ui/atoms/avatar/avatar';
 import { Thumbnail } from '../../../shared/ui/atoms/thumbnail/thumbnail';
-import { ProductCard } from '../../../shared/ui/molecules/product-card/product-card';
 import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
@@ -37,11 +36,12 @@ import { MetodosPagoService } from '../../../core/services/metodos-pago.service'
 import { ClientesService } from '../../../core/services/clientes.service';
 import { PrintAgentService } from '../../../core/services/print-agent.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { VentasSuspendidasService, VentaSuspendida } from '../../../core/services/ventas-suspendidas.service';
+import {
+  VentasSuspendidasService,
+  LineaCarritoSuspendida,
+} from '../../../core/services/ventas-suspendidas.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AlertasService } from '../../../core/services/alertas.service';
-import { DomiciliosService } from '../../../core/services/domicilios.service';
-import { ConfirmService } from '../../../core/services/confirm.service';
 import { Producto } from '../../../core/models/producto.model';
 import { Categoria } from '../../../core/models/categoria.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
@@ -51,8 +51,11 @@ import { Venta } from '../../../core/models/venta.model';
 import { MetodoPago } from '../../../core/models/metodo-pago.model';
 import { Cliente, VerificarCreditoResponse } from '../../../core/models/cliente.model';
 import { CreateDireccionClientePayload, DireccionCliente } from '../../../core/models/direccion-cliente.model';
-import { Domicilio } from '../../../core/models/domicilio.model';
-import { environment } from '../../../../environments/environment';
+import { PanelDomiciliosPos } from './panel-domicilios-pos/panel-domicilios-pos';
+import { TurnoCajaPos } from './turno-caja-pos/turno-caja-pos';
+import { VentasSuspendidasPos } from './ventas-suspendidas-pos/ventas-suspendidas-pos';
+import { CatalogoGridPos } from './catalogo-grid-pos/catalogo-grid-pos';
+import { calcularImpuesto, calcularSubtotal, formatMoney, imageUrl } from './pos-shared.util';
 
 /** Sentinel para "cargar una dirección nueva" en el selector — nunca colisiona con un UUID real. */
 const NUEVA_DIRECCION = '__nueva__';
@@ -82,7 +85,6 @@ interface LineaCarrito {
     Badge,
     Avatar,
     Thumbnail,
-    ProductCard,
     SearchBar,
     EmptyState,
     FormField,
@@ -91,6 +93,10 @@ interface LineaCarrito {
     Switch,
     Modal,
     FormsModule,
+    PanelDomiciliosPos,
+    TurnoCajaPos,
+    VentasSuspendidasPos,
+    CatalogoGridPos,
   ],
   templateUrl: './punto-venta.html',
   styleUrl: './punto-venta.scss',
@@ -112,13 +118,17 @@ export class PuntoVenta {
   private readonly ventasSuspendidasService = inject(VentasSuspendidasService);
   private readonly toast = inject(ToastService);
   private readonly alertasService = inject(AlertasService);
-  protected readonly domiciliosService = inject(DomiciliosService);
-  private readonly confirmService = inject(ConfirmService);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
   /** Referencia al buscador para devolverle el foco tras cada acción — así el lector de código de barras (que solo "escribe" donde esté el cursor) siempre tiene dónde caer. */
   private readonly buscador = viewChild<SearchBar>('buscador');
+  /**
+   * El botón "Suspender venta" vive en el carrito (acá), pero el feature completo lo dueña
+   * `VentasSuspendidasPos`. La variable de plantilla se llama distinto a esta propiedad a
+   * propósito — si coinciden, Angular resuelve el nombre dentro del template como la referencia
+   * local (la instancia del componente, no invocable) y no como esta señal.
+   */
+  protected readonly suspendidasPanel = viewChild<VentasSuspendidasPos>('panelVentasSuspendidas');
 
   protected readonly loading = signal(true);
   protected readonly productos = signal<Producto[]>([]);
@@ -202,21 +212,8 @@ export class PuntoVenta {
   /** `?domicilio=1` en la URL — prende el switch solo apenas se resuelva un cliente (ver Domicilios → "Nuevo domicilio"). */
   private readonly domicilioSolicitadoPorQuery = signal(false);
 
-  /** Panel rápido de domicilios — para que el cajero pueda avanzar estados sin salir del POS. */
-  protected readonly showPanelDomicilios = signal(false);
-  protected readonly guardandoDomicilioPanel = signal<string | null>(null);
-
   protected readonly ventaCompletada = signal<Venta | null>(null);
   protected readonly imprimiendo = signal(false);
-  protected readonly showConfirmarCerrarCaja = signal(false);
-  protected readonly showConfirmarPausarCaja = signal(false);
-
-  protected readonly ventasSuspendidas = this.ventasSuspendidasService.ventas;
-  protected readonly showSuspenderVenta = signal(false);
-  protected readonly notaSuspension = signal('');
-  protected readonly showVentasSuspendidas = signal(false);
-  protected readonly ventaSuspendidaARetomar = signal<VentaSuspendida | null>(null);
-  protected readonly showConfirmarRetomar = signal(false);
 
   /** Categorías con cada sub-categoría justo debajo de su padre — mismo patrón que `productos-list`. */
   protected readonly categoriasOrdenadas = computed(() => {
@@ -244,12 +241,8 @@ export class PuntoVenta {
     });
   });
 
-  protected readonly subtotal = computed(() =>
-    this.carrito().reduce((sum, l) => sum + l.precioUnitario * l.cantidad, 0),
-  );
-  protected readonly impuesto = computed(() =>
-    this.carrito().reduce((sum, l) => sum + l.precioUnitario * l.cantidad * (l.porcentajeImpuesto / 100), 0),
-  );
+  protected readonly subtotal = computed(() => calcularSubtotal(this.carrito()));
+  protected readonly impuesto = computed(() => calcularImpuesto(this.carrito()));
   protected readonly total = computed(() =>
     Math.max(0, this.subtotal() + this.impuesto() - this.descuentoVenta()),
   );
@@ -509,59 +502,17 @@ export class PuntoVenta {
     this.carrito.update((lineas) => lineas.filter((l) => l.productoId !== productoId));
   }
 
-  protected abrirSuspenderVenta(): void {
-    if (this.carrito().length === 0) return;
-    this.notaSuspension.set('');
-    this.showSuspenderVenta.set(true);
-  }
-
-  protected confirmarSuspenderVenta(): void {
-    this.ventasSuspendidasService.suspender(this.carrito(), this.descuentoVenta(), this.notaSuspension());
+  /** El propio carrito se suspendió — `VentasSuspendidasPos` ya lo guardó, acá solo se vacía. */
+  protected onVentaSuspendida(): void {
     this.carrito.set([]);
     this.descuentoVenta.set(0);
     this.descuentoActivo.set(false);
-    this.showSuspenderVenta.set(false);
-    this.toast.success('Venta suspendida');
   }
 
-  protected retomarVentaSuspendida(venta: VentaSuspendida): void {
-    this.showVentasSuspendidas.set(false);
-    if (this.carrito().length > 0) {
-      this.ventaSuspendidaARetomar.set(venta);
-      this.showConfirmarRetomar.set(true);
-      return;
-    }
-    this.aplicarVentaSuspendida(venta);
-  }
-
-  protected confirmarRetomarVenta(): void {
-    const venta = this.ventaSuspendidaARetomar();
-    if (!venta) return;
-    this.aplicarVentaSuspendida(venta);
-    this.showConfirmarRetomar.set(false);
-    this.ventaSuspendidaARetomar.set(null);
-  }
-
-  private aplicarVentaSuspendida(venta: VentaSuspendida): void {
-    this.ventasSuspendidasService.retomar(venta.id);
-    this.carrito.set(venta.carrito);
-    this.descuentoVenta.set(venta.descuentoVenta);
-    this.descuentoActivo.set(venta.descuentoVenta > 0);
-    this.toast.success('Venta retomada');
-  }
-
-  protected eliminarVentaSuspendida(venta: VentaSuspendida): void {
-    this.ventasSuspendidasService.eliminar(venta.id);
-    this.toast.success('Venta suspendida eliminada');
-  }
-
-  protected totalVentaSuspendida(venta: VentaSuspendida): number {
-    const subtotal = venta.carrito.reduce((sum, l) => sum + l.precioUnitario * l.cantidad, 0);
-    const impuesto = venta.carrito.reduce(
-      (sum, l) => sum + l.precioUnitario * l.cantidad * (l.porcentajeImpuesto / 100),
-      0,
-    );
-    return Math.max(0, subtotal + impuesto - venta.descuentoVenta);
+  protected onVentaRetomada(evento: { carrito: LineaCarritoSuspendida[]; descuentoVenta: number }): void {
+    this.carrito.set(evento.carrito);
+    this.descuentoVenta.set(evento.descuentoVenta);
+    this.descuentoActivo.set(evento.descuentoVenta > 0);
   }
 
   protected abrirCobro(): void {
@@ -757,58 +708,6 @@ export class PuntoVenta {
     this.direccionElegida.set(direccion);
     this.domicilioActivo.set(true);
     this.showDireccionModal.set(false);
-  }
-
-  // ---------- Panel rápido de domicilios ----------
-
-  protected alternarPanelDomicilios(): void {
-    this.showPanelDomicilios.update((v) => !v);
-  }
-
-  /** Sin pedir quién lo lleva — es la vía rápida; ese detalle se completa desde "Ver más" si hace falta. */
-  protected marcarEnCaminoDesdePos(domicilio: Domicilio): void {
-    this.guardandoDomicilioPanel.set(domicilio.id);
-    this.domiciliosService.marcarEnCamino(domicilio.id).subscribe({
-      next: () => {
-        this.guardandoDomicilioPanel.set(null);
-        this.toast.success('Domicilio en camino');
-      },
-      error: (err) => {
-        this.guardandoDomicilioPanel.set(null);
-        this.toast.error(err.error?.message ?? 'No se pudo actualizar el domicilio');
-      },
-    });
-  }
-
-  protected async marcarEntregadoDesdePos(domicilio: Domicilio): Promise<void> {
-    if (!(await this.confirmService.ask(`¿Confirmar la entrega a "${domicilio.nombreCliente}"?`))) return;
-    this.guardandoDomicilioPanel.set(domicilio.id);
-    this.domiciliosService.marcarEntregado(domicilio.id).subscribe({
-      next: () => {
-        this.guardandoDomicilioPanel.set(null);
-        this.toast.success('Domicilio entregado');
-      },
-      error: (err) => {
-        this.guardandoDomicilioPanel.set(null);
-        this.toast.error(err.error?.message ?? 'No se pudo actualizar el domicilio');
-      },
-    });
-  }
-
-  protected async cancelarDesdePos(domicilio: Domicilio): Promise<void> {
-    if (!(await this.confirmService.ask({ message: `¿Cancelar el domicilio de "${domicilio.nombreCliente}"?`, danger: true })))
-      return;
-    this.guardandoDomicilioPanel.set(domicilio.id);
-    this.domiciliosService.cancelar(domicilio.id).subscribe({
-      next: () => {
-        this.guardandoDomicilioPanel.set(null);
-        this.toast.success('Domicilio cancelado');
-      },
-      error: (err) => {
-        this.guardandoDomicilioPanel.set(null);
-        this.toast.error(err.error?.message ?? 'No se pudo cancelar el domicilio');
-      },
-    });
   }
 
   private calcularFechaPorDefecto(): string {
@@ -1008,15 +907,6 @@ export class PuntoVenta {
     });
   }
 
-  protected confirmarCerrarCaja(): void {
-    this.router.navigate(['/dashboard'], { queryParams: { cerrarTurno: '1' } });
-  }
-
-  protected confirmarPausarCaja(): void {
-    this.showConfirmarPausarCaja.set(false);
-    this.auth.pausarCaja();
-  }
-
   protected imprimirFactura(venta: Venta): void {
     this.imprimiendo.set(true);
     this.printAgent.imprimirTicket('', venta).subscribe((result) => {
@@ -1029,14 +919,6 @@ export class PuntoVenta {
     });
   }
 
-  protected imageUrl(imagenUrl?: string | null): string | null {
-    if (!imagenUrl) return null;
-    return `${environment.assetsUrl}${imagenUrl}`;
-  }
-
-  protected formatMoney(value: number): string {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(
-      value,
-    );
-  }
+  protected readonly imageUrl = imageUrl;
+  protected readonly formatMoney = formatMoney;
 }

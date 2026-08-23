@@ -10,11 +10,13 @@
       }
     </ds-select>
   }
-  @if (ventasSuspendidas().length > 0) {
-    <ds-button variant="glass" icon="history" (click)="showVentasSuspendidas.set(true)">
-      Ventas suspendidas ({{ ventasSuspendidas().length }})
-    </ds-button>
-  }
+  <app-ventas-suspendidas-pos
+    #panelVentasSuspendidas
+    [carrito]="carrito()"
+    [descuentoVenta]="descuentoVenta()"
+    (suspendida)="onVentaSuspendida()"
+    (retomada)="onVentaRetomada($event)"
+  />
   @if (turno()) {
     <ds-badge tone="success">Caja abierta</ds-badge>
   } @else {
@@ -53,21 +55,11 @@
         </ds-select>
       </div>
 
-      @if (productosFiltrados().length === 0) {
-        <ds-empty-state icon="box" title="Sin resultados" description="Prueba con otro nombre o código." />
-      } @else {
-        <div class="pos-grid">
-          @for (producto of productosFiltrados(); track producto.id) {
-            <ds-product-card
-              [imageSrc]="imageUrl(producto.imagenUrl)"
-              [name]="producto.nombre"
-              [priceLabel]="formatMoney(producto.precioVenta)"
-              [stock]="stockDe(producto.id)"
-              (click)="agregarAlCarrito(producto)"
-            />
-          }
-        </div>
-      }
+      <app-catalogo-grid-pos
+        [productos]="productosFiltrados()"
+        [stockPorProducto]="stockPorProducto()"
+        (seleccionar)="agregarAlCarrito($event)"
+      />
     </section>
 
     <aside class="pos-cart">
@@ -117,23 +109,14 @@
         <ds-button variant="primary" size="lg" [fullWidth]="true" icon="cash-register" (click)="abrirCobro()">
           Cobrar
         </ds-button>
-        <ds-button variant="ghost" [fullWidth]="true" icon="pause" (click)="abrirSuspenderVenta()">
+        <ds-button variant="ghost" [fullWidth]="true" icon="pause" (click)="suspendidasPanel()?.abrirSuspenderVenta()">
           Suspender venta
         </ds-button>
       }
     </aside>
   </div>
 
-  <div class="pos-fab-group">
-    <button type="button" class="pos-pausar-caja-fab" (click)="showConfirmarPausarCaja.set(true)" title="Pausar caja">
-      <ds-icon name="pause" [size]="20" />
-      <span>Pausar caja</span>
-    </button>
-    <button type="button" class="pos-cerrar-caja-fab" (click)="showConfirmarCerrarCaja.set(true)" title="Cerrar caja">
-      <ds-icon name="lock" [size]="20" />
-      <span>Cerrar caja</span>
-    </button>
-  </div>
+  <app-turno-caja-pos />
 }
 
 @if (showAbrirTurno()) {
@@ -149,84 +132,6 @@
     <div modal-footer>
       <ds-button variant="ghost" (click)="showAbrirTurno.set(false)">Cancelar</ds-button>
       <ds-button variant="primary" [loading]="abriendoTurno()" (click)="abrirTurnoDesdePos()">Abrir caja</ds-button>
-    </div>
-  </ds-modal>
-}
-
-@if (showConfirmarPausarCaja()) {
-  <ds-modal title="Pausar caja" size="sm" (close)="showConfirmarPausarCaja.set(false)">
-    <p class="pos-confirmar-cierre__texto">
-      ¿Estás seguro que quieres pausar la caja? El turno y el carrito actual no se pierden — solo se bloquea la
-      pantalla hasta que ingreses tu PIN.
-    </p>
-    <div modal-footer>
-      <ds-button variant="ghost" (click)="showConfirmarPausarCaja.set(false)">Cancelar</ds-button>
-      <ds-button variant="primary" (click)="confirmarPausarCaja()">Sí, pausar caja</ds-button>
-    </div>
-  </ds-modal>
-}
-
-@if (showConfirmarCerrarCaja()) {
-  <ds-modal title="Cerrar caja" size="sm" (close)="showConfirmarCerrarCaja.set(false)">
-    <p class="pos-confirmar-cierre__texto">¿Estás seguro que quieres cerrar caja?</p>
-    <div modal-footer>
-      <ds-button variant="ghost" (click)="showConfirmarCerrarCaja.set(false)">Cancelar</ds-button>
-      <ds-button variant="primary" (click)="confirmarCerrarCaja()">Sí, cerrar caja</ds-button>
-    </div>
-  </ds-modal>
-}
-
-@if (showSuspenderVenta()) {
-  <ds-modal title="Suspender venta" size="sm" (close)="showSuspenderVenta.set(false)">
-    <p class="pos-confirmar-cierre__texto">
-      El carrito actual queda en espera — no se crea ninguna venta ni se descuenta stock.
-    </p>
-    <ds-form-field label="Nota (opcional)" hint="Ej. Mesa 3, o el nombre del cliente">
-      <ds-input [ngModel]="notaSuspension()" (ngModelChange)="notaSuspension.set($event)" placeholder="Nota" />
-    </ds-form-field>
-    <div modal-footer>
-      <ds-button variant="ghost" (click)="showSuspenderVenta.set(false)">Cancelar</ds-button>
-      <ds-button variant="primary" (click)="confirmarSuspenderVenta()">Suspender</ds-button>
-    </div>
-  </ds-modal>
-}
-
-@if (showVentasSuspendidas()) {
-  <ds-modal title="Ventas suspendidas" size="md" (close)="showVentasSuspendidas.set(false)">
-    @if (ventasSuspendidas().length === 0) {
-      <ds-empty-state icon="history" title="Sin ventas suspendidas" description="Las ventas que suspendas aparecerán aquí." />
-    } @else {
-      <div class="pos-suspendidas-lista">
-        @for (venta of ventasSuspendidas(); track venta.id) {
-          <div class="pos-suspendida-item">
-            <div class="pos-suspendida-item__info">
-              <span class="pos-suspendida-item__nota">{{ venta.nota || 'Sin nota' }}</span>
-              <span class="pos-suspendida-item__meta">
-                {{ venta.carrito.length }} producto(s) · {{ formatMoney(totalVentaSuspendida(venta)) }}
-              </span>
-            </div>
-            <div class="pos-suspendida-item__acciones">
-              <ds-button variant="glass" size="sm" (click)="retomarVentaSuspendida(venta)">Retomar</ds-button>
-              <ds-button variant="ghost" size="sm" (click)="eliminarVentaSuspendida(venta)">Eliminar</ds-button>
-            </div>
-          </div>
-        }
-      </div>
-    }
-    <div modal-footer>
-      <ds-button variant="ghost" (click)="showVentasSuspendidas.set(false)">Cerrar</ds-button>
-    </div>
-  </ds-modal>
-}
-
-@if (showConfirmarRetomar()) {
-  <ds-modal title="Retomar venta suspendida" size="sm" (close)="showConfirmarRetomar.set(false)">
-    <p class="pos-confirmar-cierre__texto">
-      Tu carrito actual tiene productos sin guardar — al retomar esta venta suspendida se reemplaza. ¿Continuar?
-    </p>
-    <div modal-footer>
-      <ds-button variant="ghost" (click)="showConfirmarRetomar.set(false)">Cancelar</ds-button>
-      <ds-button variant="primary" (click)="confirmarRetomarVenta()">Sí, retomar</ds-button>
     </div>
   </ds-modal>
 }
@@ -565,67 +470,4 @@
   </ds-modal>
 }
 
-@if (auth.tienePermiso('DOMICILIOS', 'VER')) {
-  <div class="pos-domicilios-wrapper">
-    <button type="button" class="pos-domicilios-btn" (click)="alternarPanelDomicilios()">
-      <ds-icon name="map-pin" [size]="20" />
-      <span>Domicilios</span>
-      @if (domiciliosService.activos().length > 0) {
-        <span class="pos-domicilios-btn__badge">{{ domiciliosService.activos().length }}</span>
-      }
-    </button>
-
-    @if (showPanelDomicilios()) {
-      <div class="pos-domicilios-backdrop" (click)="showPanelDomicilios.set(false)"></div>
-      <div class="pos-domicilios-panel">
-        <div class="pos-domicilios-panel__header">Domicilios activos</div>
-
-        @if (domiciliosService.activos().length === 0) {
-          <div class="pos-domicilios-empty">Sin domicilios activos</div>
-        } @else {
-          @for (domicilio of domiciliosService.activos(); track domicilio.id) {
-            <div class="pos-domicilios-item">
-              <div class="pos-domicilios-item__info">
-                <span class="pos-domicilios-item__cliente">{{ domicilio.nombreCliente }}</span>
-                <span class="pos-domicilios-item__direccion">{{ domicilio.direccionTexto }}</span>
-                <ds-badge [tone]="domicilio.estado === 'NUEVO' ? 'info' : 'warning'">
-                  {{ domicilio.estado === 'NUEVO' ? 'Nuevo' : 'En camino' }}
-                </ds-badge>
-              </div>
-              <div class="pos-domicilios-item__acciones">
-                @if (domicilio.estado === 'NUEVO') {
-                  <ds-button
-                    variant="glass"
-                    size="sm"
-                    [loading]="guardandoDomicilioPanel() === domicilio.id"
-                    (click)="marcarEnCaminoDesdePos(domicilio)"
-                  >
-                    En camino
-                  </ds-button>
-                } @else {
-                  <ds-button
-                    variant="glass"
-                    size="sm"
-                    [loading]="guardandoDomicilioPanel() === domicilio.id"
-                    (click)="marcarEntregadoDesdePos(domicilio)"
-                  >
-                    Entregado
-                  </ds-button>
-                }
-                <ds-button
-                  variant="ghost"
-                  size="sm"
-                  [loading]="guardandoDomicilioPanel() === domicilio.id"
-                  (click)="cancelarDesdePos(domicilio)"
-                >
-                  Cancelar
-                </ds-button>
-                <a class="pos-domicilios-item__vermas" routerLink="/domicilios">Ver más</a>
-              </div>
-            </div>
-          }
-        }
-      </div>
-    }
-  </div>
-}
+<app-panel-domicilios-pos />

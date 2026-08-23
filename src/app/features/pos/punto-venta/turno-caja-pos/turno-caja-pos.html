@@ -1,0 +1,33 @@
+<div class="pos-fab-group">
+  <button type="button" class="pos-pausar-caja-fab" (click)="showConfirmarPausarCaja.set(true)" title="Pausar caja">
+    <ds-icon name="pause" [size]="20" />
+    <span>Pausar caja</span>
+  </button>
+  <button type="button" class="pos-cerrar-caja-fab" (click)="showConfirmarCerrarCaja.set(true)" title="Cerrar caja">
+    <ds-icon name="lock" [size]="20" />
+    <span>Cerrar caja</span>
+  </button>
+</div>
+
+@if (showConfirmarPausarCaja()) {
+  <ds-modal title="Pausar caja" size="sm" (close)="showConfirmarPausarCaja.set(false)">
+    <p class="pos-confirmar-cierre__texto">
+      ¿Estás seguro que quieres pausar la caja? El turno y el carrito actual no se pierden — solo se bloquea la
+      pantalla hasta que ingreses tu PIN.
+    </p>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showConfirmarPausarCaja.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" (click)="confirmarPausarCaja()">Sí, pausar caja</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (showConfirmarCerrarCaja()) {
+  <ds-modal title="Cerrar caja" size="sm" (close)="showConfirmarCerrarCaja.set(false)">
+    <p class="pos-confirmar-cierre__texto">¿Estás seguro que quieres cerrar caja?</p>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showConfirmarCerrarCaja.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" (click)="confirmarCerrarCaja()">Sí, cerrar caja</ds-button>
+    </div>
+  </ds-modal>
+}
