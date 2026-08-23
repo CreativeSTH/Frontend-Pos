@@ -52,7 +52,7 @@ src/app/
 
 ## Estado (Fases 1–4.5 completas + extensiones)
 
-Implementado: Login, Dashboard, Punto de venta (POS), Productos (multi-categoría vía selector modal, proveedores vinculados), Categorías, Marcas/Líneas, **Proveedores** (`/proveedores`), Inventario (con vista de Kardex por producto/bodega), Bodegas, **Lista de pedidos** (`/lista-pedidos` — flujo Pendientes/Pedidos/Historial, ver abajo), **Domicilios** (`/domicilios`, ver abajo), Caja, Clientes, Cobros, **Métodos de pago** (`/metodos-pago` — catálogo editable por negocio, ver abajo), Reportes (ventas/márgenes/cierres de caja), Sucursales, Usuarios, Alertas (con panel dedicado y notificaciones en vivo, ver abajo), y **Roles y permisos** (`/roles`). El menú principal quedó reducido a Dashboard/Punto de venta/Caja/**Configuración** (`/configuracion`, hub de cards agrupadas — ver abajo) — todo lo demás se navega desde ahí.
+Implementado: Login, Dashboard, Punto de venta (POS), Productos (multi-categoría vía selector modal, proveedores vinculados), Categorías, Marcas/Líneas, **Proveedores** (`/proveedores`), Inventario (con vista de Kardex por producto/bodega), Bodegas, **Lista de pedidos** (`/lista-pedidos` — flujo Pendientes/Pedidos/Historial, ver abajo), **Domicilios** (`/domicilios`, ver abajo), Caja, Clientes, Cobros, **Métodos de pago** (`/metodos-pago` — catálogo editable por negocio, ver abajo), Reportes (ventas/márgenes/cierres de caja), Sucursales, Usuarios, Alertas (con panel dedicado y notificaciones en vivo, ver abajo), **Roles y permisos** (`/roles`), y **Asistente de configuración** (`/asistente`, ver abajo). El menú principal quedó reducido a Dashboard/Punto de venta/Caja/**Configuración** (`/configuracion`, hub de cards agrupadas — ver abajo) — todo lo demás se navega desde ahí.
 
 Pendiente (ver Roadmap en el doc de arquitectura): devoluciones/facturación electrónica/tienda online (Fase 5). `/negocios` (tier SISTEMA) ya tiene UI propia (crear/editar/desactivar negocios + "Entrar como").
 
@@ -90,9 +90,30 @@ El switch "Domicilio" vive en `features/pos/punto-venta/` (diálogo de cobro), n
 
 `AuthService.tienePermiso(modulo, accion)` reemplaza los viejos `isSuperAdmin`/`isAdminNegocio` — respaldado por un signal `permisos` poblado desde la respuesta de `/auth/login` (una foto para UI, la autorización real siempre la re-chequea el backend — cambiar los permisos de un rol no se refleja en el frontend hasta el próximo login/pin-switch, aunque el backend ya lo aplique de inmediato). El sidebar (`layout/sidebar/sidebar.ts`) filtra `NAV_ITEMS` por `tienePermiso(modulo, 'VER')`, y cada ruta protegida en `app.routes.ts` usa el factory `core/guards/permiso.guard.ts` (protección de UX — la protección real es el `PermissionsGuard` del backend). Pantalla de administración en `features/roles/roles-list/` (matriz de checkboxes Ver/Crear/Editar/Eliminar por módulo, patrón calcado de `features/marcas`) — su `ETIQUETAS_MODULO: Record<ModuloPermiso, string>` tiene que tener una entrada por cada valor de `ModuloPermiso` o el build falla en tiempo de compilación (TS lo fuerza) — no lo olvides al agregar un módulo nuevo.
 
+## Asistente de configuración (`/asistente`)
+
+`features/asistente/` (un solo componente, sin subrutas) guía Sucursal → Bodega → Productos y
+stock — 3 pasos reales; "Productos y stock" cubre también "inventario", que en este modelo de
+datos nunca es un paso separado (siempre es el resultado de asignarle stock a un producto en una
+bodega). Resumible: en vez de asumir que siempre arranca en el paso 1, consulta
+`sucursales`/`bodegas`/`productos` en cada entrada y salta al paso que corresponda. El paso de
+productos tiene dos variantes: si el negocio no tiene catálogo, embebe el mismo `ProductoForm` que
+usa `/productos` (ver arriba) directo, sin `<ds-modal>` alrededor (`permitirVarios` hace que se
+limpie solo tras cada guardado, así no hace falta un botón separado de "agregar otro"); si ya tiene
+productos, una lista rápida con `POST /inventario/ajustar` por fila para asignarles stock en la
+bodega nueva, más un botón para crear uno nuevo con el mismo formulario.
+
+Se dispara solo — nunca reemplaza las pantallas de Sucursales/Bodegas/Productos, que siguen
+funcionando exactamente igual: `landingGuard` y `sucursalGuard` (`core/guards/`) redirigen acá
+cuando el usuario tiene 0 sucursales y permiso `SUCURSALES:CREAR` (evita atrapar a alguien sin ese
+permiso); `sucursales-list.ts` ofrece continuar acá tras crear una sucursal nueva
+(`?sucursalId=<id>`, arranca en el paso 2); y hay una card en `/configuracion` para relanzarlo a
+mano. La ruta `/asistente` no lleva `sucursalGuard` a propósito — ese guard redirige *hacia* acá
+cuando `sucursales.length === 0`, así que tenerlo también en esta ruta generaría un loop.
+
 ## Configuración (`/configuracion`) y menú principal
 
-El sidebar quedó reducido a Dashboard/Punto de venta/Caja + un botón "Configuración" anclado abajo (sobre la card de usuario, junto a "Cambiar de cajero"). Todo lo demás (Productos, Categorías, Marcas, Proveedores, Inventario, Bodegas, Lista de pedidos, Clientes, Cobros, Domicilios, Ventas, Reportes, Alertas, Sucursales, Usuarios, Roles, Métodos de pago, Negocios) vive en `/configuracion` (`features/configuracion/configuracion-list/`) como cards de navegación agrupadas por tema — son links a las pantallas completas ya existentes, no hay edición inline. Fuente única de verdad: `core/models/configuracion-menu.model.ts` (`CONFIG_GROUPS`), importada tanto por el Sidebar (para saber cuándo ocultar el botón "Configuración" — ve `modulosAlternativos` en `NavItem`) como por la página — si agregás un módulo nuevo a un grupo existente, alcanza con tocar ese único archivo.
+El sidebar quedó reducido a Dashboard/Punto de venta/Caja + un botón "Configuración" anclado abajo (sobre la card de usuario, junto a "Cambiar de cajero"). Todo lo demás (Productos, Categorías, Marcas, Proveedores, Inventario, Bodegas, Lista de pedidos, Clientes, Cobros, Domicilios, Ventas, Reportes, Alertas, Sucursales, Asistente de configuración, Usuarios, Roles, Métodos de pago, Negocios) vive en `/configuracion` (`features/configuracion/configuracion-list/`) como cards de navegación agrupadas por tema — son links a las pantallas completas ya existentes, no hay edición inline. Fuente única de verdad: `core/models/configuracion-menu.model.ts` (`CONFIG_GROUPS`), importada tanto por el Sidebar (para saber cuándo ocultar el botón "Configuración" — ve `modulosAlternativos` en `NavItem`) como por la página — si agregás un módulo nuevo a un grupo existente, alcanza con tocar ese único archivo. Cada card se gatea por `VER` salvo que declare `accion` (ej. el asistente pide `CREAR` de `SUCURSALES` — mostrarlo a alguien que solo puede ver sucursales sería un callejón sin salida, ya que la ruta en sí exige ese permiso).
 
 ## Métodos de pago (`/metodos-pago`)
 
