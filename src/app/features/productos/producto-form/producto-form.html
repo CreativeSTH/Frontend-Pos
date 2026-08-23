@@ -1,0 +1,307 @@
+<form [formGroup]="form" class="producto-form" (ngSubmit)="guardar()">
+  <ds-image-upload
+    [existingUrl]="editingImagenUrl()"
+    (fileSelected)="selectedImage.set($event)"
+  />
+
+  <ds-form-field label="Nombre">
+    <ds-input formControlName="nombre" placeholder="Croquetas Perro Adulto 3kg" />
+  </ds-form-field>
+
+  <ds-form-field label="Código de barras">
+    <ds-input icon="barcode" formControlName="codigoBarras" placeholder="7701234567890" />
+  </ds-form-field>
+
+  <ds-form-field label="Código de producto (SKU)" hint="Código corto para teclear a mano si falla el lector de código de barras">
+    <ds-input icon="tag" formControlName="sku" placeholder="Ej. 1234" />
+  </ds-form-field>
+
+  <div class="producto-form__row">
+    <ds-form-field label="Precio de venta">
+      <ds-input type="number" icon="banknote" formControlName="precioVenta" />
+    </ds-form-field>
+    <ds-form-field label="Costo">
+      <ds-input type="number" icon="banknote" formControlName="costo" />
+    </ds-form-field>
+  </div>
+
+  <div class="producto-form__stock">
+    <div class="producto-form__stock-header">
+      <span>Categorías</span>
+      <button type="button" class="producto-form__stock-add" (click)="abrirSeleccionCategorias()">
+        <ds-icon name="plus" [size]="14" />
+        Agregar categoría
+      </button>
+    </div>
+
+    @if (categoriasSeleccionadasOrdenadas().length === 0) {
+      <p class="producto-form__stock-empty">Sin categorías asignadas.</p>
+    } @else {
+      <div class="producto-form__categorias-chips">
+        @for (categoria of categoriasSeleccionadasOrdenadas(); track categoria.id) {
+          <ds-badge tone="neutral">{{ categoria.categoriaPadreId ? '— ' : '' }}{{ categoria.nombre }}</ds-badge>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="producto-form__row">
+    <ds-form-field label="Marca">
+      <ds-select formControlName="marcaId">
+        <option value="">Sin marca</option>
+        @for (marca of marcasOrdenadas(); track marca.id) {
+          <option [value]="marca.id">{{ marca.marcaPadreId ? '— ' : '' }}{{ marca.nombre }}</option>
+        }
+      </ds-select>
+    </ds-form-field>
+    <ds-form-field label="Línea">
+      <ds-select formControlName="lineaId">
+        <option value="">Sin línea</option>
+        @for (linea of lineasDeMarca(); track linea.id) {
+          <option [value]="linea.id">{{ linea.nombre }}</option>
+        }
+      </ds-select>
+    </ds-form-field>
+  </div>
+
+  <div class="producto-form__row">
+    <ds-form-field label="IVA">
+      <ds-select formControlName="tipoImpuesto">
+        <option value="GRAVADO">Gravado (con IVA)</option>
+        <option value="EXCLUIDO">Excluido (no aplica IVA)</option>
+        <option value="EXENTO">Exento de IVA</option>
+      </ds-select>
+    </ds-form-field>
+    @if (esGravado()) {
+      <ds-form-field label="% IVA">
+        <ds-input type="number" formControlName="porcentajeImpuesto" />
+      </ds-form-field>
+    }
+  </div>
+
+  <div class="producto-form__stock-minimo">
+    <ds-switch
+      label="Definir stock mínimo personalizado"
+      [ngModel]="stockMinimoPersonalizado()"
+      [ngModelOptions]="{ standalone: true }"
+      (ngModelChange)="stockMinimoPersonalizado.set($event)"
+    />
+    @if (stockMinimoPersonalizado()) {
+      <ds-form-field label="Alertar cuando el stock llegue a">
+        <ds-input
+          type="number"
+          icon="alert-triangle"
+          [ngModel]="stockMinimoValor()"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="stockMinimoValor.set($event)"
+        />
+      </ds-form-field>
+    } @else {
+      <p class="producto-form__stock-empty">Se usará el valor por defecto (2 unidades).</p>
+    }
+  </div>
+
+  @if (!editingId()) {
+    <div class="producto-form__stock">
+      <div class="producto-form__stock-header">
+        <span>Stock inicial por bodega</span>
+        <button type="button" class="producto-form__stock-add" (click)="agregarFilaStock()">
+          <ds-icon name="plus" [size]="14" />
+          Agregar bodega
+        </button>
+      </div>
+
+      @if (stockInicial().length === 0) {
+        <p class="producto-form__stock-empty">Agregá al menos una bodega — podés dejarla en 0 si todavía no hay stock, pero tiene que estar asignada para que el producto se vea en el punto de venta de esa bodega.</p>
+      } @else {
+        @for (fila of stockInicial(); track $index) {
+          <div class="producto-form__stock-row">
+            <ds-select
+              [ngModel]="fila.bodegaId"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="actualizarFilaStock($index, { bodegaId: $event })"
+            >
+              @for (bodega of bodegas(); track bodega.id) {
+                <option [value]="bodega.id">{{ bodega.nombre }}</option>
+              }
+            </ds-select>
+            <ds-input
+              type="number"
+              icon="box"
+              [ngModel]="fila.cantidad"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="actualizarFilaStock($index, { cantidad: $event })"
+            />
+            <button type="button" class="producto-form__stock-remove" (click)="quitarFilaStock($index)">
+              <ds-icon name="x" [size]="16" />
+            </button>
+          </div>
+        }
+      }
+    </div>
+  } @else {
+    <div class="producto-form__stock">
+      <div class="producto-form__stock-header">
+        <span>Stock por bodega</span>
+      </div>
+      @if (stockEdicion().length === 0) {
+        <p class="producto-form__stock-empty">No hay bodegas creadas todavía.</p>
+      } @else {
+        @for (fila of stockEdicion(); track fila.bodegaId; let i = $index) {
+          <div class="producto-form__stock-row">
+            <span class="producto-form__stock-bodega">{{ nombreBodega(fila.bodegaId) }}</span>
+            <ds-input
+              type="number"
+              icon="box"
+              [ngModel]="fila.cantidadNueva"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="actualizarStockEdicion(i, $event)"
+            />
+          </div>
+        }
+      }
+    </div>
+  }
+
+  @if (!editingId()) {
+    <div class="producto-form__stock">
+      <div class="producto-form__stock-header">
+        <span>Proveedores (opcional)</span>
+        <button type="button" class="producto-form__stock-add" (click)="agregarFilaProveedor()">
+          <ds-icon name="plus" [size]="14" />
+          Agregar proveedor
+        </button>
+      </div>
+
+      @if (proveedoresInicial().length === 0) {
+        <p class="producto-form__stock-empty">Podés vincular proveedores ahora, o hacerlo después desde la ficha del producto.</p>
+      } @else {
+        @for (fila of proveedoresInicial(); track $index) {
+          <div class="producto-form__proveedor-row">
+            <ds-select
+              [ngModel]="fila.proveedorId"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="actualizarFilaProveedor($index, { proveedorId: $event })"
+            >
+              <option value="" disabled>Elegí un proveedor</option>
+              @for (proveedor of proveedoresCatalogo(); track proveedor.id) {
+                <option [value]="proveedor.id">{{ proveedor.nombre }}</option>
+              }
+              <option [value]="NUEVO_PROVEEDOR">+ Nuevo proveedor</option>
+            </ds-select>
+            @if (fila.proveedorId === NUEVO_PROVEEDOR) {
+              <ds-input
+                placeholder="Nombre del proveedor"
+                [ngModel]="fila.nombreNuevo"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="actualizarFilaProveedor($index, { nombreNuevo: $event })"
+              />
+            }
+            <ds-input
+              type="number"
+              icon="banknote"
+              placeholder="Costo"
+              [ngModel]="fila.costo"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="actualizarFilaProveedor($index, { costo: $event })"
+            />
+            <button type="button" class="producto-form__stock-remove" (click)="quitarFilaProveedor($index)">
+              <ds-icon name="x" [size]="16" />
+            </button>
+          </div>
+        }
+      }
+    </div>
+  } @else {
+    <div class="producto-form__stock">
+      <div class="producto-form__stock-header">
+        <span>Proveedores de este producto</span>
+      </div>
+
+      @if (cargandoProveedoresProducto()) {
+        <p class="producto-form__stock-empty">Cargando...</p>
+      } @else {
+        @if (proveedoresProducto().length > 0) {
+          @for (vinculo of proveedoresProducto(); track vinculo.id) {
+            <div class="producto-form__proveedor-row producto-form__proveedor-row--vinculado">
+              <span class="producto-form__stock-bodega">{{ vinculo.proveedor?.nombre }}</span>
+              <span class="producto-form__proveedor-costo">{{ formatMoney(vinculo.costo) }}</span>
+              <button type="button" class="producto-form__stock-remove" (click)="quitarProveedorDeProducto(vinculo)">
+                <ds-icon name="x" [size]="16" />
+              </button>
+            </div>
+          }
+        } @else {
+          <p class="producto-form__stock-empty">Este producto todavía no tiene proveedores vinculados.</p>
+        }
+
+        <div class="producto-form__proveedor-row">
+          <ds-select
+            [ngModel]="nuevaFilaProveedor().proveedorId"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="actualizarNuevaFilaProveedor({ proveedorId: $event })"
+          >
+            <option value="" disabled>Elegí un proveedor</option>
+            @for (proveedor of proveedoresCatalogo(); track proveedor.id) {
+              <option [value]="proveedor.id">{{ proveedor.nombre }}</option>
+            }
+            <option [value]="NUEVO_PROVEEDOR">+ Nuevo proveedor</option>
+          </ds-select>
+          @if (nuevaFilaProveedor().proveedorId === NUEVO_PROVEEDOR) {
+            <ds-input
+              placeholder="Nombre del proveedor"
+              [ngModel]="nuevaFilaProveedor().nombreNuevo"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="actualizarNuevaFilaProveedor({ nombreNuevo: $event })"
+            />
+          }
+          <ds-input
+            type="number"
+            icon="banknote"
+            placeholder="Costo"
+            [ngModel]="nuevaFilaProveedor().costo"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="actualizarNuevaFilaProveedor({ costo: $event })"
+          />
+          <ds-button
+            type="button"
+            variant="glass"
+            size="sm"
+            [loading]="guardandoProveedorProducto()"
+            (click)="agregarProveedorAProducto()"
+          >
+            Agregar
+          </ds-button>
+        </div>
+      }
+    </div>
+  }
+
+  <button type="submit" class="producto-form__submit-oculto" tabindex="-1" aria-hidden="true"></button>
+</form>
+
+@if (showCategoriasModal()) {
+  <ds-modal title="Seleccionar categorías" size="lg" (close)="showCategoriasModal.set(false)">
+    @if (categoriasOrdenadas().length === 0) {
+      <p class="producto-form__stock-empty">No hay categorías creadas todavía.</p>
+    } @else {
+      <div class="producto-form__categorias producto-form__categorias--modal">
+        @for (categoria of categoriasOrdenadas(); track categoria.id) {
+          <label class="producto-form__categoria-item" [class.producto-form__categoria-item--sub]="categoria.categoriaPadreId">
+            <input
+              type="checkbox"
+              [checked]="categoriaIdsBorrador().includes(categoria.id)"
+              (change)="alternarCategoriaBorrador(categoria.id, $any($event.target).checked)"
+            />
+            {{ categoria.categoriaPadreId ? '— ' : '' }}{{ categoria.nombre }}
+          </label>
+        }
+      </div>
+    }
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showCategoriasModal.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" (click)="guardarSeleccionCategorias()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}
