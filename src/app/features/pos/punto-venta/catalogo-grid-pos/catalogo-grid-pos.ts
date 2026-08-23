@@ -22,7 +22,7 @@ export class CatalogoGridPos {
   protected readonly imageUrl = imageUrl;
   protected readonly formatMoney = formatMoney;
 
-  protected stockDe(productoId: string): number | null {
-    return this.stockPorProducto().get(productoId) ?? null;
+  protected stockDe(productoId: string): number {
+    return this.stockPorProducto().get(productoId) ?? 0;
   }
 }

@@ -227,10 +227,22 @@ export class PuntoVenta {
     return resultado;
   });
 
+  /**
+   * Cada sede está anclada a una bodega — el punto de venta solo debe ofrecer lo que esa bodega
+   * realmente tiene registrado, ni más ni menos. `stockPorProducto` (armado al cambiar de bodega)
+   * solo trae entradas para productos con fila de inventario ahí, así que `.has(id)` ya es
+   * exactamente "pertenece al surtido de esta bodega" — no hace falta pedirle nada nuevo al
+   * backend. Un producto con fila en 0 sí pasa este filtro (se ve marcado "Sin stock" en
+   * `ProductCard`); uno sin ninguna fila, no.
+   */
+  protected readonly productosDeBodega = computed(() =>
+    this.productos().filter((p) => this.stockPorProducto().has(p.id)),
+  );
+
   protected readonly productosFiltrados = computed(() => {
     const term = this.search().toLowerCase().trim();
     const categoriaId = this.filtroCategoriaId();
-    return this.productos().filter((p) => {
+    return this.productosDeBodega().filter((p) => {
       if (categoriaId && !p.categorias.some((c) => c.id === categoriaId)) return false;
       if (!term) return true;
       return (
@@ -355,8 +367,14 @@ export class PuntoVenta {
     this.sucursalContext.elegir(sucursalId);
   }
 
-  protected stockDe(productoId: string): number | null {
-    return this.stockPorProducto().get(productoId) ?? null;
+  /**
+   * Sin fila de inventario para esta bodega = 0 disponible, no "sin límite". Defensa en
+   * profundidad: `productosDeBodega`/`onScanSubmit` ya evitan que esto se alcance en el uso
+   * normal, pero una línea que quedó en el carrito de ANTES de cambiar de bodega sigue pasando
+   * por acá — sin este `?? 0` (antes `?? null`), el guard de `incrementar()` se saltaba entero.
+   */
+  protected stockDe(productoId: string): number {
+    return this.stockPorProducto().get(productoId) ?? 0;
   }
 
   protected abrirTurnoDesdePos(): void {
@@ -383,7 +401,7 @@ export class PuntoVenta {
   protected agregarAlCarrito(producto: Producto): void {
     const stock = this.stockDe(producto.id);
     const enCarrito = this.carrito().find((l) => l.productoId === producto.id)?.cantidad ?? 0;
-    if (stock !== null && enCarrito + 1 > stock) {
+    if (enCarrito + 1 > stock) {
       this.toast.error(stock <= 0 ? `"${producto.nombre}" está agotado` : `Solo queda ${stock} disponible(s) de "${producto.nombre}"`);
       return;
     }
@@ -468,7 +486,7 @@ export class PuntoVenta {
   }
 
   protected onScanSubmit(codigo: string): void {
-    const producto = this.productos().find((p) => p.codigoBarras === codigo || p.sku === codigo);
+    const producto = this.productosDeBodega().find((p) => p.codigoBarras === codigo || p.sku === codigo);
     if (!producto) {
       this.toast.error(`Sin coincidencias para "${codigo}"`);
       this.buscador()?.focus();
@@ -481,8 +499,8 @@ export class PuntoVenta {
   protected incrementar(productoId: string): void {
     const stock = this.stockDe(productoId);
     const linea = this.carrito().find((l) => l.productoId === productoId);
-    if (stock !== null && linea && linea.cantidad + 1 > stock) {
-      this.toast.error(`Solo queda ${stock} disponible(s) de "${linea.nombre}"`);
+    if (linea && linea.cantidad + 1 > stock) {
+      this.toast.error(stock <= 0 ? `"${linea.nombre}" está agotado` : `Solo queda ${stock} disponible(s) de "${linea.nombre}"`);
       return;
     }
     this.carrito.update((lineas) =>
