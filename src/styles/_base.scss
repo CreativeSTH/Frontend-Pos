@@ -51,17 +51,6 @@ button {
   font-family: inherit;
 }
 
-/*
- * Las <option> de ds-select llegan por ng-content — pertenecen a la vista de
- * quien las declara, no a select.component, así que el encapsulation propio
- * del componente nunca las alcanza. Se estilan acá, globalmente, en su lugar.
- */
-.ds-select__field option {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  padding: var(--space-2) var(--space-3);
-}
-
 /* Fondo "aurora" fijo: manchas de luz difusas detrás de los paneles de vidrio. */
 .app-aurora {
   position: fixed;

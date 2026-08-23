@@ -1,15 +1,56 @@
-<div class="ds-select" [class.ds-select--invalid]="invalid()" [class.ds-select--disabled]="disabled()">
-  @if (icon()) {
-    <ds-icon class="ds-select__icon" [name]="icon()!" [size]="18" />
-  }
-  <select
-    class="ds-select__field"
-    [disabled]="disabled()"
-    [value]="value()"
-    (change)="handleChange($event)"
-    (blur)="handleBlur()"
-  >
+<div
+  class="ds-select"
+  [class.ds-select--invalid]="invalid()"
+  [class.ds-select--disabled]="disabled()"
+  [class.ds-select--open]="open()"
+>
+  <select #nativeSelect class="ds-select__native" tabindex="-1" aria-hidden="true">
     <ng-content />
   </select>
-  <ds-icon class="ds-select__chevron" name="chevron-down" [size]="16" />
+  <button
+    #trigger
+    type="button"
+    class="ds-select__trigger"
+    [disabled]="disabled()"
+    [attr.aria-expanded]="open()"
+    aria-haspopup="listbox"
+    (click)="toggle()"
+    (keydown)="onKeydown($event)"
+    (blur)="handleBlur()"
+  >
+    @if (icon()) {
+      <ds-icon class="ds-select__icon" [name]="icon()!" [size]="18" />
+    }
+    <span class="ds-select__value">{{ selectedLabel() }}</span>
+    <ds-icon class="ds-select__chevron" name="chevron-down" [size]="16" />
+  </button>
+</div>
+
+<div
+  #panel
+  class="ds-select__panel"
+  role="listbox"
+  [class.ds-select__panel--open]="open()"
+  [style.top.px]="panelTop()"
+  [style.left.px]="panelLeft()"
+  [style.width.px]="panelWidth()"
+>
+  @for (opt of options(); track opt.value; let i = $index) {
+    <button
+      type="button"
+      class="ds-select__option"
+      [class.ds-select__option--selected]="opt.value === value()"
+      [class.ds-select__option--highlighted]="i === highlighted()"
+      [disabled]="opt.disabled"
+      role="option"
+      [attr.aria-selected]="opt.value === value()"
+      (click)="selectOption(opt)"
+      (mouseenter)="highlighted.set(i)"
+    >
+      <span class="ds-select__option-label">{{ opt.label }}</span>
+      @if (opt.value === value()) {
+        <ds-icon class="ds-select__option-check" name="check" [size]="16" />
+      }
+    </button>
+  }
 </div>

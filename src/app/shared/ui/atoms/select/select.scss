@@ -1,3 +1,5 @@
+@use 'mixins' as mix;
+
 .ds-select {
   position: relative;
   display: flex;
@@ -5,7 +7,6 @@
   width: 100%;
   min-width: 0;
   height: 46px;
-  padding: 0 var(--space-4);
   border-radius: var(--radius-md);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -32,33 +33,123 @@
   }
 }
 
+.ds-select__native {
+  display: none;
+}
+
+.ds-select__trigger {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0 var(--space-4);
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  text-align: left;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
 .ds-select__icon {
   flex-shrink: 0;
   margin-right: var(--space-2);
   color: var(--text-tertiary);
 }
 
-.ds-select__field {
+.ds-select__value {
   flex: 1;
   min-width: 0;
-  width: 100%;
-  height: 100%;
-  padding-right: var(--space-5);
-  border: none;
-  outline: none;
-  background: transparent;
-  appearance: none;
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: var(--fs-base);
-
-  /* Estilo de <option> global en styles/_base.scss — ver comentario ahí. */
+  @include mix.text-truncate;
 }
 
 .ds-select__chevron {
-  position: absolute;
-  right: var(--space-4);
   flex-shrink: 0;
-  pointer-events: none;
+  margin-left: var(--space-2);
   color: var(--text-tertiary);
+  transition: transform var(--duration-base) var(--ease-standard);
+
+  .ds-select--open & {
+    transform: rotate(180deg);
+  }
+}
+
+.ds-select__panel {
+  position: fixed;
+  z-index: var(--z-select-panel);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  @include mix.glass-panel-elevated;
+  overflow-y: auto;
+  @include mix.scrollbar-thin;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard),
+    visibility var(--duration-fast);
+
+  &--open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+}
+
+.ds-select__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover:not(:disabled),
+  &--highlighted:not(:disabled) {
+    background: var(--glass-bg-hover);
+  }
+
+  &--selected {
+    color: var(--accent-primary);
+    background: rgba(var(--accent-primary-rgb), 0.12);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.ds-select__option-label {
+  min-width: 0;
+  @include mix.text-truncate;
+}
+
+.ds-select__option-check {
+  flex-shrink: 0;
+  color: var(--accent-primary);
 }
