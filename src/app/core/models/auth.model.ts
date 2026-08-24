@@ -1,5 +1,6 @@
 export type ModuloPermiso =
   | 'NEGOCIOS'
+  | 'NEGOCIO'
   | 'SUCURSALES'
   | 'USUARIOS'
   | 'ROLES'

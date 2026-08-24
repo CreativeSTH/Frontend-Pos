@@ -21,6 +21,7 @@ const ACCIONES: AccionPermiso[] = ['VER', 'CREAR', 'EDITAR', 'ELIMINAR'];
 
 const ETIQUETAS_MODULO: Record<ModuloPermiso, string> = {
   NEGOCIOS: 'Negocios',
+  NEGOCIO: 'Datos del negocio',
   SUCURSALES: 'Sucursales',
   USUARIOS: 'Usuarios',
   ROLES: 'Roles',

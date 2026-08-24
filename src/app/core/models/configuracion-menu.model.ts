@@ -49,6 +49,7 @@ export const CONFIG_GROUPS: ConfiguracionGroup[] = [
   {
     titulo: 'Negocio',
     items: [
+      { label: 'Datos del negocio', description: 'Nombre, NIT, dirección y contacto', icon: 'settings', route: '/mi-negocio', modulo: 'NEGOCIO' },
       { label: 'Sucursales', description: 'Sucursales y metas de venta', icon: 'store', route: '/sucursales', modulo: 'SUCURSALES' },
       { label: 'Asistente de configuración', description: 'Guía paso a paso para dejar una sucursal lista: bodega y productos', icon: 'layers', route: '/asistente', modulo: 'SUCURSALES', accion: 'CREAR' },
       { label: 'Usuarios', description: 'Usuarios y asignación de roles', icon: 'users', route: '/usuarios', modulo: 'USUARIOS' },

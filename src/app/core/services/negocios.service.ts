@@ -21,4 +21,13 @@ export class NegociosService {
   remove(id: string) {
     return this.api.delete<void>(`/negocios/${id}`);
   }
+
+  /** Datos del propio negocio del usuario autenticado — gateado por NEGOCIO (tier negocio), no por NEGOCIOS (tier sistema). */
+  miNegocio() {
+    return this.api.get<Negocio>('/negocios/mi-negocio');
+  }
+
+  actualizarMiNegocio(payload: UpdateNegocioPayload) {
+    return this.api.patch<Negocio>('/negocios/mi-negocio', payload);
+  }
 }

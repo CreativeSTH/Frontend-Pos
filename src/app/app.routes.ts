@@ -117,6 +117,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/ventas/ventas-list/ventas-list').then((m) => m.VentasList),
       },
       {
+        path: 'mi-negocio',
+        canActivate: [permisoGuard('NEGOCIO')],
+        loadComponent: () => import('./features/negocio-datos/negocio-datos').then((m) => m.NegocioDatos),
+      },
+      {
         path: 'sucursales',
         canActivate: [permisoGuard('SUCURSALES')],
         loadComponent: () =>

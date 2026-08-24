@@ -1,0 +1,45 @@
+<app-topbar title="Datos del negocio" subtitle="Nombre, NIT y datos de contacto de tu negocio" />
+
+@if (cargando()) {
+  <div class="negocio-datos-loading">
+    <ds-icon name="settings" [size]="28" />
+    <span>Cargando datos del negocio...</span>
+  </div>
+} @else {
+  <section class="ds-panel negocio-datos-panel">
+    <header class="ds-panel__header">
+      <div>
+        <h2>Información general</h2>
+        <p>Estos datos se usan, entre otras cosas, en los recibos y facturas que imprime tu negocio.</p>
+      </div>
+    </header>
+
+    <ds-form-field label="Nombre del negocio">
+      <ds-input [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" />
+    </ds-form-field>
+
+    <ds-form-field label="NIT (opcional)">
+      <ds-input [ngModel]="nit()" (ngModelChange)="nit.set($event)" />
+    </ds-form-field>
+
+    <ds-form-field label="Tipo de negocio (opcional)">
+      <ds-input [ngModel]="tipoNegocio()" (ngModelChange)="tipoNegocio.set($event)" placeholder="Ej. Mascotas, Restaurante, Ropa..." />
+    </ds-form-field>
+
+    <ds-form-field label="Correo de contacto (opcional)">
+      <ds-input type="email" [ngModel]="email()" (ngModelChange)="email.set($event)" />
+    </ds-form-field>
+
+    <ds-form-field label="Teléfono (opcional)">
+      <ds-input [ngModel]="telefono()" (ngModelChange)="telefono.set($event)" />
+    </ds-form-field>
+
+    <ds-form-field label="Dirección (opcional)">
+      <ds-input [ngModel]="direccion()" (ngModelChange)="direccion.set($event)" />
+    </ds-form-field>
+
+    <div class="negocio-datos-acciones">
+      <ds-button variant="primary" [loading]="guardando()" (click)="guardar()">Guardar cambios</ds-button>
+    </div>
+  </section>
+}
