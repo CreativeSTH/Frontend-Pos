@@ -34,6 +34,7 @@ import { InventarioService } from '../../../core/services/inventario.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { MetodosPagoService } from '../../../core/services/metodos-pago.service';
 import { ClientesService } from '../../../core/services/clientes.service';
+import { CuponesService } from '../../../core/services/cupones.service';
 import { PrintAgentService } from '../../../core/services/print-agent.service';
 import { AuthService } from '../../../core/services/auth.service';
 import {
@@ -51,6 +52,7 @@ import { Venta } from '../../../core/models/venta.model';
 import { MetodoPago } from '../../../core/models/metodo-pago.model';
 import { Cliente, VerificarCreditoResponse } from '../../../core/models/cliente.model';
 import { CreateDireccionClientePayload, DireccionCliente } from '../../../core/models/direccion-cliente.model';
+import { PrecioVigente } from '../../../core/models/promocion.model';
 import { PanelDomiciliosPos } from './panel-domicilios-pos/panel-domicilios-pos';
 import { TurnoCajaPos } from './turno-caja-pos/turno-caja-pos';
 import { VentasSuspendidasPos } from './ventas-suspendidas-pos/ventas-suspendidas-pos';
@@ -113,6 +115,7 @@ export class PuntoVenta {
   private readonly ventasService = inject(VentasService);
   private readonly metodosPagoService = inject(MetodosPagoService);
   private readonly clientesService = inject(ClientesService);
+  private readonly cuponesService = inject(CuponesService);
   protected readonly printAgent = inject(PrintAgentService);
   protected readonly auth = inject(AuthService);
   private readonly ventasSuspendidasService = inject(VentasSuspendidasService);
@@ -138,6 +141,8 @@ export class PuntoVenta {
   protected readonly bodegas = signal<Bodega[]>([]);
   protected readonly turno = signal<TurnoCaja | null>(null);
   protected readonly stockPorProducto = signal<Map<string, number>>(new Map());
+  /** Promociones automáticas vigentes por producto en la bodega activa — ver efecto de carga en el constructor. */
+  protected readonly preciosVigentes = signal<Map<string, PrecioVigente>>(new Map());
 
   /** Sucursal activa: la fija del usuario (cajero) o la elegida por un admin — ver `SucursalContextService`. */
   protected readonly sucursal = computed<Sucursal | null>(
@@ -163,6 +168,14 @@ export class PuntoVenta {
   protected readonly pagos = signal<LineaPago[]>([]);
   protected readonly descuentoActivo = signal(false);
   protected readonly descuentoVenta = signal<number>(0);
+  protected readonly pinAutorizacionDescuento = signal<string>('');
+  /** Si el cajero actual ya puede eliminar/cancelar ventas, no necesita aprobación — mismo permiso que usa `cancelar()` de step-up. */
+  protected readonly requierePinDescuento = computed(() => !this.auth.tienePermiso('VENTAS', 'ELIMINAR'));
+  protected readonly cuponActivo = signal(false);
+  protected readonly codigoCupon = signal<string>('');
+  protected readonly cuponAplicado = signal<{ codigo: string; descuento: number } | null>(null);
+  protected readonly validandoCupon = signal(false);
+  protected readonly descuentoCupon = computed(() => this.cuponAplicado()?.descuento ?? 0);
   protected readonly metodosPago = signal<MetodoPago[]>([]);
   /** Nombre del método marcado esEfectivo en el catálogo del negocio — puede no haber ninguno. */
   protected readonly nombreEfectivo = computed(() => this.metodosPago().find((m) => m.esEfectivo)?.nombre);
@@ -214,7 +227,8 @@ export class PuntoVenta {
   private readonly domicilioSolicitadoPorQuery = signal(false);
 
   protected readonly ventaCompletada = signal<Venta | null>(null);
-  private readonly cambioVentaCompletada = signal(0);
+  /** Solo lectura desde el template — se muestra en el modal "Venta completada" cuando hubo devuelta en efectivo. */
+  protected readonly cambioVentaCompletada = signal(0);
   protected readonly imprimiendo = signal(false);
 
   /** Categorías con cada sub-categoría justo debajo de su padre — mismo patrón que `productos-list`. */
@@ -258,7 +272,7 @@ export class PuntoVenta {
   protected readonly subtotal = computed(() => calcularSubtotal(this.carrito()));
   protected readonly impuesto = computed(() => calcularImpuesto(this.carrito()));
   protected readonly total = computed(() =>
-    Math.max(0, this.subtotal() + this.impuesto() - this.descuentoVenta()),
+    Math.max(0, this.subtotal() + this.impuesto() - this.descuentoVenta() - this.descuentoCupon()),
   );
 
   /**
@@ -286,6 +300,9 @@ export class PuntoVenta {
   protected readonly totalPagado = computed(() => this.montoOtrosMetodos() + this.efectivoAplicado());
   protected readonly faltante = computed(() => Math.max(0, this.total() - this.totalPagado()));
   protected readonly tieneEfectivo = computed(() => this.pagos().some((p) => p.metodoPago === this.nombreEfectivo()));
+
+  /** Lo que le queda por cubrir a la fila de efectivo antes de que el cajero escriba nada en ella — base para sugerir montos rápidos. */
+  protected readonly montoPendienteEfectivo = computed(() => Math.max(0, this.total() - this.montoOtrosMetodos()));
 
   constructor() {
     this.load();
@@ -335,6 +352,22 @@ export class PuntoVenta {
           for (const item of items) mapa.set(item.productoId, Number(item.cantidad));
           this.stockPorProducto.set(mapa);
         },
+      });
+    });
+
+    /** Promociones automáticas vigentes para la sucursal/bodega activa — se recargan solas al cambiar, igual que el stock. */
+    effect(() => {
+      const sucursalId = this.sucursal()?.id;
+      const bodegaId = this.bodega()?.id;
+      if (!sucursalId || !bodegaId) {
+        this.preciosVigentes.set(new Map());
+        return;
+      }
+      this.cuponesService.preciosVigentes(sucursalId, bodegaId).subscribe({
+        next: (precios) => {
+          this.preciosVigentes.set(new Map(precios.map((p) => [p.productoId, p])));
+        },
+        error: () => this.preciosVigentes.set(new Map()),
       });
     });
   }
@@ -421,7 +454,9 @@ export class PuntoVenta {
           nombre: producto.nombre,
           imagenUrl: producto.imagenUrl,
           cantidad: 1,
-          precioUnitario: producto.precioVenta,
+          // Si hay una promoción automática vigente, el carrito ya refleja el precio con descuento —
+          // el backend igual lo recalcula de forma autoritativa al confirmar la venta.
+          precioUnitario: this.preciosVigentes().get(producto.id)?.precio ?? producto.precioVenta,
           costoUnitario: producto.costo,
           porcentajeImpuesto: producto.porcentajeImpuesto,
         },
@@ -527,6 +562,7 @@ export class PuntoVenta {
     this.carrito.set([]);
     this.descuentoVenta.set(0);
     this.descuentoActivo.set(false);
+    this.alternarCupon(false);
   }
 
   protected onVentaRetomada(evento: { carrito: LineaCarritoSuspendida[]; descuentoVenta: number }): void {
@@ -541,6 +577,8 @@ export class PuntoVenta {
     this.tipoComprobante.set(this.sucursal()?.tipoComprobanteDefecto ?? 'RECIBO');
     this.descuentoActivo.set(false);
     this.descuentoVenta.set(0);
+    this.pinAutorizacionDescuento.set('');
+    this.alternarCupon(false);
     this.pagos.set([{ metodoPago: this.nombreEfectivo() ?? this.metodosPago()[0]?.nombre ?? '', monto: this.total() }]);
     this.clienteId.set('');
     this.numeroCuotas.set(1);
@@ -783,7 +821,58 @@ export class PuntoVenta {
     this.descuentoActivo.set(activo);
     if (!activo) {
       this.actualizarDescuentoVenta(0);
+      this.pinAutorizacionDescuento.set('');
     }
+  }
+
+  protected alternarCupon(activo: boolean): void {
+    this.cuponActivo.set(activo);
+    if (!activo) {
+      this.quitarCupon();
+    }
+  }
+
+  protected quitarCupon(): void {
+    this.codigoCupon.set('');
+    this.cuponAplicado.set(null);
+  }
+
+  /** Valida el código contra el carrito actual — el descuento real siempre se recalcula (y se redime) de forma autoritativa en el servidor al confirmar la venta. */
+  protected redimirCupon(): void {
+    const codigo = this.codigoCupon().trim();
+    const sucursal = this.sucursal();
+    const bodega = this.bodega();
+    if (!codigo || !sucursal || !bodega) return;
+
+    this.validandoCupon.set(true);
+    this.cuponesService
+      .validar({
+        codigo,
+        sucursalId: sucursal.id,
+        bodegaId: bodega.id,
+        items: this.carrito().map((l) => ({
+          productoId: l.productoId,
+          cantidad: l.cantidad,
+          precioUnitario: l.precioUnitario,
+        })),
+      })
+      .subscribe({
+        next: (resultado) => {
+          this.validandoCupon.set(false);
+          if (!resultado.valido) {
+            this.cuponAplicado.set(null);
+            this.toast.error(resultado.motivo ?? 'El cupón ingresado no es válido');
+            return;
+          }
+          this.cuponAplicado.set({ codigo, descuento: resultado.descuento ?? 0 });
+          this.toast.success('Cupón aplicado');
+        },
+        error: () => {
+          this.validandoCupon.set(false);
+          this.cuponAplicado.set(null);
+          this.toast.error('El cupón ingresado no es válido');
+        },
+      });
   }
 
   protected agregarPago(): void {
@@ -801,6 +890,22 @@ export class PuntoVenta {
 
   protected actualizarMontoPago(index: number, monto: number): void {
     this.pagos.update((lineas) => lineas.map((l, i) => (i === index ? { ...l, monto } : l)));
+  }
+
+  /** Denominaciones de billete en COP, para sugerir montos "redondos" al cajero en vez de que tenga que teclear todo a mano. */
+  private static readonly DENOMINACIONES = [2000, 5000, 10000, 20000, 50000, 100000];
+
+  /** Monto exacto pendiente + hasta 2 redondeos hacia arriba a la denominación de billete más cercana — vacío si no falta nada por cubrir en efectivo. */
+  protected montosRapidos(): number[] {
+    const pendiente = this.montoPendienteEfectivo();
+    if (pendiente <= 0) return [];
+    const sugeridos = new Set<number>([pendiente]);
+    for (const denominacion of PuntoVenta.DENOMINACIONES) {
+      if (denominacion < pendiente) continue;
+      sugeridos.add(Math.ceil(pendiente / denominacion) * denominacion);
+      if (sugeridos.size >= 3) break;
+    }
+    return Array.from(sugeridos).sort((a, b) => a - b);
   }
 
   protected quitarPago(index: number): void {
@@ -827,6 +932,18 @@ export class PuntoVenta {
     }
 
     const esCredito = this.tipoVenta() === 'CREDITO';
+
+    if (this.cuponActivo() && !this.cuponAplicado()) {
+      this.toast.error('Redimí el cupón antes de confirmar la venta, o desactivá el switch');
+      return;
+    }
+
+    if (this.descuentoActivo() && this.descuentoVenta() > 0 && this.requierePinDescuento()) {
+      if (!/^\d{4,6}$/.test(this.pinAutorizacionDescuento())) {
+        this.toast.error('Ingresá el PIN de un administrador para aplicar el descuento (4 a 6 dígitos)');
+        return;
+      }
+    }
 
     if (!esCredito) {
       if (this.faltante() > 1) {
@@ -882,6 +999,9 @@ export class PuntoVenta {
         tipoComprobante: this.tipoComprobante(),
         items: this.carrito().map((l) => ({ productoId: l.productoId, cantidad: l.cantidad })),
         descuentoVenta: this.descuentoVenta() || undefined,
+        pinAutorizacionDescuento:
+          this.descuentoActivo() && this.descuentoVenta() > 0 ? this.pinAutorizacionDescuento() || undefined : undefined,
+        cuponCodigo: this.cuponAplicado()?.codigo,
         ...(esCredito
           ? {
               tipoVenta: 'CREDITO' as const,

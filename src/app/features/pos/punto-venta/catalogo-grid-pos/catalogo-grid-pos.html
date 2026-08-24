@@ -6,7 +6,9 @@
       <ds-product-card
         [imageSrc]="imageUrl(producto.imagenUrl)"
         [name]="producto.nombre"
-        [priceLabel]="formatMoney(producto.precioVenta)"
+        [priceLabel]="formatMoney(precioVigenteDe(producto.id)?.precio ?? producto.precioVenta)"
+        [originalPriceLabel]="precioVigenteDe(producto.id) ? formatMoney(precioVigenteDe(producto.id)!.precioOriginal) : null"
+        [isPromo]="!!precioVigenteDe(producto.id)"
         [stock]="stockDe(producto.id)"
         (click)="seleccionar.emit(producto)"
       />

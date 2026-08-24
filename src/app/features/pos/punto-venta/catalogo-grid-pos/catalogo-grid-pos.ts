@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { ProductCard } from '../../../../shared/ui/molecules/product-card/product-card';
 import { EmptyState } from '../../../../shared/ui/molecules/empty-state/empty-state';
 import { Producto } from '../../../../core/models/producto.model';
+import { PrecioVigente } from '../../../../core/models/promocion.model';
 import { formatMoney, imageUrl } from '../pos-shared.util';
 
 /** Grilla de productos del catálogo — puramente presentacional, ya recibe la lista filtrada. */
@@ -16,6 +17,8 @@ import { formatMoney, imageUrl } from '../pos-shared.util';
 export class CatalogoGridPos {
   readonly productos = input.required<Producto[]>();
   readonly stockPorProducto = input.required<Map<string, number>>();
+  /** Promociones automáticas vigentes por producto, para la etiqueta "Promoción" + antes/ahora. */
+  readonly preciosVigentes = input<Map<string, PrecioVigente>>(new Map());
 
   readonly seleccionar = output<Producto>();
 
@@ -24,5 +27,9 @@ export class CatalogoGridPos {
 
   protected stockDe(productoId: string): number {
     return this.stockPorProducto().get(productoId) ?? 0;
+  }
+
+  protected precioVigenteDe(productoId: string): PrecioVigente | undefined {
+    return this.preciosVigentes().get(productoId);
   }
 }

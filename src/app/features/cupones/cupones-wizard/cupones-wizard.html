@@ -1,0 +1,203 @@
+<app-topbar [title]="editandoId() ? 'Editar cupón/promoción' : 'Nuevo cupón/promoción'" subtitle="Descuentos automáticos o cupones de código para el punto de venta">
+  <ds-button variant="ghost" icon="x" (click)="salir()">Cancelar</ds-button>
+</app-topbar>
+
+@if (cargando()) {
+  <div class="cupones-wizard__loading">
+    <ds-icon name="tag" [size]="28" />
+    <span>Cargando...</span>
+  </div>
+} @else {
+  <div class="cupones-wizard">
+    <ds-stepper [pasos]="pasos" [pasoActual]="paso()" />
+
+    <div class="cupones-wizard__body">
+      @if (paso() === 1) {
+        <div class="cupones-wizard__tipo-tabs">
+          <button
+            type="button"
+            class="cupones-wizard__tipo-tab"
+            [class.cupones-wizard__tipo-tab--active]="formPrincipal.controls.tipo.value === 'PROMOCION'"
+            (click)="formPrincipal.controls.tipo.setValue('PROMOCION')"
+          >
+            <ds-icon name="zap" [size]="16" />
+            Promoción
+            <small>Efecto inmediato en el precio — sin código</small>
+          </button>
+          <button
+            type="button"
+            class="cupones-wizard__tipo-tab"
+            [class.cupones-wizard__tipo-tab--active]="formPrincipal.controls.tipo.value === 'CUPON'"
+            (click)="formPrincipal.controls.tipo.setValue('CUPON')"
+          >
+            <ds-icon name="tag" [size]="16" />
+            Cupón
+            <small>Se redime con un código al cobrar</small>
+          </button>
+        </div>
+
+        <form [formGroup]="formPrincipal" class="cupones-wizard__form">
+          <ds-form-field label="Nombre">
+            <ds-input formControlName="nombre" placeholder="Ej. 10% en accesorios" />
+          </ds-form-field>
+          <ds-form-field label="Descripción (opcional)">
+            <ds-input formControlName="descripcion" placeholder="Notas internas sobre esta promoción" />
+          </ds-form-field>
+          @if (esCupon()) {
+            <ds-form-field label="Código del cupón" hint="El cajero lo ingresa tal cual en el punto de venta">
+              <ds-input formControlName="codigo" placeholder="Ej. BIENVENIDO10" />
+            </ds-form-field>
+          }
+        </form>
+      }
+
+      @if (paso() === 2) {
+        <form [formGroup]="formDescuento" class="cupones-wizard__form">
+          <div class="cupones-wizard__row">
+            <ds-form-field label="Tipo de descuento">
+              <ds-select formControlName="tipoDescuento">
+                <option value="PORCENTAJE">Porcentaje</option>
+                <option value="MONTO_FIJO">Monto fijo</option>
+              </ds-select>
+            </ds-form-field>
+            <ds-form-field [label]="formDescuento.controls.tipoDescuento.value === 'PORCENTAJE' ? 'Porcentaje (%)' : 'Monto fijo'">
+              <ds-input type="number" icon="banknote" formControlName="valor" />
+            </ds-form-field>
+          </div>
+          @if (esCupon()) {
+            <ds-form-field label="Compra mínima (opcional)" hint="El cupón solo es válido si la compra alcanza este monto">
+              <ds-input type="number" icon="banknote" formControlName="montoMinimoCompra" />
+            </ds-form-field>
+          }
+        </form>
+      }
+
+      @if (paso() === 3) {
+        <p class="cupones-wizard__hint">Sin selección = aplica a todas. Elegí elementos específicos solo para limitar el alcance.</p>
+        @for (dim of dimensiones; track dim) {
+          <div class="cupones-wizard__stock">
+            <div class="cupones-wizard__stock-header">
+              <span>{{ etiquetasDimension[dim] }}</span>
+              <button type="button" class="cupones-wizard__stock-add" (click)="abrirAlcance(dim)">
+                <ds-icon name="plus" [size]="14" />
+                Elegir {{ etiquetasDimension[dim].toLowerCase() }}
+              </button>
+            </div>
+            @if (chipsDe(dim).length === 0) {
+              <p class="cupones-wizard__stock-empty">Todas ({{ etiquetasDimension[dim].toLowerCase() }})</p>
+            } @else {
+              <div class="cupones-wizard__chips">
+                @for (opcion of chipsDe(dim); track opcion.id) {
+                  <ds-badge tone="neutral">{{ opcion.nombre }}</ds-badge>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+
+      @if (paso() === 4) {
+        <form [formGroup]="formLimites" class="cupones-wizard__form">
+          <p class="cupones-wizard__hint">Dejá los campos vacíos para no limitar por tiempo o por cantidad de usos.</p>
+          <div class="cupones-wizard__row">
+            <ds-form-field label="Fecha de inicio (opcional)">
+              <input type="date" class="cupones-wizard__native-input" formControlName="fechaInicio" />
+            </ds-form-field>
+            <ds-form-field label="Hora de inicio">
+              <input type="time" class="cupones-wizard__native-input" formControlName="horaInicio" />
+            </ds-form-field>
+          </div>
+          <div class="cupones-wizard__row">
+            <ds-form-field label="Fecha de fin (opcional)">
+              <input type="date" class="cupones-wizard__native-input" formControlName="fechaFin" />
+            </ds-form-field>
+            <ds-form-field label="Hora de fin">
+              <input type="time" class="cupones-wizard__native-input" formControlName="horaFin" />
+            </ds-form-field>
+          </div>
+          <ds-form-field label="Uso máximo (opcional)" hint="Número máximo de veces que se puede usar en total">
+            <ds-input type="number" formControlName="usoMaximo" />
+          </ds-form-field>
+        </form>
+      }
+
+      @if (paso() === 5) {
+        <div class="cupones-wizard__resumen">
+          <div class="cupones-wizard__resumen-row">
+            <span>Tipo</span>
+            <strong>{{ esCupon() ? 'Cupón' : 'Promoción' }}</strong>
+          </div>
+          <div class="cupones-wizard__resumen-row">
+            <span>Nombre</span>
+            <strong>{{ formPrincipal.controls.nombre.value }}</strong>
+          </div>
+          @if (esCupon()) {
+            <div class="cupones-wizard__resumen-row">
+              <span>Código</span>
+              <strong>{{ formPrincipal.controls.codigo.value }}</strong>
+            </div>
+          }
+          <div class="cupones-wizard__resumen-row">
+            <span>Descuento</span>
+            <strong>{{ resumenDescuento() }}</strong>
+          </div>
+          <div class="cupones-wizard__resumen-row">
+            <span>Vigencia</span>
+            <strong>{{ resumenVigencia() }}</strong>
+          </div>
+          <div class="cupones-wizard__resumen-row">
+            <span>Uso</span>
+            <strong>{{ resumenUso() }}</strong>
+          </div>
+          @for (dim of dimensiones; track dim) {
+            <div class="cupones-wizard__resumen-row">
+              <span>{{ etiquetasDimension[dim] }}</span>
+              <strong>{{ chipsDe(dim).length === 0 ? 'Todas' : chipsDe(dim).length + ' seleccionadas' }}</strong>
+            </div>
+          }
+          <div class="cupones-wizard__activo-switch">
+            <ds-switch label="Activo" [ngModel]="activo()" (ngModelChange)="activo.set($event)" />
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="cupones-wizard__footer">
+      @if (paso() > 1) {
+        <ds-button variant="ghost" (click)="anterior()">Atrás</ds-button>
+      }
+      @if (paso() < 5) {
+        <ds-button variant="primary" (click)="siguiente()">Siguiente</ds-button>
+      } @else {
+        <ds-button variant="primary" [loading]="guardando()" (click)="guardar()">
+          {{ editandoId() ? 'Guardar cambios' : 'Crear' }}
+        </ds-button>
+      }
+    </div>
+  </div>
+}
+
+@if (alcanceEditando(); as dim) {
+  <ds-modal [title]="'Seleccionar ' + etiquetasDimension[dim].toLowerCase()" size="lg" (close)="alcanceEditando.set(null)">
+    @if (opcionesDimension(dim).length === 0) {
+      <p class="cupones-wizard__stock-empty">No hay {{ etiquetasDimension[dim].toLowerCase() }} creadas todavía.</p>
+    } @else {
+      <div class="cupones-wizard__checklist">
+        @for (opcion of opcionesDimension(dim); track opcion.id) {
+          <label class="cupones-wizard__check-item">
+            <input
+              type="checkbox"
+              [checked]="borrador().has(opcion.id)"
+              (change)="alternarBorrador(opcion.id, $any($event.target).checked)"
+            />
+            {{ opcion.nombre }}
+          </label>
+        }
+      </div>
+    }
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="alcanceEditando.set(null)">Cancelar</ds-button>
+      <ds-button variant="primary" (click)="guardarAlcance()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}

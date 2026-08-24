@@ -58,6 +58,7 @@
       <app-catalogo-grid-pos
         [productos]="productosFiltrados()"
         [stockPorProducto]="stockPorProducto()"
+        [preciosVigentes]="preciosVigentes()"
         (seleccionar)="agregarAlCarrito($event)"
       />
     </section>
@@ -138,15 +139,23 @@
 
 @if (showCobro()) {
   <ds-modal title="Cobrar venta" size="md" (close)="showCobro.set(false)">
-    @if (descuentoVenta() > 0) {
+    @if (descuentoVenta() > 0 || descuentoCupon() > 0) {
       <div class="cobro-subtotal-row">
         <span>Subtotal</span>
         <span>{{ formatMoney(subtotal() + impuesto()) }}</span>
       </div>
-      <div class="cobro-subtotal-row cobro-subtotal-row--descuento">
-        <span>Descuento</span>
-        <span>-{{ formatMoney(descuentoVenta()) }}</span>
-      </div>
+      @if (descuentoVenta() > 0) {
+        <div class="cobro-subtotal-row cobro-subtotal-row--descuento">
+          <span>Descuento</span>
+          <span>-{{ formatMoney(descuentoVenta()) }}</span>
+        </div>
+      }
+      @if (descuentoCupon() > 0) {
+        <div class="cobro-subtotal-row cobro-subtotal-row--descuento">
+          <span>Cupón {{ cuponAplicado()?.codigo }}</span>
+          <span>-{{ formatMoney(descuentoCupon()) }}</span>
+        </div>
+      }
     }
     <div class="cobro-total">{{ formatMoney(total()) }}</div>
 
@@ -204,32 +213,106 @@
           (ngModelChange)="actualizarDescuentoVenta($event)"
         />
       </ds-form-field>
+      @if (requierePinDescuento()) {
+        <ds-form-field label="PIN de un administrador" hint="Tu usuario no tiene permisos para aplicar descuentos directamente">
+          <ds-input
+            type="password"
+            icon="lock"
+            placeholder="••••"
+            [ngModel]="pinAutorizacionDescuento()"
+            (ngModelChange)="pinAutorizacionDescuento.set($event)"
+          />
+        </ds-form-field>
+      }
+    }
+
+    <div class="cobro-descuento-switch">
+      <ds-switch label="Cupón de descuento" [ngModel]="cuponActivo()" (ngModelChange)="alternarCupon($event)" />
+    </div>
+    @if (cuponActivo()) {
+      <div class="cobro-cupon-row">
+        @if (!cuponAplicado()) {
+          <ds-input
+            icon="tag"
+            placeholder="Código del cupón"
+            [ngModel]="codigoCupon()"
+            (ngModelChange)="codigoCupon.set($event)"
+          />
+          <ds-button variant="glass" [loading]="validandoCupon()" (click)="redimirCupon()">Redimir</ds-button>
+        } @else {
+          <div class="cobro-cupon-aplicado">
+            <ds-icon name="tag" [size]="14" />
+            <span>{{ cuponAplicado()?.codigo }}</span>
+          </div>
+          <ds-button variant="ghost" icon="x" (click)="quitarCupon()">Quitar</ds-button>
+        }
+      </div>
     }
 
     @if (tipoVenta() === 'CONTADO') {
       <div class="cobro-pagos">
-        @for (pago of pagos(); track $index) {
-          <div class="cobro-pago-row">
-            <ds-select
-              [ngModel]="pago.metodoPago"
-              (ngModelChange)="actualizarMetodoPago($index, $event)"
-            >
-              @for (m of metodosPago(); track m.id) {
-                <option [value]="m.nombre">{{ m.nombre }}</option>
+        @for (pago of pagos(); track $index; let pagoIndex = $index) {
+          @if (pago.metodoPago === nombreEfectivo()) {
+            <div class="cobro-efectivo-panel">
+              <div class="cobro-efectivo-panel__top">
+                <ds-select
+                  [ngModel]="pago.metodoPago"
+                  (ngModelChange)="actualizarMetodoPago(pagoIndex, $event)"
+                >
+                  @for (m of metodosPago(); track m.id) {
+                    <option [value]="m.nombre">{{ m.nombre }}</option>
+                  }
+                </ds-select>
+                @if (pagos().length > 1) {
+                  <button type="button" class="cobro-pago-row__remove" (click)="quitarPago(pagoIndex)">
+                    <ds-icon name="x" [size]="16" />
+                  </button>
+                }
+              </div>
+              <label class="cobro-efectivo-panel__label">
+                <ds-icon name="banknote" [size]="16" />
+                Efectivo recibido del cliente
+              </label>
+              <span class="cobro-efectivo-panel__hint">Ingresá cuánto te entregó — se usa para calcular la devuelta</span>
+              <ds-input
+                type="number"
+                icon="banknote"
+                [ngModel]="pago.monto"
+                (ngModelChange)="actualizarMontoPago(pagoIndex, $event)"
+              />
+              @if (montosRapidos().length > 0) {
+                <div class="cobro-montos-rapidos">
+                  @for (monto of montosRapidos(); track monto) {
+                    <button type="button" class="cobro-monto-rapido" (click)="actualizarMontoPago(pagoIndex, monto)">
+                      {{ formatMoney(monto) }}
+                    </button>
+                  }
+                </div>
               }
-            </ds-select>
-            <ds-input
-              type="number"
-              icon="banknote"
-              [ngModel]="pago.monto"
-              (ngModelChange)="actualizarMontoPago($index, $event)"
-            />
-            @if (pagos().length > 1) {
-              <button type="button" class="cobro-pago-row__remove" (click)="quitarPago($index)">
-                <ds-icon name="x" [size]="16" />
-              </button>
-            }
-          </div>
+            </div>
+          } @else {
+            <div class="cobro-pago-row">
+              <ds-select
+                [ngModel]="pago.metodoPago"
+                (ngModelChange)="actualizarMetodoPago(pagoIndex, $event)"
+              >
+                @for (m of metodosPago(); track m.id) {
+                  <option [value]="m.nombre">{{ m.nombre }}</option>
+                }
+              </ds-select>
+              <ds-input
+                type="number"
+                icon="banknote"
+                [ngModel]="pago.monto"
+                (ngModelChange)="actualizarMontoPago(pagoIndex, $event)"
+              />
+              @if (pagos().length > 1) {
+                <button type="button" class="cobro-pago-row__remove" (click)="quitarPago(pagoIndex)">
+                  <ds-icon name="x" [size]="16" />
+                </button>
+              }
+            </div>
+          }
         }
       </div>
 
@@ -239,16 +322,14 @@
       </button>
 
       @if (faltante() > 0) {
-        <div class="cobro-aviso cobro-aviso--danger">
-          <span>Falta por pagar</span>
-          <strong>{{ formatMoney(faltante()) }}</strong>
+        <div class="cobro-resultado cobro-resultado--danger">
+          <span class="cobro-resultado__label">Falta por pagar</span>
+          <span class="cobro-resultado__valor">{{ formatMoney(faltante()) }}</span>
         </div>
-      }
-
-      @if (tieneEfectivo() && cambio() > 0) {
-        <div class="cobro-cambio">
-          <span>Cambio</span>
-          <strong>{{ formatMoney(cambio()) }}</strong>
+      } @else if (tieneEfectivo() && cambio() > 0) {
+        <div class="cobro-resultado cobro-resultado--success">
+          <span class="cobro-resultado__label">Cambio a devolver</span>
+          <span class="cobro-resultado__valor">{{ formatMoney(cambio()) }}</span>
         </div>
       }
 
@@ -475,15 +556,22 @@
     } @else {
       <div class="venta-ok">
         <ds-icon name="check" [size]="40" />
+        <span class="venta-ok__etiqueta">Valor de venta</span>
         <p class="venta-ok__total">{{ formatMoney(venta.total) }}</p>
+        @if (cambioVentaCompletada() > 0) {
+          <div class="venta-ok__devuelta">
+            <span class="venta-ok__etiqueta">Valor a devolver</span>
+            <p class="venta-ok__devuelta-valor">{{ formatMoney(cambioVentaCompletada()) }}</p>
+          </div>
+        }
         <p class="venta-ok__meta">Venta #{{ venta.id.slice(0, 8) }}</p>
         <p class="venta-ok__pregunta">¿Imprimir {{ venta.tipoComprobanteEmitido === 'FACTURA' ? 'factura' : 'recibo' }}?</p>
       </div>
     }
     @if (!imprimiendo()) {
-      <div modal-footer>
+      <div modal-footer class="venta-ok__footer">
         <ds-button variant="ghost" (click)="nuevaVenta()">No, gracias</ds-button>
-        <ds-button variant="primary" [fullWidth]="true" icon="printer" (click)="imprimirFactura(venta)">
+        <ds-button variant="primary" icon="printer" (click)="imprimirFactura(venta)">
           Sí, imprimir
         </ds-button>
       </div>

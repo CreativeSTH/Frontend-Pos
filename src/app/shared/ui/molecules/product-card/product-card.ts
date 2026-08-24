@@ -15,4 +15,7 @@ export class ProductCard {
   readonly priceLabel = input.required<string>();
   /** `undefined`/`null` = sin registro de inventario en la bodega activa (no se muestra badge). */
   readonly stock = input<number | null | undefined>(undefined);
+  /** Si viene seteado, hay una promoción vigente: `priceLabel` pasa a ser el precio "ahora" y este el "antes" tachado. */
+  readonly originalPriceLabel = input<string | null | undefined>(undefined);
+  readonly isPromo = input(false);
 }

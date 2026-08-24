@@ -1,0 +1,94 @@
+<app-topbar title="Cupones y descuentos" subtitle="Promociones automáticas y cupones de código para el punto de venta">
+  <ds-button variant="primary" icon="plus" (click)="nuevo()">Nuevo</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="cupones-loading">
+    <ds-icon name="tag" [size]="28" />
+    <span>Cargando cupones y promociones...</span>
+  </div>
+} @else if (promociones().length === 0) {
+  <ds-empty-state icon="tag" title="Aún no hay cupones ni promociones" description="Creá el primero para aplicar descuentos automáticos o cupones de código.">
+    <ds-button variant="glass" icon="plus" (click)="nuevo()">Nuevo</ds-button>
+  </ds-empty-state>
+} @else {
+  <div class="cupones-seccion">
+    <h3 class="cupones-seccion__titulo">Promociones automáticas</h3>
+    @if (promocionesAutomaticas().length === 0) {
+      <p class="cupones-vacio">No hay promociones automáticas todavía.</p>
+    } @else {
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Descuento</th>
+            <th>Vigencia</th>
+            <th>Usos</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (promocion of promocionesAutomaticas(); track promocion.id) {
+            <tr>
+              <td>{{ promocion.nombre }}</td>
+              <td>{{ promocion.tipoDescuento === 'PORCENTAJE' ? promocion.valor + '%' : '$' + promocion.valor }}</td>
+              <td>{{ vigencia(promocion) }}</td>
+              <td>{{ usos(promocion) }}</td>
+              <td><ds-badge [tone]="tonoEstado[promocion.estado]">{{ etiquetaEstado[promocion.estado] }}</ds-badge></td>
+              <td class="cupones-actions">
+                <button type="button" class="cupones-actions__btn" (click)="editar(promocion)">
+                  <ds-icon name="pencil" [size]="16" />
+                </button>
+                <button type="button" class="cupones-actions__btn cupones-actions__btn--danger" (click)="eliminar(promocion)">
+                  <ds-icon name="trash" [size]="16" />
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+    }
+  </div>
+
+  <div class="cupones-seccion">
+    <h3 class="cupones-seccion__titulo">Cupones de código</h3>
+    @if (cupones().length === 0) {
+      <p class="cupones-vacio">No hay cupones todavía.</p>
+    } @else {
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Código</th>
+            <th>Descuento</th>
+            <th>Vigencia</th>
+            <th>Usos</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (promocion of cupones(); track promocion.id) {
+            <tr>
+              <td>{{ promocion.nombre }}</td>
+              <td><ds-badge tone="neutral">{{ promocion.codigo }}</ds-badge></td>
+              <td>{{ promocion.tipoDescuento === 'PORCENTAJE' ? promocion.valor + '%' : '$' + promocion.valor }}</td>
+              <td>{{ vigencia(promocion) }}</td>
+              <td>{{ usos(promocion) }}</td>
+              <td><ds-badge [tone]="tonoEstado[promocion.estado]">{{ etiquetaEstado[promocion.estado] }}</ds-badge></td>
+              <td class="cupones-actions">
+                <button type="button" class="cupones-actions__btn" (click)="editar(promocion)">
+                  <ds-icon name="pencil" [size]="16" />
+                </button>
+                <button type="button" class="cupones-actions__btn cupones-actions__btn--danger" (click)="eliminar(promocion)">
+                  <ds-icon name="trash" [size]="16" />
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+    }
+  </div>
+}

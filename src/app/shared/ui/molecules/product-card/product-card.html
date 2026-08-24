@@ -7,6 +7,9 @@
         <ds-icon name="box" [size]="36" />
       </div>
     }
+    @if (isPromo()) {
+      <span class="product-card__promo-badge">Promoción</span>
+    }
     @if (stock() !== undefined && stock() !== null) {
       <span class="product-card__stock" [class.product-card__stock--empty]="stock()! <= 0">
         {{ stock()! <= 0 ? 'Sin stock' : stock() + ' disp.' }}
@@ -16,6 +19,13 @@
 
   <div class="product-card__footer">
     <span class="product-card__name">{{ name() }}</span>
-    <span class="product-card__price">{{ priceLabel() }}</span>
+    @if (originalPriceLabel()) {
+      <span class="product-card__price-promo">
+        <span class="product-card__price-before">Antes: {{ originalPriceLabel() }}</span>
+        <span class="product-card__price-now">Ahora: {{ priceLabel() }}</span>
+      </span>
+    } @else {
+      <span class="product-card__price">{{ priceLabel() }}</span>
+    }
   </div>
 </button>

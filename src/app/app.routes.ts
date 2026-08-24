@@ -199,6 +199,18 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/facturacion/facturacion-wizard/facturacion-wizard').then((m) => m.FacturacionWizard),
       },
+      {
+        path: 'configuracion/cupones',
+        canActivate: [permisoGuard('CUPONES')],
+        loadComponent: () =>
+          import('./features/cupones/cupones-list/cupones-list').then((m) => m.CuponesList),
+      },
+      {
+        path: 'configuracion/cupones/wizard',
+        canActivate: [permisoGuard('CUPONES', 'CREAR')],
+        loadComponent: () =>
+          import('./features/cupones/cupones-wizard/cupones-wizard').then((m) => m.CuponesWizard),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

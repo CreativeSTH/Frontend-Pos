@@ -21,6 +21,8 @@ export interface Venta {
   fechaCancelacion?: string;
   numeroComprobante?: string;
   tipoComprobanteEmitido?: 'RECIBO' | 'FACTURA';
+  cuponId?: string;
+  descuentoCupon: number;
   items: VentaItem[];
   pagos: VentaPago[];
   createdAt: string;
@@ -56,6 +58,8 @@ export interface CreateVentaPayload {
   fechaPrimerPago?: string;
   omitirValidacionCredito?: boolean;
   descuentoVenta?: number;
+  pinAutorizacionDescuento?: string;
+  cuponCodigo?: string;
   items: Array<{ productoId: string; cantidad: number; descuento?: number }>;
   pagos?: Array<{ metodoPago: string; monto: number; referencia?: string }>;
   domicilio?: DomicilioVentaPayload;
