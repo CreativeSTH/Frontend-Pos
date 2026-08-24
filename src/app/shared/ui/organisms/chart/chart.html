@@ -1,0 +1,13 @@
+<div class="ds-chart" [style.height]="alto() === '100%' ? '100%' : alto() + 'px'">
+  <div #host class="ds-chart__host" [class.ds-chart__host--hidden]="vacio() && !loading()"></div>
+  @if (loading()) {
+    <div class="ds-chart__overlay">
+      <ds-spinner [size]="32" />
+    </div>
+  }
+  @if (vacio() && !loading()) {
+    <div class="ds-chart__overlay">
+      <ds-empty-state icon="bar-chart" title="Sin datos" [description]="mensajeVacio()" />
+    </div>
+  }
+</div>

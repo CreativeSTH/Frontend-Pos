@@ -1,0 +1,13 @@
+<div class="widget-card">
+  <div class="widget-card__header">
+    <span class="widget-card__titulo">{{ nombre() }}</span>
+    @if (editable()) {
+      <button type="button" class="widget-card__quitar" (click)="quitar.emit()">
+        <ds-icon name="x" [size]="14" />
+      </button>
+    }
+  </div>
+  <div class="widget-card__body">
+    <ds-chart [option]="opcion()" [loading]="cargando()" [vacio]="vacio()" alto="100%" />
+  </div>
+</div>

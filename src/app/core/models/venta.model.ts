@@ -19,6 +19,8 @@ export interface Venta {
   canceladaPor?: string;
   motivoCancelacion?: string;
   fechaCancelacion?: string;
+  numeroComprobante?: string;
+  tipoComprobanteEmitido?: 'RECIBO' | 'FACTURA';
   items: VentaItem[];
   pagos: VentaPago[];
   createdAt: string;
@@ -49,6 +51,7 @@ export interface CreateVentaPayload {
   clienteId?: string;
   nombreCliente?: string;
   tipoVenta?: 'CONTADO' | 'CREDITO';
+  tipoComprobante?: 'RECIBO' | 'FACTURA';
   numeroCuotas?: number;
   fechaPrimerPago?: string;
   omitirValidacionCredito?: boolean;

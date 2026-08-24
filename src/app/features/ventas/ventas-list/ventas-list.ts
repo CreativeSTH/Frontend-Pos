@@ -67,7 +67,7 @@ const TONOS_ESTADO: Partial<Record<string, BadgeTone>> = {
 })
 export class VentasList {
   private readonly ventasService = inject(VentasService);
-  protected readonly printAgent = inject(PrintAgentService);
+  private readonly printAgent = inject(PrintAgentService);
   protected readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
 
@@ -183,5 +183,19 @@ export class VentasList {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(
       value,
     );
+  }
+
+  /** Reimpresión: no hay "cambio" que mostrar (nunca se persiste, solo existe en el momento de la venta original). */
+  protected reimprimir(venta: Venta): void {
+    this.ventasService.obtenerComprobante(venta.id).subscribe({
+      next: (contenido) => {
+        this.printAgent.imprimirTicket(contenido).subscribe((result) => {
+          if (!result.impreso) {
+            this.printAgent.imprimirReciboNavegador(contenido);
+          }
+        });
+      },
+      error: () => this.toast.error('No se pudo obtener el comprobante de esta venta'),
+    });
   }
 }

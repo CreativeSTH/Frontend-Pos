@@ -25,6 +25,7 @@ export const ICONS: Record<string, string> = {
   plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
   x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   'chevron-down': '<path d="m6 9 6 6 6-6"/>',
+  'chevron-up': '<path d="m18 15-6-6-6 6"/>',
   'chevron-right': '<path d="m9 18 6-6-6-6"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   'alert-triangle':
@@ -76,6 +77,12 @@ export const ICONS: Record<string, string> = {
     '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
   settings:
     '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  'trending-up':
+    '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  'pie-chart':
+    '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+  activity:
+    '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
 };
 
 export type IconName = keyof typeof ICONS;

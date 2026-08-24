@@ -169,6 +169,25 @@
       </button>
     </div>
 
+    <div class="cobro-tipo-tabs cobro-tipo-tabs--comprobante">
+      <button
+        type="button"
+        class="cobro-tipo-tab"
+        [class.cobro-tipo-tab--active]="tipoComprobante() === 'RECIBO'"
+        (click)="seleccionarTipoComprobante('RECIBO')"
+      >
+        <ds-icon name="receipt" [size]="14" /> Recibo
+      </button>
+      <button
+        type="button"
+        class="cobro-tipo-tab"
+        [class.cobro-tipo-tab--active]="tipoComprobante() === 'FACTURA'"
+        (click)="seleccionarTipoComprobante('FACTURA')"
+      >
+        <ds-icon name="file-text" [size]="14" /> Factura
+      </button>
+    </div>
+
     <div class="cobro-descuento-switch">
       <ds-switch
         label="Aplicar descuento a la venta"
@@ -451,14 +470,14 @@
     @if (imprimiendo()) {
       <div class="imprimiendo-overlay">
         <ds-icon name="printer" [size]="32" />
-        <span>Imprimiendo factura...</span>
+        <span>Imprimiendo {{ venta.tipoComprobanteEmitido === 'FACTURA' ? 'factura' : 'recibo' }}...</span>
       </div>
     } @else {
       <div class="venta-ok">
         <ds-icon name="check" [size]="40" />
         <p class="venta-ok__total">{{ formatMoney(venta.total) }}</p>
         <p class="venta-ok__meta">Venta #{{ venta.id.slice(0, 8) }}</p>
-        <p class="venta-ok__pregunta">¿Imprimir factura?</p>
+        <p class="venta-ok__pregunta">¿Imprimir {{ venta.tipoComprobanteEmitido === 'FACTURA' ? 'factura' : 'recibo' }}?</p>
       </div>
     }
     @if (!imprimiendo()) {

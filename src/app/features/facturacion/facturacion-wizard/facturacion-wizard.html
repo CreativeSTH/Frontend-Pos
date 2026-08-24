@@ -1,0 +1,197 @@
+<app-topbar
+  [title]="editandoId() ? 'Editar plantilla' : 'Nueva plantilla'"
+  subtitle="Recibo de caja o factura — personalizá qué se imprime al cobrar"
+/>
+
+@if (cargando()) {
+  <div class="facturacion-wizard-loading">
+    <ds-icon name="file-text" [size]="28" />
+    <span>Cargando...</span>
+  </div>
+} @else {
+  <ds-stepper [pasos]="pasosStepper()" [pasoActual]="paso()" />
+
+  <div class="facturacion-wizard-card">
+    @if (paso() === 1) {
+      <h3>Tipo de documento</h3>
+      <p class="facturacion-wizard-hint">Elegí si esta plantilla es para un recibo de caja o una factura de venta.</p>
+
+      <form [formGroup]="formPrincipal" class="facturacion-wizard-form">
+        <div class="facturacion-wizard-tipos">
+          <button
+            type="button"
+            class="facturacion-wizard-tipo"
+            [class.facturacion-wizard-tipo--activo]="formPrincipal.controls.tipo.value === 'RECIBO'"
+            (click)="formPrincipal.controls.tipo.setValue('RECIBO')"
+          >
+            <ds-icon name="receipt" [size]="20" />
+            Recibo de caja
+          </button>
+          <button
+            type="button"
+            class="facturacion-wizard-tipo"
+            [class.facturacion-wizard-tipo--activo]="formPrincipal.controls.tipo.value === 'FACTURA'"
+            (click)="formPrincipal.controls.tipo.setValue('FACTURA')"
+          >
+            <ds-icon name="file-text" [size]="20" />
+            Factura de venta
+          </button>
+        </div>
+
+        <ds-form-field label="Nombre de la plantilla">
+          <ds-input formControlName="nombre" placeholder="Ej. Recibo estándar" />
+        </ds-form-field>
+      </form>
+
+      <div class="facturacion-wizard-acciones">
+        <button type="button" class="facturacion-wizard-salir" (click)="salir()">Salir por ahora</button>
+        <ds-button variant="primary" (click)="siguiente()">Siguiente</ds-button>
+      </div>
+    }
+
+    @if (paso() === 2) {
+      <h3>Datos del negocio a mostrar</h3>
+      <p class="facturacion-wizard-hint">Estos datos aparecen en el encabezado del documento impreso.</p>
+
+      <ds-image-upload
+        label="Logo (opcional)"
+        [existingUrl]="logoUrlPreview()"
+        (fileSelected)="logoSeleccionado.set($event)"
+      />
+
+      <form [formGroup]="formNegocio" class="facturacion-wizard-form">
+        <ds-form-field label="A nombre de qué persona natural se expide (opcional)">
+          <ds-input formControlName="nombrePersonaNatural" placeholder="Ej. Juan Pérez" />
+        </ds-form-field>
+        <ds-form-field label="Dirección">
+          <ds-input formControlName="direccion" />
+        </ds-form-field>
+        <ds-form-field label="Teléfono">
+          <ds-input formControlName="telefono" />
+        </ds-form-field>
+      </form>
+
+      <div class="facturacion-wizard-acciones">
+        <ds-button variant="ghost" (click)="anterior()">Atrás</ds-button>
+        <ds-button variant="primary" (click)="siguiente()">Siguiente</ds-button>
+      </div>
+    }
+
+    @if (paso() === 3) {
+      <h3>Mensajes</h3>
+      <p class="facturacion-wizard-hint">Se muestran al final del documento impreso.</p>
+
+      <form [formGroup]="formMensajes" class="facturacion-wizard-form">
+        <ds-form-field label="Mensaje de cierre (opcional)">
+          <ds-input formControlName="mensajeCierre" placeholder="Ej. ¡Gracias por tu compra!" />
+        </ds-form-field>
+        <ds-form-field label="Términos y condiciones / garantía (opcional)">
+          <ds-input formControlName="terminos" placeholder="Ej. Garantía de 30 días con este recibo" />
+        </ds-form-field>
+      </form>
+
+      <div class="facturacion-wizard-acciones">
+        <ds-button variant="ghost" (click)="anterior()">Atrás</ds-button>
+        <ds-button variant="primary" (click)="siguiente()">
+          {{ esFactura() ? 'Siguiente' : 'Ver vista previa' }}
+        </ds-button>
+      </div>
+    }
+
+    @if (paso() === 4 && esFactura()) {
+      <h3>Campos DIAN</h3>
+
+      <div class="facturacion-wizard-disclaimer">
+        <ds-icon name="alert-triangle" [size]="18" />
+        <p>
+          Estos campos son informativos y quedan bajo tu responsabilidad. No configuran facturación electrónica ante
+          la DIAN — si tu negocio está obligado a facturar electrónicamente, necesitás una solución de facturación
+          electrónica certificada aparte. Esta plantilla solo personaliza el documento impreso/local.
+        </p>
+      </div>
+
+      <form [formGroup]="formDian" class="facturacion-wizard-form">
+        <ds-form-field label="Número de resolución (opcional)">
+          <ds-input formControlName="resolucionNumero" />
+        </ds-form-field>
+        <ds-form-field label="Prefijo (opcional)">
+          <ds-input formControlName="prefijo" placeholder="Ej. FE" />
+        </ds-form-field>
+        <ds-form-field label="Rango autorizado desde (opcional)">
+          <ds-input type="number" formControlName="rangoDesde" />
+        </ds-form-field>
+        <ds-form-field label="Rango autorizado hasta (opcional)">
+          <ds-input type="number" formControlName="rangoHasta" />
+        </ds-form-field>
+        <ds-form-field label="Fecha de vigencia (opcional)">
+          <ds-input type="text" formControlName="fechaVigencia" placeholder="YYYY-MM-DD" />
+        </ds-form-field>
+        <ds-form-field label="Régimen fiscal (opcional)">
+          <ds-input formControlName="regimenFiscal" />
+        </ds-form-field>
+      </form>
+
+      <div class="facturacion-wizard-campos-extra">
+        @for (campo of camposExtra.controls; track $index) {
+          <div class="facturacion-wizard-campo-extra" [formGroup]="campo">
+            <ds-form-field label="Etiqueta">
+              <ds-input formControlName="etiqueta" placeholder="Ej. Código CUFE" />
+            </ds-form-field>
+            <ds-form-field label="Valor">
+              <ds-input formControlName="valor" />
+            </ds-form-field>
+            <button type="button" class="facturacion-wizard-quitar-campo" (click)="quitarCampoExtra($index)">
+              <ds-icon name="trash" [size]="16" />
+            </button>
+          </div>
+        }
+      </div>
+      <button type="button" class="facturacion-wizard-link" (click)="agregarCampoExtra()">
+        <ds-icon name="plus" [size]="14" /> Agregar otro código o norma
+      </button>
+
+      <div class="facturacion-wizard-acciones">
+        <ds-button variant="ghost" (click)="anterior()">Atrás</ds-button>
+        <ds-button variant="primary" (click)="siguiente()">Ver vista previa</ds-button>
+      </div>
+    }
+
+    @if (paso() === 5) {
+      <h3>Revisar y guardar</h3>
+      <p class="facturacion-wizard-hint">Así se va a ver el documento impreso (con datos de muestra).</p>
+
+      <ds-recibo-preview
+        [tipo]="formPrincipal.controls.tipo.value"
+        [negocioNombre]="previewNombreNegocio"
+        [logoUrl]="logoUrlPreview()"
+        [configuracion]="previewConfiguracion()"
+      />
+
+      <div class="facturacion-wizard-switch-row">
+        <ds-switch [ngModel]="esPredeterminada()" (ngModelChange)="esPredeterminada.set($event)" [ngModelOptions]="{ standalone: true }" label="Predeterminada para todo el negocio" />
+      </div>
+
+      <h4 class="facturacion-wizard-subtitulo">Predeterminada en estas sucursales</h4>
+      <p class="facturacion-wizard-hint">Marcá las sucursales donde esta plantilla se va a usar por defecto al cobrar.</p>
+      <div class="facturacion-wizard-sucursales">
+        @for (sucursal of sucursales(); track sucursal.id) {
+          <label class="facturacion-wizard-sucursal">
+            <input
+              type="checkbox"
+              [checked]="sucursalesSeleccionadas().has(sucursal.id)"
+              (change)="toggleSucursal(sucursal.id)"
+            />
+            {{ sucursal.nombre }}
+          </label>
+        }
+      </div>
+
+      <div class="facturacion-wizard-acciones facturacion-wizard-acciones--final">
+        <ds-button variant="ghost" (click)="anterior()">Atrás</ds-button>
+        <ds-button variant="primary" [loading]="guardando()" (click)="guardar()">
+          {{ editandoId() ? 'Guardar cambios' : 'Crear plantilla' }}
+        </ds-button>
+      </div>
+    }
+  </div>
+}

@@ -6,26 +6,7 @@
     <span>Cargando...</span>
   </div>
 } @else {
-  <div class="asistente-pasos">
-    <div class="asistente-paso-indicador" [class.asistente-paso-indicador--activo]="paso() === 1" [class.asistente-paso-indicador--listo]="paso() > 1">
-      <span class="asistente-paso-indicador__numero">
-        @if (paso() > 1) { <ds-icon name="check" [size]="14" /> } @else { 1 }
-      </span>
-      Sucursal
-    </div>
-    <div class="asistente-paso-linea"></div>
-    <div class="asistente-paso-indicador" [class.asistente-paso-indicador--activo]="paso() === 2" [class.asistente-paso-indicador--listo]="paso() > 2">
-      <span class="asistente-paso-indicador__numero">
-        @if (paso() > 2) { <ds-icon name="check" [size]="14" /> } @else { 2 }
-      </span>
-      Bodega
-    </div>
-    <div class="asistente-paso-linea"></div>
-    <div class="asistente-paso-indicador" [class.asistente-paso-indicador--activo]="paso() === 3">
-      <span class="asistente-paso-indicador__numero">3</span>
-      Productos y stock
-    </div>
-  </div>
+  <ds-stepper [pasos]="pasosStepper" [pasoActual]="paso()" />
 
   <div class="asistente-card">
     @if (paso() === 1) {

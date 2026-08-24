@@ -1,0 +1,83 @@
+<div class="recibo-preview">
+  @if (logoUrl()) {
+    <img class="recibo-preview__logo" [src]="logoUrl()" alt="Logo" />
+  }
+
+  <div class="recibo-preview__titulo">{{ tipo() === 'FACTURA' ? 'FACTURA DE VENTA' : 'RECIBO DE CAJA' }}</div>
+  <div class="recibo-preview__negocio">{{ negocioNombre() }}</div>
+  @if (nit()) {
+    <div class="recibo-preview__linea">NIT: {{ nit() }}</div>
+  }
+  @if (configuracion().nombrePersonaNatural) {
+    <div class="recibo-preview__linea">{{ configuracion().nombrePersonaNatural }}</div>
+  }
+  @if (configuracion().direccion) {
+    <div class="recibo-preview__linea">{{ configuracion().direccion }}</div>
+  }
+  @if (configuracion().telefono) {
+    <div class="recibo-preview__linea">Tel: {{ configuracion().telefono }}</div>
+  }
+
+  <div class="recibo-preview__separador"></div>
+  <div class="recibo-preview__meta">
+    <span>No. {{ numero() }}</span>
+    <span>{{ fecha }}</span>
+  </div>
+  <div class="recibo-preview__separador"></div>
+
+  <table class="recibo-preview__tabla">
+    <thead>
+      <tr>
+        <td>Producto</td>
+        <td class="recibo-preview__num">Cant.</td>
+        <td class="recibo-preview__num">Subtotal</td>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of items; track item.nombre) {
+        <tr>
+          <td>{{ item.nombre }}</td>
+          <td class="recibo-preview__num">{{ item.cantidad }}</td>
+          <td class="recibo-preview__num">{{ formatMoney(item.subtotal) }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <div class="recibo-preview__separador"></div>
+  <div class="recibo-preview__total">
+    <span>Total</span>
+    <span>{{ formatMoney(subtotal()) }}</span>
+  </div>
+  <div class="recibo-preview__separador"></div>
+
+  @if (configuracion().mensajeCierre) {
+    <div class="recibo-preview__mensaje">{{ configuracion().mensajeCierre }}</div>
+  }
+  @if (configuracion().terminos) {
+    <div class="recibo-preview__terminos">{{ configuracion().terminos }}</div>
+  }
+
+  @if (tipo() === 'FACTURA' && configuracion().dian; as dian) {
+    <div class="recibo-preview__separador"></div>
+    <div class="recibo-preview__dian">
+      @if (dian.resolucionNumero) {
+        <div>Resolución DIAN No. {{ dian.resolucionNumero }}</div>
+      }
+      @if (dian.prefijo || dian.rangoDesde || dian.rangoHasta) {
+        <div>
+          Numeración autorizada: {{ dian.prefijo }}{{ dian.rangoDesde }} - {{ dian.prefijo }}{{ dian.rangoHasta }}
+        </div>
+      }
+      @if (dian.fechaVigencia) {
+        <div>Vigente hasta: {{ dian.fechaVigencia }}</div>
+      }
+      @if (dian.regimenFiscal) {
+        <div>Régimen: {{ dian.regimenFiscal }}</div>
+      }
+      @for (campo of dian.camposExtra; track campo.etiqueta) {
+        <div>{{ campo.etiqueta }}: {{ campo.valor }}</div>
+      }
+    </div>
+  }
+</div>

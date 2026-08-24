@@ -333,8 +333,16 @@
 }
 
 
+.cobro-tipo-tabs--comprobante {
+  margin-top: 0;
+}
+
 .cobro-tipo-tab {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
   padding: var(--space-2) var(--space-4);
   border: none;
   border-radius: var(--radius-md);

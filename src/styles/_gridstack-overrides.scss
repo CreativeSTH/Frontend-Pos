@@ -1,0 +1,22 @@
+/*
+  Overrides mínimos sobre el CSS de `gridstack` (importado como asset en
+  angular.json) para que el placeholder de arrastre y las manijas de resize
+  usen los tokens del sistema de diseño en vez de los colores por defecto.
+*/
+
+.grid-stack-item-content {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.grid-stack-placeholder > .placeholder-content {
+  background: rgba(var(--accent-primary-rgb), 0.14);
+  border: 1px dashed var(--accent-primary);
+  border-radius: var(--radius-md);
+}
+
+.ui-resizable-handle {
+  &::after {
+    border-color: var(--text-tertiary) !important;
+  }
+}

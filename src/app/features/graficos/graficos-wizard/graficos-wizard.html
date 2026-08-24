@@ -1,0 +1,179 @@
+<app-topbar
+  [title]="editandoId() ? 'Editar gráfico' : 'Nuevo gráfico'"
+  subtitle="Elegí el tipo, los datos a mostrar y el rango de fechas"
+/>
+
+@if (cargando()) {
+  <div class="graficos-wizard-loading">
+    <ds-icon name="activity" [size]="28" />
+    <span>Cargando...</span>
+  </div>
+} @else {
+  <ds-stepper [pasos]="pasosStepper" [pasoActual]="paso()" />
+
+  <div class="graficos-wizard-card">
+    @if (paso() === 1) {
+      <h3>Tipo de gráfico</h3>
+      <p class="graficos-wizard-hint">Elegí cómo se van a visualizar los datos.</p>
+
+      <form [formGroup]="formPrincipal" class="graficos-wizard-form">
+        <div class="graficos-wizard-tipos">
+          @for (tipo of tiposGrafico; track tipo.valor) {
+            <button
+              type="button"
+              class="graficos-wizard-tipo"
+              [class.graficos-wizard-tipo--activo]="formPrincipal.controls.tipo.value === tipo.valor"
+              (click)="formPrincipal.controls.tipo.setValue(tipo.valor)"
+            >
+              <ds-icon [name]="tipo.icono" [size]="20" />
+              {{ tipo.etiqueta }}
+            </button>
+          }
+        </div>
+
+        <ds-form-field label="Nombre del gráfico">
+          <ds-input formControlName="nombre" placeholder="Ventas de los últimos 30 días" />
+        </ds-form-field>
+      </form>
+
+      <div class="graficos-wizard-acciones">
+        <button type="button" class="graficos-wizard-salir" (click)="salir()">Salir por ahora</button>
+        <ds-button variant="primary" (click)="siguiente()">Siguiente</ds-button>
+      </div>
+    }
+
+    @if (paso() === 2) {
+      <h3>Datos a mostrar</h3>
+      <p class="graficos-wizard-hint">Agregá una o más series para comparar entre sí.</p>
+
+      <div class="graficos-wizard-series">
+        @for (serie of series.controls; track $index) {
+          <div class="graficos-wizard-serie" [formGroup]="serie">
+            <ds-form-field label="Dato">
+              <ds-select formControlName="fuenteDato">
+                @for (fuente of fuentes(); track fuente.valor) {
+                  <option [value]="fuente.valor">{{ fuente.etiqueta }}</option>
+                }
+              </ds-select>
+            </ds-form-field>
+
+            <ds-form-field label="Etiqueta de la serie">
+              <ds-input formControlName="etiqueta" placeholder="Ej. Ventas" />
+            </ds-form-field>
+
+            <ds-form-field label="Sucursal (opcional)">
+              <ds-select formControlName="sucursalId">
+                <option value="">Todas las sucursales</option>
+                @for (sucursal of sucursales(); track sucursal.id) {
+                  <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+                }
+              </ds-select>
+            </ds-form-field>
+
+            @if (series.length > 1) {
+              <button type="button" class="graficos-wizard-quitar-serie" (click)="quitarSerie($index)">
+                <ds-icon name="trash" [size]="16" />
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <button type="button" class="graficos-wizard-link" (click)="agregarSerie()">
+        <ds-icon name="plus" [size]="14" /> Agregar otra serie para comparar
+      </button>
+
+      <div class="graficos-wizard-acciones">
+        <ds-button variant="ghost" (click)="anterior()">Atrás</ds-button>
+        <ds-button variant="primary" (click)="siguiente()">Siguiente</ds-button>
+      </div>
+    }
+
+    @if (paso() === 3) {
+      <h3>Rango de fechas</h3>
+      <p class="graficos-wizard-hint">Elegí qué período de tiempo va a mostrar el gráfico.</p>
+
+      <form [formGroup]="formRango" class="graficos-wizard-form">
+        <ds-form-field label="Rango">
+          <ds-select formControlName="modo">
+            <option value="RELATIVO">Ventana móvil (ej. últimos 30 días, siempre actualizada)</option>
+            <option value="FIJO">Fechas fijas</option>
+          </ds-select>
+        </ds-form-field>
+
+        @if (formRango.controls.modo.value === 'RELATIVO') {
+          <ds-form-field label="Días hacia atrás desde hoy">
+            <ds-input type="number" formControlName="diasRelativos" />
+          </ds-form-field>
+        } @else {
+          <ds-form-field label="Desde">
+            <ds-input type="text" formControlName="desde" placeholder="YYYY-MM-DD" />
+          </ds-form-field>
+          <ds-form-field label="Hasta">
+            <ds-input type="text" formControlName="hasta" placeholder="YYYY-MM-DD" />
+          </ds-form-field>
+        }
+
+        <ds-form-field label="Agrupar por">
+          <ds-select formControlName="agrupacion">
+            <option value="DIA">Día</option>
+            <option value="SEMANA">Semana</option>
+            <option value="MES">Mes</option>
+          </ds-select>
+        </ds-form-field>
+
+        <div class="graficos-wizard-switch-row">
+          <ds-switch formControlName="mostrarLeyenda" label="Mostrar leyenda" />
+        </div>
+
+        @if (esBarra()) {
+          <div class="graficos-wizard-switch-row">
+            <ds-switch formControlName="apilado" label="Barras apiladas" />
+          </div>
+        }
+
+        <div class="graficos-wizard-switch-row">
+          <ds-switch formControlName="compararActivo" label="Comparar contra un período anterior" />
+        </div>
+
+        @if (formRango.controls.compararActivo.value) {
+          <ds-form-field label="Comparar contra">
+            <ds-select formControlName="compararTipo">
+              <option value="PERIODO_ANTERIOR">El período anterior inmediato</option>
+              <option value="MISMO_PERIODO_ANIO_ANTERIOR">El mismo período del año anterior</option>
+            </ds-select>
+          </ds-form-field>
+        }
+      </form>
+
+      <div class="graficos-wizard-acciones">
+        <ds-button variant="ghost" (click)="anterior()">Atrás</ds-button>
+        <ds-button variant="primary" (click)="siguiente()">Ver vista previa</ds-button>
+      </div>
+    }
+
+    @if (paso() === 4) {
+      <h3>Vista previa</h3>
+      <p class="graficos-wizard-hint">Así se va a ver el gráfico con los datos reales del negocio.</p>
+
+      <ds-chart
+        [option]="opcionPreview()"
+        [loading]="cargandoPreview()"
+        [vacio]="previewVacio()"
+        mensajeVacio="No hay datos en el rango elegido"
+        [alto]="320"
+      />
+
+      @if (previewError()) {
+        <p class="graficos-wizard-error">{{ previewError() }}</p>
+      }
+
+      <div class="graficos-wizard-acciones graficos-wizard-acciones--final">
+        <ds-button variant="ghost" (click)="anterior()">Atrás</ds-button>
+        <ds-button variant="primary" [loading]="guardando()" (click)="guardar()">
+          {{ editandoId() ? 'Guardar cambios' : 'Crear gráfico' }}
+        </ds-button>
+      </div>
+    }
+  </div>
+}

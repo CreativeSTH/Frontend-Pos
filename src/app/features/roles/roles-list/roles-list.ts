@@ -39,6 +39,8 @@ const ETIQUETAS_MODULO: Record<ModuloPermiso, string> = {
   ALERTAS: 'Alertas',
   REPORTES: 'Reportes',
   METODOS_PAGO: 'Métodos de pago',
+  GRAFICOS: 'Gráficos',
+  FACTURACION: 'Facturación',
 };
 
 const ETIQUETAS_ACCION: Record<AccionPermiso, string> = {

@@ -1,0 +1,88 @@
+<app-topbar title="Facturación" subtitle="Formatos de recibo y factura para imprimir al cobrar">
+  <ds-button variant="primary" icon="plus" (click)="nueva()">Nueva plantilla</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="facturacion-loading">
+    <ds-icon name="file-text" [size]="28" />
+    <span>Cargando plantillas...</span>
+  </div>
+} @else if (plantillas().length === 0) {
+  <ds-empty-state icon="file-text" title="Aún no hay plantillas" description="Creá tu primer recibo o factura para usarlo al cobrar.">
+    <ds-button variant="glass" icon="plus" (click)="nueva()">Nueva plantilla</ds-button>
+  </ds-empty-state>
+} @else {
+  <div class="facturacion-seccion">
+    <h3 class="facturacion-seccion__titulo">Recibos de caja</h3>
+    @if (recibos().length === 0) {
+      <p class="facturacion-vacio">No hay plantillas de recibo todavía.</p>
+    } @else {
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Predeterminada</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (plantilla of recibos(); track plantilla.id) {
+            <tr>
+              <td>{{ plantilla.nombre }}</td>
+              <td>
+                @if (plantilla.esPredeterminada) {
+                  <ds-badge tone="success">Sí</ds-badge>
+                }
+              </td>
+              <td class="facturacion-actions">
+                <button type="button" class="facturacion-actions__btn" (click)="editar(plantilla)">
+                  <ds-icon name="pencil" [size]="16" />
+                </button>
+                <button type="button" class="facturacion-actions__btn facturacion-actions__btn--danger" (click)="eliminar(plantilla)">
+                  <ds-icon name="trash" [size]="16" />
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+    }
+  </div>
+
+  <div class="facturacion-seccion">
+    <h3 class="facturacion-seccion__titulo">Facturas</h3>
+    @if (facturas().length === 0) {
+      <p class="facturacion-vacio">No hay plantillas de factura todavía.</p>
+    } @else {
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Predeterminada</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (plantilla of facturas(); track plantilla.id) {
+            <tr>
+              <td>{{ plantilla.nombre }}</td>
+              <td>
+                @if (plantilla.esPredeterminada) {
+                  <ds-badge tone="success">Sí</ds-badge>
+                }
+              </td>
+              <td class="facturacion-actions">
+                <button type="button" class="facturacion-actions__btn" (click)="editar(plantilla)">
+                  <ds-icon name="pencil" [size]="16" />
+                </button>
+                <button type="button" class="facturacion-actions__btn facturacion-actions__btn--danger" (click)="eliminar(plantilla)">
+                  <ds-icon name="trash" [size]="16" />
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+    }
+  </div>
+}

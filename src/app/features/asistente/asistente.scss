@@ -8,64 +8,6 @@
   padding: var(--space-10) 0;
 }
 
-.asistente-pasos {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-6);
-
-  @include mix.mobile-down {
-    display: none;
-  }
-}
-
-.asistente-paso-indicador {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--fs-sm);
-  color: var(--text-tertiary);
-  white-space: nowrap;
-
-  &--activo {
-    color: var(--text-primary);
-    font-weight: var(--fw-semibold);
-  }
-
-  &--listo {
-    color: var(--text-secondary);
-  }
-}
-
-.asistente-paso-indicador__numero {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-full);
-  background: var(--glass-bg);
-  color: inherit;
-  font-size: var(--fs-xs);
-
-  .asistente-paso-indicador--activo & {
-    background: var(--accent-primary);
-    color: var(--text-on-accent);
-  }
-
-  .asistente-paso-indicador--listo & {
-    background: rgba(var(--accent-success-rgb), 0.18);
-    color: var(--accent-success);
-  }
-}
-
-.asistente-paso-linea {
-  flex: 1;
-  height: 1px;
-  background: var(--glass-border);
-  max-width: 60px;
-}
-
 .asistente-card {
   max-width: 560px;
   padding: var(--space-6);

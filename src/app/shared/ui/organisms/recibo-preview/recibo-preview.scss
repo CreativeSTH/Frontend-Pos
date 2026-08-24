@@ -1,0 +1,97 @@
+:host {
+  display: flex;
+  justify-content: center;
+}
+
+.recibo-preview {
+  width: 300px;
+  padding: 20px 16px;
+  background: #fff;
+  color: #000;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--glass-shadow-lg);
+}
+
+.recibo-preview__logo {
+  display: block;
+  max-width: 100%;
+  max-height: 80px;
+  margin: 0 auto 8px;
+  object-fit: contain;
+}
+
+.recibo-preview__titulo {
+  text-align: center;
+  font-weight: bold;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+.recibo-preview__negocio {
+  text-align: center;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.recibo-preview__linea {
+  text-align: center;
+  font-size: 11px;
+}
+
+.recibo-preview__separador {
+  border-top: 1px dashed #000;
+  margin: 8px 0;
+}
+
+.recibo-preview__meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.recibo-preview__tabla {
+  width: 100%;
+  border-collapse: collapse;
+
+  td {
+    padding: 2px 0;
+    vertical-align: top;
+  }
+
+  thead td {
+    font-weight: bold;
+    border-bottom: 1px solid #000;
+  }
+}
+
+.recibo-preview__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.recibo-preview__total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.recibo-preview__mensaje {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.recibo-preview__terminos {
+  margin-top: 8px;
+  font-size: 10px;
+  color: #333;
+}
+
+.recibo-preview__dian {
+  font-size: 9px;
+  color: #333;
+  text-align: center;
+}

@@ -168,6 +168,7 @@ export class PuntoVenta {
   protected readonly nombreEfectivo = computed(() => this.metodosPago().find((m) => m.esEfectivo)?.nombre);
 
   protected readonly tipoVenta = signal<'CONTADO' | 'CREDITO'>('CONTADO');
+  protected readonly tipoComprobante = signal<'RECIBO' | 'FACTURA'>('RECIBO');
   protected readonly clientes = signal<Cliente[]>([]);
   protected readonly clienteId = signal<string>('');
   protected readonly numeroCuotas = signal<number>(1);
@@ -213,6 +214,7 @@ export class PuntoVenta {
   private readonly domicilioSolicitadoPorQuery = signal(false);
 
   protected readonly ventaCompletada = signal<Venta | null>(null);
+  private readonly cambioVentaCompletada = signal(0);
   protected readonly imprimiendo = signal(false);
 
   /** Categorías con cada sub-categoría justo debajo de su padre — mismo patrón que `productos-list`. */
@@ -536,6 +538,7 @@ export class PuntoVenta {
   protected abrirCobro(): void {
     if (this.carrito().length === 0) return;
     this.tipoVenta.set('CONTADO');
+    this.tipoComprobante.set(this.sucursal()?.tipoComprobanteDefecto ?? 'RECIBO');
     this.descuentoActivo.set(false);
     this.descuentoVenta.set(0);
     this.pagos.set([{ metodoPago: this.nombreEfectivo() ?? this.metodosPago()[0]?.nombre ?? '', monto: this.total() }]);
@@ -742,6 +745,10 @@ export class PuntoVenta {
     }
   }
 
+  protected seleccionarTipoComprobante(tipo: 'RECIBO' | 'FACTURA'): void {
+    this.tipoComprobante.set(tipo);
+  }
+
   protected onClienteChange(clienteId: string): void {
     this.clienteId.set(clienteId);
     this.reiniciarDomicilio();
@@ -865,11 +872,14 @@ export class PuntoVenta {
     nombreClienteContado?: string,
   ): void {
     const direccion = this.direccionElegida();
+    // Se captura antes de limpiar el carrito — `cambio()` depende de `pagos()`/`total()`, que se resetean abajo.
+    const cambioVenta = !esCredito ? this.cambio() : 0;
     this.procesando.set(true);
     this.ventasService
       .create({
         sucursalId,
         bodegaId,
+        tipoComprobante: this.tipoComprobante(),
         items: this.carrito().map((l) => ({ productoId: l.productoId, cantidad: l.cantidad })),
         descuentoVenta: this.descuentoVenta() || undefined,
         ...(esCredito
@@ -892,6 +902,7 @@ export class PuntoVenta {
         next: (venta) => {
           this.procesando.set(false);
           this.showCobro.set(false);
+          this.cambioVentaCompletada.set(cambioVenta);
           this.ventaCompletada.set(venta);
           this.descontarStockVendido(this.carrito());
           this.carrito.set([]);
@@ -927,13 +938,22 @@ export class PuntoVenta {
 
   protected imprimirFactura(venta: Venta): void {
     this.imprimiendo.set(true);
-    this.printAgent.imprimirTicket('', venta).subscribe((result) => {
-      if (!result.impreso) {
-        this.toast.info('Agente de impresión no disponible — abriendo el recibo en el navegador');
-        this.printAgent.imprimirReciboNavegador('', venta);
-      }
-      this.imprimiendo.set(false);
-      this.nuevaVenta();
+    const opciones = { cambio: this.cambioVentaCompletada() || undefined };
+    this.ventasService.obtenerComprobante(venta.id).subscribe({
+      next: (contenido) => {
+        this.printAgent.imprimirTicket(contenido, opciones).subscribe((result) => {
+          if (!result.impreso) {
+            this.toast.info('Agente de impresión no disponible — abriendo el recibo en el navegador');
+            this.printAgent.imprimirReciboNavegador(contenido, opciones);
+          }
+          this.imprimiendo.set(false);
+          this.nuevaVenta();
+        });
+      },
+      error: () => {
+        this.imprimiendo.set(false);
+        this.toast.error('No se pudo obtener el comprobante de esta venta');
+      },
     });
   }
 

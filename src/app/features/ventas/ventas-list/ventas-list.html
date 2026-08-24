@@ -123,7 +123,7 @@
         @if (venta.estado !== 'CANCELADA') {
           <ds-button variant="ghost" (click)="abrirCancelar(venta)">Cancelar venta</ds-button>
         }
-        <ds-button variant="primary" icon="printer" (click)="printAgent.imprimirReciboNavegador('', venta)">
+        <ds-button variant="primary" icon="printer" (click)="reimprimir(venta)">
           Imprimir
         </ds-button>
       }

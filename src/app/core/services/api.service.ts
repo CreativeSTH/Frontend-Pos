@@ -22,6 +22,10 @@ export class ApiService {
     return this.wrap(this.http.patch<T>(`${this.baseUrl}${path}`, body));
   }
 
+  put<T>(path: string, body: unknown): Observable<T> {
+    return this.wrap(this.http.put<T>(`${this.baseUrl}${path}`, body));
+  }
+
   delete<T>(path: string): Observable<T> {
     return this.wrap(this.http.delete<T>(`${this.baseUrl}${path}`));
   }

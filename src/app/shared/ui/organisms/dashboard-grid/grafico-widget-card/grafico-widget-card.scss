@@ -1,0 +1,54 @@
+@use 'mixins' as mix;
+
+.widget-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-radius: var(--radius-md);
+  @include mix.glass-panel;
+}
+
+.widget-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  /* handle de arrastre de gridstack — mueve el widget al arrastrar el título */
+  cursor: grab;
+}
+
+.widget-card__titulo {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.widget-card__quitar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--accent-danger);
+    background: var(--glass-bg-hover);
+  }
+}
+
+.widget-card__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}

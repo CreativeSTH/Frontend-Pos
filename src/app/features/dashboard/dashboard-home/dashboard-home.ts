@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal, viewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -11,6 +11,9 @@ import { Icon } from '../../../shared/ui/atoms/icon/icon';
 import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
+import { Spinner } from '../../../shared/ui/atoms/spinner/spinner';
+import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { DashboardGrid } from '../../../shared/ui/organisms/dashboard-grid/dashboard-grid';
 import { ProductosService } from '../../../core/services/productos.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { CajaService } from '../../../core/services/caja.service';
@@ -19,13 +22,29 @@ import { SucursalContextService } from '../../../core/services/sucursal-context.
 import { InventarioService } from '../../../core/services/inventario.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { GraficosService } from '../../../core/services/graficos.service';
 import { ResumenTurno } from '../../../core/models/caja.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
+import { GraficoConfigurado, WidgetLayoutGrafico } from '../../../core/models/grafico.model';
 
 @Component({
   selector: 'app-dashboard-home',
   standalone: true,
-  imports: [Topbar, StatCard, Badge, Button, Icon, Modal, Input, FormField, FormsModule, DatePipe],
+  imports: [
+    Topbar,
+    StatCard,
+    Badge,
+    Button,
+    Icon,
+    Modal,
+    Input,
+    FormField,
+    Spinner,
+    EmptyState,
+    DashboardGrid,
+    FormsModule,
+    DatePipe,
+  ],
   templateUrl: './dashboard-home.html',
   styleUrl: './dashboard-home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +59,7 @@ export class DashboardHome {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly graficosService = inject(GraficosService);
   protected readonly auth = inject(AuthService);
 
   protected readonly loading = signal(true);
@@ -62,8 +82,24 @@ export class DashboardHome {
 
   private autoAbrioCierre = false;
 
+  protected readonly cargandoGraficos = signal(true);
+  protected readonly graficos = signal<GraficoConfigurado[]>([]);
+  protected readonly layoutWidgets = signal<WidgetLayoutGrafico[]>([]);
+  /** Se incrementa para forzar destruir/recrear `ds-dashboard-grid` (usado solo al cancelar edición, para descartar cambios sin guardar). */
+  protected readonly gridVersion = signal(0);
+  protected readonly modoEdicion = signal(false);
+  protected readonly guardandoLayout = signal(false);
+  protected readonly showAgregarGrafico = signal(false);
+  protected readonly graficosParaAgregar = signal<GraficoConfigurado[]>([]);
+  protected readonly gridRef = viewChild(DashboardGrid);
+
   constructor() {
     this.load();
+    if (this.auth.tienePermiso('GRAFICOS', 'VER')) {
+      this.cargarGraficos();
+    } else {
+      this.cargandoGraficos.set(false);
+    }
 
     /** Llegar desde el botón flotante "Cerrar caja" del POS (?cerrarTurno=1) abre este modal solo. */
     effect(() => {
@@ -195,5 +231,66 @@ export class DashboardHome {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(
       value,
     );
+  }
+
+  private cargarGraficos(): void {
+    this.cargandoGraficos.set(true);
+    forkJoin({
+      graficos: this.graficosService.findAll(),
+      layout: this.graficosService.obtenerLayout('DASHBOARD'),
+    }).subscribe({
+      next: ({ graficos, layout }) => {
+        this.graficos.set(graficos);
+        this.layoutWidgets.set(layout.widgets);
+        this.cargandoGraficos.set(false);
+      },
+      error: () => this.cargandoGraficos.set(false),
+    });
+  }
+
+  protected activarEdicion(): void {
+    // `ds-dashboard-grid` reacciona solo (vía `setStatic()` de gridstack) — no hace falta recrearlo.
+    this.modoEdicion.set(true);
+  }
+
+  protected cancelarEdicion(): void {
+    // Acá sí se fuerza recrear el grid — es la única forma de descartar movimientos/tamaños
+    // sin guardar y volver a `layoutWidgets()` (el último estado persistido).
+    this.modoEdicion.set(false);
+    this.gridVersion.update((v) => v + 1);
+  }
+
+  protected abrirAgregarGrafico(): void {
+    const usados = new Set(this.gridRef()?.obtenerWidgets().map((w) => w.graficoId) ?? []);
+    this.graficosParaAgregar.set(this.graficos().filter((g) => !usados.has(g.id)));
+    this.showAgregarGrafico.set(true);
+  }
+
+  protected elegirGrafico(grafico: GraficoConfigurado): void {
+    this.gridRef()?.agregarGrafico(grafico);
+    this.showAgregarGrafico.set(false);
+  }
+
+  protected guardarDiseno(): void {
+    const grid = this.gridRef();
+    if (!grid) return;
+    const widgets = grid.obtenerWidgets();
+    this.guardandoLayout.set(true);
+    this.graficosService.guardarLayout('DASHBOARD', widgets).subscribe({
+      next: () => {
+        this.guardandoLayout.set(false);
+        this.layoutWidgets.set(widgets);
+        this.modoEdicion.set(false);
+        this.toast.success('Diseño guardado');
+      },
+      error: () => {
+        this.guardandoLayout.set(false);
+        this.toast.error('No se pudo guardar el diseño');
+      },
+    });
+  }
+
+  protected crearGrafico(): void {
+    this.router.navigate(['/graficos/wizard']);
   }
 }

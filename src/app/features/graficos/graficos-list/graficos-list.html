@@ -1,0 +1,46 @@
+<app-topbar title="Gráficos" subtitle="Crea y administra los gráficos de Dashboard y Reportes">
+  <ds-button variant="primary" icon="plus" (click)="nuevo()">Nuevo gráfico</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="graficos-loading">
+    <ds-icon name="activity" [size]="28" />
+    <span>Cargando gráficos...</span>
+  </div>
+} @else if (graficos().length === 0) {
+  <ds-empty-state icon="activity" title="Aún no hay gráficos" description="Crea el primero para verlo en Dashboard o Reportes.">
+    <ds-button variant="glass" icon="plus" (click)="nuevo()">Nuevo gráfico</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Tipo</th>
+        <th>Series</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (grafico of graficosPaginados(); track grafico.id) {
+        <tr>
+          <td>{{ grafico.nombre }}</td>
+          <td class="graficos-tipo">
+            <ds-icon [name]="icono(grafico.tipo)" [size]="16" />
+            {{ etiquetaTipo(grafico.tipo) }}
+          </td>
+          <td>{{ cantidadSeries(grafico) }}</td>
+          <td class="graficos-actions">
+            <button type="button" class="graficos-actions__btn" (click)="editar(grafico)">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            <button type="button" class="graficos-actions__btn graficos-actions__btn--danger" (click)="eliminar(grafico)">
+              <ds-icon name="trash" [size]="16" />
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
+}

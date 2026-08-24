@@ -151,6 +151,17 @@ export const routes: Routes = [
         loadComponent: () => import('./features/alertas/alertas-list/alertas-list').then((m) => m.AlertasList),
       },
       {
+        path: 'graficos',
+        canActivate: [permisoGuard('GRAFICOS')],
+        loadComponent: () => import('./features/graficos/graficos-list/graficos-list').then((m) => m.GraficosList),
+      },
+      {
+        path: 'graficos/wizard',
+        canActivate: [permisoGuard('GRAFICOS', 'CREAR')],
+        loadComponent: () =>
+          import('./features/graficos/graficos-wizard/graficos-wizard').then((m) => m.GraficosWizard),
+      },
+      {
         path: 'metodos-pago',
         canActivate: [permisoGuard('METODOS_PAGO')],
         loadComponent: () =>
@@ -170,6 +181,18 @@ export const routes: Routes = [
         canActivate: [permisoGuard('CAJA')],
         loadComponent: () =>
           import('./features/configuracion/dispositivos/dispositivos').then((m) => m.Dispositivos),
+      },
+      {
+        path: 'configuracion/facturacion',
+        canActivate: [permisoGuard('FACTURACION')],
+        loadComponent: () =>
+          import('./features/facturacion/facturacion-list/facturacion-list').then((m) => m.FacturacionList),
+      },
+      {
+        path: 'configuracion/facturacion/wizard',
+        canActivate: [permisoGuard('FACTURACION', 'CREAR')],
+        loadComponent: () =>
+          import('./features/facturacion/facturacion-wizard/facturacion-wizard').then((m) => m.FacturacionWizard),
       },
     ],
   },

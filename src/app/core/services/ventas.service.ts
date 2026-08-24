@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
 import { CreateVentaPayload, Venta } from '../models/venta.model';
+import { ReciboContenido } from '../models/recibo-contenido.model';
 
 @Injectable({ providedIn: 'root' })
 export class VentasService {
@@ -12,6 +13,10 @@ export class VentasService {
 
   findOne(id: string) {
     return this.api.get<Venta>(`/ventas/${id}`);
+  }
+
+  obtenerComprobante(id: string) {
+    return this.api.get<ReciboContenido>(`/ventas/${id}/comprobante`);
   }
 
   create(payload: CreateVentaPayload) {

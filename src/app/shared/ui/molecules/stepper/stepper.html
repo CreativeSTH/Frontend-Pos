@@ -1,0 +1,21 @@
+<div class="ds-stepper">
+  @for (paso of pasos(); track paso.numero; let last = $last) {
+    <div
+      class="ds-stepper__item"
+      [class.ds-stepper__item--activo]="pasoActual() === paso.numero"
+      [class.ds-stepper__item--listo]="pasoActual() > paso.numero"
+    >
+      <span class="ds-stepper__numero">
+        @if (pasoActual() > paso.numero) {
+          <ds-icon name="check" [size]="14" />
+        } @else {
+          {{ paso.numero }}
+        }
+      </span>
+      {{ paso.etiqueta }}
+    </div>
+    @if (!last) {
+      <div class="ds-stepper__linea"></div>
+    }
+  }
+</div>

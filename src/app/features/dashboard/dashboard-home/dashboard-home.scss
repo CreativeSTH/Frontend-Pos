@@ -39,6 +39,68 @@
   color: var(--text-tertiary);
 }
 
+.dashboard-graficos {
+  margin-top: var(--space-6);
+}
+
+.dashboard-graficos__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+
+  h2 {
+    margin: 0;
+    font-size: var(--fs-lg);
+    color: var(--text-primary);
+  }
+}
+
+.dashboard-graficos__acciones-edicion {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dashboard-graficos__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) 0;
+}
+
+.dashboard-graficos__picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.dashboard-graficos__picker-vacio {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--fs-sm);
+}
+
+.dashboard-graficos__picker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-size: var(--fs-base);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-strong);
+  }
+}
+
 .resumen-loading {
   display: flex;
   align-items: center;

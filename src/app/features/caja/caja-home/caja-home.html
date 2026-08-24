@@ -236,7 +236,7 @@
     <div modal-footer>
       <ds-button variant="ghost" (click)="showFactura.set(false)">Cerrar</ds-button>
       @if (ventaFactura(); as venta) {
-        <ds-button variant="primary" icon="printer" (click)="printAgent.imprimirReciboNavegador('', venta)">
+        <ds-button variant="primary" icon="printer" (click)="reimprimir(venta)">
           Imprimir
         </ds-button>
       }

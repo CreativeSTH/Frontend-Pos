@@ -60,6 +60,62 @@
   </section>
 }
 
+@if (!auth.esSistema() && auth.tienePermiso('GRAFICOS', 'VER')) {
+  <section class="dashboard-graficos">
+    <div class="dashboard-graficos__header">
+      <h2>Gráficos</h2>
+      @if (auth.tienePermiso('GRAFICOS', 'EDITAR') && graficos().length > 0) {
+        @if (!modoEdicion()) {
+          <ds-button variant="glass" size="sm" icon="pencil" (click)="activarEdicion()">Editar diseño</ds-button>
+        } @else {
+          <div class="dashboard-graficos__acciones-edicion">
+            <ds-button variant="glass" size="sm" icon="plus" (click)="abrirAgregarGrafico()">Agregar gráfico</ds-button>
+            <ds-button variant="ghost" size="sm" (click)="cancelarEdicion()">Cancelar</ds-button>
+            <ds-button variant="primary" size="sm" [loading]="guardandoLayout()" (click)="guardarDiseno()">
+              Guardar diseño
+            </ds-button>
+          </div>
+        }
+      }
+    </div>
+
+    @if (cargandoGraficos()) {
+      <div class="dashboard-graficos__loading">
+        <ds-spinner [size]="24" />
+      </div>
+    } @else if (graficos().length === 0) {
+      <ds-empty-state
+        icon="activity"
+        title="Aún no hay gráficos"
+        description="Creá uno para verlo acá y en Reportes."
+      >
+        <ds-button variant="glass" icon="plus" (click)="crearGrafico()">Crear gráfico</ds-button>
+      </ds-empty-state>
+    } @else {
+      @for (v of [gridVersion()]; track v) {
+        <ds-dashboard-grid [widgetsIniciales]="layoutWidgets()" [graficos]="graficos()" [editable]="modoEdicion()" />
+      }
+    }
+  </section>
+}
+
+@if (showAgregarGrafico()) {
+  <ds-modal title="Agregar gráfico" size="sm" (close)="showAgregarGrafico.set(false)">
+    @if (graficosParaAgregar().length === 0) {
+      <p class="dashboard-graficos__picker-vacio">Ya agregaste todos tus gráficos a este dashboard.</p>
+    } @else {
+      <div class="dashboard-graficos__picker">
+        @for (grafico of graficosParaAgregar(); track grafico.id) {
+          <button type="button" class="dashboard-graficos__picker-item" (click)="elegirGrafico(grafico)">
+            <ds-icon name="activity" [size]="16" />
+            {{ grafico.nombre }}
+          </button>
+        }
+      </div>
+    }
+  </ds-modal>
+}
+
 @if (showAbrirTurno()) {
   <ds-modal title="Abrir turno de caja" size="sm" (close)="showAbrirTurno.set(false)">
     <ds-form-field label="Fondo inicial en efectivo">

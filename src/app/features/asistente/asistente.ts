@@ -8,6 +8,7 @@ import { Icon } from '../../shared/ui/atoms/icon/icon';
 import { FormField } from '../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../shared/ui/atoms/input/input';
 import { SearchBar } from '../../shared/ui/molecules/search-bar/search-bar';
+import { Stepper, PasoStepper } from '../../shared/ui/molecules/stepper/stepper';
 import { ProductoForm } from '../productos/producto-form/producto-form';
 import { SucursalesService } from '../../core/services/sucursales.service';
 import { BodegasService } from '../../core/services/bodegas.service';
@@ -30,7 +31,7 @@ type PasoAsistente = 1 | 2 | 3;
 @Component({
   selector: 'app-asistente',
   standalone: true,
-  imports: [Topbar, Button, Icon, FormField, Input, SearchBar, ProductoForm, ReactiveFormsModule, FormsModule],
+  imports: [Topbar, Button, Icon, FormField, Input, SearchBar, Stepper, ProductoForm, ReactiveFormsModule, FormsModule],
   templateUrl: './asistente.html',
   styleUrl: './asistente.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,6 +49,11 @@ export class Asistente {
 
   protected readonly cargando = signal(true);
   protected readonly paso = signal<PasoAsistente>(1);
+  protected readonly pasosStepper: PasoStepper[] = [
+    { numero: 1, etiqueta: 'Sucursal' },
+    { numero: 2, etiqueta: 'Bodega' },
+    { numero: 3, etiqueta: 'Productos y stock' },
+  ];
 
   protected readonly sucursales = signal<Sucursal[]>([]);
   protected readonly sucursalActiva = signal<Sucursal | null>(null);

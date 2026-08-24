@@ -42,6 +42,7 @@ export const CONFIG_GROUPS: ConfiguracionGroup[] = [
     items: [
       { label: 'Ventas', description: 'Historial completo de ventas', icon: 'receipt', route: '/ventas', modulo: 'VENTAS' },
       { label: 'Reportes', description: 'Ventas, márgenes y cierres de caja', icon: 'bar-chart', route: '/reportes', modulo: 'REPORTES' },
+      { label: 'Gráficos', description: 'Crear y administrar gráficos personalizados', icon: 'activity', route: '/graficos', modulo: 'GRAFICOS' },
       { label: 'Alertas', description: 'Notificaciones y reglas de alerta', icon: 'bell', route: '/alertas', modulo: 'ALERTAS' },
     ],
   },
@@ -53,6 +54,7 @@ export const CONFIG_GROUPS: ConfiguracionGroup[] = [
       { label: 'Usuarios', description: 'Usuarios y asignación de roles', icon: 'users', route: '/usuarios', modulo: 'USUARIOS' },
       { label: 'Roles', description: 'Roles y permisos por módulo', icon: 'tag', route: '/roles', modulo: 'ROLES' },
       { label: 'Métodos de pago', description: 'Formas de cobro disponibles en el POS', icon: 'credit-card', route: '/metodos-pago', modulo: 'METODOS_PAGO' },
+      { label: 'Facturación', description: 'Formatos de recibo y factura', icon: 'file-text', route: '/configuracion/facturacion', modulo: 'FACTURACION' },
       { label: 'Dispositivos', description: 'Impresora, cajón monedero y lector de código de barras', icon: 'printer', route: '/configuracion/dispositivos', modulo: 'CAJA' },
       { label: 'Negocios', description: 'Gestión de negocios de la plataforma', icon: 'store', route: '/negocios', modulo: 'NEGOCIOS' },
     ],

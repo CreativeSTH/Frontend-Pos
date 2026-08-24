@@ -31,6 +31,11 @@
   <button type="button" class="reportes-tab" [class.reportes-tab--active]="tab() === 'cierres'" (click)="cambiarTab('cierres')">
     Cierres de caja
   </button>
+  @if (auth.tienePermiso('GRAFICOS', 'VER')) {
+    <button type="button" class="reportes-tab" [class.reportes-tab--active]="tab() === 'graficos'" (click)="cambiarTab('graficos')">
+      Gráficos
+    </button>
+  }
 </div>
 
 @if (loading()) {
@@ -182,4 +187,73 @@
       </ds-table>
     }
   }
+
+  @if (tab() === 'graficos') {
+    <div class="reportes-graficos-header">
+      <p class="reportes-graficos-hint">Los gráficos de esta pestaña usan el mismo rango de fechas y sucursal del filtro de arriba.</p>
+      <ds-button variant="glass" size="sm" icon="plus" (click)="showAgregarGrafico.set(true)">Agregar gráfico</ds-button>
+    </div>
+
+    @if (cargandoGraficosTab()) {
+      <div class="reportes-loading">
+        <ds-icon name="activity" [size]="28" />
+        <span>Cargando gráficos...</span>
+      </div>
+    } @else if (graficosSeleccionados().length === 0) {
+      <ds-empty-state icon="activity" title="Sin gráficos en Reportes" description="Agregá uno de tus gráficos creados para verlo acá.">
+        <ds-button variant="glass" icon="plus" (click)="showAgregarGrafico.set(true)">Agregar gráfico</ds-button>
+      </ds-empty-state>
+    } @else {
+      <div class="reportes-graficos-lista">
+        @for (widget of graficosSeleccionados(); track widget.id; let i = $index) {
+          @if (graficoPorId(widget.graficoId); as grafico) {
+            <div class="reportes-panel reportes-grafico-card">
+              <div class="reportes-grafico-card__header">
+                <h3 class="reportes-panel__title">{{ grafico.nombre }}</h3>
+                <div class="reportes-grafico-card__acciones">
+                  <button type="button" class="reportes-grafico-card__btn" [disabled]="i === 0" (click)="moverGrafico(i, -1)">
+                    <ds-icon name="chevron-up" [size]="14" />
+                  </button>
+                  <button
+                    type="button"
+                    class="reportes-grafico-card__btn"
+                    [disabled]="i === graficosSeleccionados().length - 1"
+                    (click)="moverGrafico(i, 1)"
+                  >
+                    <ds-icon name="chevron-down" [size]="14" />
+                  </button>
+                  <button type="button" class="reportes-grafico-card__btn reportes-grafico-card__btn--danger" (click)="quitarGrafico(widget)">
+                    <ds-icon name="x" [size]="14" />
+                  </button>
+                </div>
+              </div>
+              <ds-chart
+                [option]="opcionGrafico(widget.graficoId)"
+                [loading]="cargandoGrafico(widget.graficoId)"
+                [vacio]="graficoVacio(widget.graficoId)"
+                [alto]="280"
+              />
+            </div>
+          }
+        }
+      </div>
+    }
+  }
+}
+
+@if (showAgregarGrafico()) {
+  <ds-modal title="Agregar gráfico" size="sm" (close)="showAgregarGrafico.set(false)">
+    @if (graficosParaAgregar().length === 0) {
+      <p class="reportes-graficos-hint">Ya agregaste todos tus gráficos a esta pestaña, o todavía no creaste ninguno.</p>
+    } @else {
+      <div class="reportes-graficos-picker">
+        @for (grafico of graficosParaAgregar(); track grafico.id) {
+          <button type="button" class="reportes-graficos-picker__item" (click)="agregarGrafico(grafico)">
+            <ds-icon name="activity" [size]="16" />
+            {{ grafico.nombre }}
+          </button>
+        }
+      </div>
+    }
+  </ds-modal>
 }

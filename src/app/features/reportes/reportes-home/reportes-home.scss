@@ -88,3 +88,91 @@
   color: var(--text-primary);
   margin: 0 0 var(--space-4);
 }
+
+.reportes-graficos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.reportes-graficos-hint {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+}
+
+.reportes-graficos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.reportes-grafico-card {
+  margin-bottom: 0;
+}
+
+.reportes-grafico-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.reportes-grafico-card__acciones {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.reportes-grafico-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &--danger:hover:not(:disabled) {
+    color: var(--accent-danger);
+  }
+}
+
+.reportes-graficos-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.reportes-graficos-picker__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  font-size: var(--fs-base);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-strong);
+  }
+}
