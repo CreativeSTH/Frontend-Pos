@@ -1,59 +1,58 @@
-# PosFrontend
+# pos-frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.4.
+Frontend del sistema POS multi-negocio — **Angular 20** (standalone components + signals). Una sola app que cubre el punto de venta (cajero) y el back-office (administrador), separados por permisos de rol.
 
-## Development server
+Documento de arquitectura general del proyecto: [`../docs/ARQUITECTURA.md`](../docs/ARQUITECTURA.md).
 
-To start a local development server, run:
+## Stack
 
-```bash
-ng serve
-```
+- **Angular 20**, componentes standalone, estado con Signals
+- `@if`/`@for` en vez de `*ngIf`/`*ngFor`, `input()`/`output()`/`model()`, `inject()`
+- Sistema de diseño propio en `shared/ui/` (atómico: atoms/molecules/organisms)
+- **3 temas visuales** seleccionables en vivo: Glass (glassmorphism oscuro), SaaS oscuro y SaaS claro
+- Socket.IO client para notificaciones en tiempo real (alertas, domicilios)
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Requisitos
 
-## Code scaffolding
+- Node.js 20+
+- [`pos-backend`](https://github.com/CreativeSTH/api-astralis-pos) corriendo en `http://localhost:3000/api`
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Puesta en marcha
 
 ```bash
-ng generate --help
+npm install
+npm start          # ng serve en http://localhost:4200
 ```
 
-## Building
-
-To build the project run:
+La app se recarga sola al modificar cualquier archivo fuente. Necesita el backend arriba para poder loguear y traer datos.
 
 ```bash
-ng build
+npm run build       # build de producción (dist/)
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Estructura
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
+```
+src/app/
+├── core/            # ApiService, AuthService, modelos, interceptor JWT, guards
+├── shared/ui/        # Design system: atoms/molecules/organisms + design tokens
+├── layout/           # Sidebar, Topbar, DashboardLayout, AuthLayout
+└── features/         # Páginas: auth, dashboard, punto-venta, productos, caja, ...
 ```
 
-## Running end-to-end tests
+Menú principal reducido a Dashboard / Punto de venta / Caja + un hub de "Configuración" que agrupa el resto de los módulos (Productos, Inventario, Proveedores, Clientes, Domicilios, Reportes, Roles, Usuarios, etc.) como cards de navegación.
 
-For end-to-end (e2e) testing, run:
+## Convenciones de diseño
 
-```bash
-ng e2e
-```
+Ninguna pantalla escribe estilos de superficie "a mano" (colores, blur, sombras) — todo pasa por los tokens de `src/styles/_tokens.scss` o por un componente del design system. Ver la sección "Sistema de Diseño" de [`../docs/ARQUITECTURA.md`](../docs/ARQUITECTURA.md) y el `CLAUDE.md` de este repo para el detalle completo.
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Repos relacionados
 
-## Additional Resources
+| Repo | Rol |
+|---|---|
+| [`pos-backend`](https://github.com/CreativeSTH/api-astralis-pos) | API REST (NestJS + PostgreSQL) |
+| [`pos-agent`](https://github.com/CreativeSTH/Pos-Agent) | Puente local a impresora térmica/cajón, corre en la PC de caja |
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Git
+
+Se commitea y pushea solo a `develop`. `main` recibe merges únicamente cuando se pide explícitamente un release — ver sección 17 de `ARQUITECTURA.md`.
