@@ -1,4 +1,4 @@
-<app-topbar title="Lista de pedidos" subtitle="Productos que hay que pedirle a un proveedor">
+<app-topbar title="Lista de pedidos" subtitle="Productos que hay que pedirle a un proveedor" backTo="/configuracion">
   @for (tab of tabs; track tab.estado) {
     <ds-button [variant]="tabActual() === tab.estado ? 'primary' : 'glass'" (click)="tabActual.set(tab.estado)">
       {{ tab.label }}

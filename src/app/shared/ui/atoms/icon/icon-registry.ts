@@ -53,6 +53,7 @@ export const ICONS: Record<string, string> = {
     '<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
   'arrow-up-right': '<path d="M7 17 17 7"/><path d="M7 7h10v10"/>',
   'arrow-down-right': '<path d="m7 7 10 10"/><path d="M17 7v10H7"/>',
+  'arrow-left': '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
   spinner:
     '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
   history:

@@ -48,7 +48,7 @@
   }
 }
 
-.topbar__titles {
+.topbar__left {
   /*
     Columnas fijas a propósito: si el centro queda vacío y se oculta con
     `:empty { display:none }`, el auto-placement del grid corre el siguiente
@@ -58,6 +58,29 @@
     hermanos estén presentes/visibles.
   */
   grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.topbar__back-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+  }
 }
 
 .topbar__center {

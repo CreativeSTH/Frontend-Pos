@@ -1,4 +1,4 @@
-<app-topbar title="Alertas" subtitle="Stock bajo, cuotas por vencer/vencidas, límite de crédito, ventas en mora y reglas propias">
+<app-topbar title="Alertas" subtitle="Stock bajo, cuotas por vencer/vencidas, límite de crédito, ventas en mora y reglas propias" backTo="/configuracion">
   <ds-button variant="glass" icon="plus" (click)="abrirNuevaRegla()">Nueva regla</ds-button>
   <ds-button variant="glass" icon="plus" (click)="abrirNuevaAlerta()">Nuevo recordatorio</ds-button>
   <ds-button variant="glass" icon="alert-triangle" [loading]="generando()" (click)="generar()">Actualizar</ds-button>

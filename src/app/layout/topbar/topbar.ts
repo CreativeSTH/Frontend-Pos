@@ -28,6 +28,8 @@ const TONOS_SEVERIDAD: Record<SeveridadAlerta, BadgeTone> = {
 export class Topbar {
   readonly title = input<string>('');
   readonly subtitle = input<string | undefined>(undefined);
+  /** Ruta a la que vuelve la flecha atrás (ej. `/configuracion`) — sin esto, no se muestra. */
+  readonly backTo = input<string | undefined>(undefined);
 
   protected readonly mobileNav = inject(MobileNavService);
   protected readonly alertasService = inject(AlertasService);
@@ -80,5 +82,9 @@ export class Topbar {
   protected irAAlertas(): void {
     this.showNotificaciones.set(false);
     this.router.navigateByUrl('/alertas');
+  }
+
+  protected volver(): void {
+    this.router.navigateByUrl(this.backTo()!);
   }
 }
