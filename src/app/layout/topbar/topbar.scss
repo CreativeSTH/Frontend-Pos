@@ -1,14 +1,82 @@
 @use 'mixins' as mix;
 
+/*
+  El topbar "se pega" al riel del sidebar y al borde superior de la ventana:
+  sangra con márgenes negativos hasta los bordes del padding de
+  `.dashboard-shell__content` (ver dashboard-layout.scss) y ese mismo padding
+  se restaura como margin-bottom antes del contenido de la página. Acoplado
+  a propósito a ese valor de padding — es el único contenedor que lo usa.
+*/
 .topbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-4);
-  padding-bottom: var(--space-6);
+  margin: calc(-1 * var(--space-8)) calc(-1 * var(--space-10)) var(--space-8);
+  padding: var(--space-4) var(--space-10);
+  border-bottom: 1px solid var(--glass-border);
+  /* El backdrop-filter ya crea su propio stacking context; sin position+z-index
+     acá, ese contexto pinta en el orden normal del DOM y los paneles que
+     abren la campana o el usuario (dentro del topbar) terminan detrás de
+     hermanos posteriores (catálogo, carrito) que también usan glass. */
+  position: relative;
+  z-index: var(--z-sticky);
+
+  /*
+    El blur vive en un pseudo-elemento, NO directo en `.topbar`: cualquier
+    ancestro con backdrop-filter se vuelve el "containing block" de sus
+    descendientes position:fixed (spec de CSS) — y dentro del topbar vive
+    `<app-turno-caja-pos>` con su modal de "Cerrar caja" (`.modal-backdrop`
+    es fixed). Con el filter en `.topbar` mismo, ese modal quedaba atrapado
+    en la cajita angosta del topbar en vez de centrarse en toda la pantalla.
+  */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+  }
 
   @include mix.mobile-down {
-    flex-wrap: wrap;
+    grid-template-columns: 1fr;
+    margin: calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-5);
+    padding: var(--space-3) var(--space-5);
+  }
+}
+
+.topbar__titles {
+  /*
+    Columnas fijas a propósito: si el centro queda vacío y se oculta con
+    `:empty { display:none }`, el auto-placement del grid corre el siguiente
+    ítem (acciones) a la columna del medio en vez de dejarlo en la derecha
+    (pasa en cualquier página que no usa topbar-center). Con grid-column
+    explícito cada bloque se queda en su columna sin importar cuántos
+    hermanos estén presentes/visibles.
+  */
+  grid-column: 1;
+}
+
+.topbar__center {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: var(--space-3);
+  min-width: 0;
+
+  &:empty {
+    display: none;
+  }
+
+  @include mix.mobile-down {
+    order: 3;
+    justify-content: flex-start;
+    flex-basis: 100%;
   }
 }
 
@@ -46,16 +114,16 @@
   min-width: 0;
 
   h1 {
-    font-size: var(--fs-2xl);
+    font-size: var(--fs-lg);
     color: var(--text-primary);
 
     @include mix.mobile-down {
-      font-size: var(--fs-xl);
+      font-size: var(--fs-md);
     }
   }
 
   p {
-    font-size: var(--fs-sm);
+    font-size: var(--fs-xs);
     color: var(--text-tertiary);
   }
 }
@@ -213,13 +281,16 @@
 }
 
 .topbar__actions {
+  grid-column: 3;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-3);
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  min-width: 0;
 
   @include mix.mobile-down {
+    order: 2;
     flex-basis: 100%;
-    justify-content: flex-end;
   }
 }

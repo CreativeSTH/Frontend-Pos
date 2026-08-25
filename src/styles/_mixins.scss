@@ -30,6 +30,7 @@ $bp-mobile: 560px;
 
 @mixin glass-panel-elevated {
   @include glass-panel(28px);
+  background: var(--glass-bg-elevated);
   box-shadow: var(--glass-shadow-lg);
   border-color: var(--glass-border-strong);
 }

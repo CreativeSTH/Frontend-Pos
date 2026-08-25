@@ -36,57 +36,12 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
-  /* ---- Radios ---- */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 26px;
-  --radius-full: 999px;
-
   /* ---- Movimiento ---- */
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-emphasized: cubic-bezier(0.2, 0.9, 0.2, 1);
   --duration-fast: 120ms;
   --duration-base: 220ms;
   --duration-slow: 400ms;
-
-  /* ---- Superficie base (fondo de la app) ---- */
-  --bg-void: #05060a;
-  --bg-base: #0a0b12;
-  --bg-elevated: #0f111a;
-
-  /* ---- Acentos (tecnológico: cian eléctrico + violeta) ---- */
-  --accent-primary: #5b8cff;
-  --accent-primary-strong: #3d6bff;
-  --accent-secondary: #a78bfa;
-  --accent-cyan: #22d3ee;
-  --accent-success: #34d399;
-  --accent-warning: #fbbf24;
-  --accent-danger: #fb7185;
-
-  --accent-primary-rgb: 91, 140, 255;
-  --accent-secondary-rgb: 167, 139, 250;
-  --accent-cyan-rgb: 34, 211, 238;
-  --accent-success-rgb: 52, 211, 153;
-  --accent-warning-rgb: 251, 191, 36;
-  --accent-danger-rgb: 251, 113, 133;
-
-  /* ---- Texto ---- */
-  --text-primary: rgba(255, 255, 255, 0.94);
-  --text-secondary: rgba(255, 255, 255, 0.64);
-  --text-tertiary: rgba(255, 255, 255, 0.4);
-  --text-on-accent: #050608;
-
-  /* ---- Vidrio (glassmorphism) — sin bordes de color, todo neutro ---- */
-  --glass-bg: rgba(255, 255, 255, 0.055);
-  --glass-bg-hover: rgba(255, 255, 255, 0.085);
-  --glass-bg-active: rgba(255, 255, 255, 0.11);
-  --glass-border: rgba(255, 255, 255, 0.09);
-  --glass-border-strong: rgba(255, 255, 255, 0.16);
-  --glass-blur: 22px;
-  --glass-blur-sm: 12px;
-  --glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --glass-shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 
   /* ---- Z-index ---- */
   --z-dropdown: 100;
@@ -95,4 +50,168 @@
   --z-modal: 400;
   --z-select-panel: 450;
   --z-toast: 500;
+}
+
+/*
+  Tokens de tema — 3 variantes seleccionables (ver ThemeService):
+  "glass"      — glassmorphism oscuro pastel (rosa/violeta), el look original de la app, refinado.
+  "saas-dark"  — rediseño SaaS 2027, oscuro, superficies planas sin blur, formas geométricas.
+  "saas-light" — mismo rediseño SaaS 2027 en modo claro.
+
+  Los 3 comparten el mismo NOMBRE de variable (así ningún componente existente
+  se rompe) — solo cambia el valor. "glass" vive también en :root para que la
+  app no quede sin estilo antes de que ThemeService aplique data-theme.
+*/
+:root,
+[data-theme='glass'] {
+  /* Radios — grandes y suaves */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+  --radius-badge: 999px;
+
+  /* Superficie base (fondo de la app) */
+  --bg-void: #05060a;
+  --bg-base: #0a0b12;
+  --bg-elevated: #0f111a;
+
+  /* Acentos — degradado pastel rosa/violeta, distinto del azul de SaaS 2027 */
+  --accent-primary: #f0729f;
+  --accent-primary-strong: #ea5c8c;
+  --accent-secondary: #8f7ff5;
+  --accent-cyan: #22d3ee;
+  --accent-success: #34d399;
+  --accent-warning: #fbbf24;
+  --accent-danger: #fb7185;
+
+  --accent-primary-rgb: 240, 114, 159;
+  --accent-secondary-rgb: 143, 127, 245;
+  --accent-cyan-rgb: 34, 211, 238;
+  --accent-success-rgb: 52, 211, 153;
+  --accent-warning-rgb: 251, 191, 36;
+  --accent-danger-rgb: 251, 113, 133;
+
+  /* Texto */
+  --text-primary: rgba(255, 255, 255, 0.94);
+  --text-secondary: rgba(255, 255, 255, 0.64);
+  --text-tertiary: rgba(255, 255, 255, 0.4);
+  --text-on-accent: #1a0a14;
+
+  /* Vidrio (glassmorphism) — sin bordes de color, todo neutro */
+  --glass-bg: rgba(255, 255, 255, 0.055);
+  --glass-bg-hover: rgba(255, 255, 255, 0.085);
+  --glass-bg-active: rgba(255, 255, 255, 0.11);
+  --glass-bg-elevated: rgba(20, 13, 24, 0.92);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-border-strong: rgba(255, 255, 255, 0.16);
+  --glass-blur: 22px;
+  --glass-blur-sm: 12px;
+  --glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+  /* Botón primario y demás formas que difieren de SaaS 2027 */
+  --btn-primary-bg: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  --btn-primary-shadow: 0 8px 24px rgba(var(--accent-primary-rgb), 0.35);
+  --btn-primary-shadow-hover: 0 10px 30px rgba(var(--accent-primary-rgb), 0.5);
+}
+
+[data-theme='saas-dark'] {
+  /* Radios — chicos y geométricos */
+  --radius-sm: 7px;
+  --radius-md: 9px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
+  --radius-badge: 5px;
+
+  --bg-void: #08090c;
+  --bg-base: #0b0c10;
+  --bg-elevated: #121319;
+
+  /* Acentos — azul/cian, sin degradado en botones */
+  --accent-primary: #5b8cff;
+  --accent-primary-strong: #3d6bff;
+  --accent-secondary: #22d3ee;
+  --accent-cyan: #22d3ee;
+  --accent-success: #34d399;
+  --accent-warning: #fbbf24;
+  --accent-danger: #fb7185;
+
+  --accent-primary-rgb: 91, 140, 255;
+  --accent-secondary-rgb: 34, 211, 238;
+  --accent-cyan-rgb: 34, 211, 238;
+  --accent-success-rgb: 52, 211, 153;
+  --accent-warning-rgb: 251, 191, 36;
+  --accent-danger-rgb: 251, 113, 133;
+
+  --text-primary: #f2f3f6;
+  --text-secondary: #9198a6;
+  --text-tertiary: #5c626f;
+  --text-on-accent: #06070a;
+
+  /* "Vidrio" plano — superficies opacas, sin blur */
+  --glass-bg: #121319;
+  --glass-bg-hover: #171922;
+  --glass-bg-active: #1b1e28;
+  --glass-bg-elevated: #16171d;
+  --glass-border: #23252e;
+  --glass-border-strong: #2d303c;
+  --glass-blur: 0px;
+  --glass-blur-sm: 0px;
+  --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 1px 3px rgba(0, 0, 0, 0.5);
+  --glass-shadow-lg: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 4px 16px rgba(0, 0, 0, 0.55);
+
+  --btn-primary-bg: var(--accent-primary);
+  --btn-primary-shadow: none;
+  --btn-primary-shadow-hover: none;
+}
+
+[data-theme='saas-light'] {
+  --radius-sm: 7px;
+  --radius-md: 9px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
+  --radius-badge: 5px;
+
+  --bg-void: #eef0f3;
+  --bg-base: #f5f6f8;
+  --bg-elevated: #ffffff;
+
+  --accent-primary: #3d6bff;
+  --accent-primary-strong: #2851e0;
+  --accent-secondary: #7c3aed;
+  --accent-cyan: #0891b2;
+  --accent-success: #16a34a;
+  --accent-warning: #d97706;
+  --accent-danger: #e11d48;
+
+  --accent-primary-rgb: 61, 107, 255;
+  --accent-secondary-rgb: 124, 58, 237;
+  --accent-cyan-rgb: 8, 145, 178;
+  --accent-success-rgb: 22, 163, 74;
+  --accent-warning-rgb: 217, 119, 6;
+  --accent-danger-rgb: 225, 29, 72;
+
+  --text-primary: #14161a;
+  --text-secondary: #63676f;
+  --text-tertiary: #9a9ea6;
+  --text-on-accent: #ffffff;
+
+  --glass-bg: #ffffff;
+  --glass-bg-hover: #f7f8fa;
+  --glass-bg-active: #f1f2f5;
+  --glass-bg-elevated: #ffffff;
+  --glass-border: #e4e6eb;
+  --glass-border-strong: #d3d6dc;
+  --glass-blur: 0px;
+  --glass-blur-sm: 0px;
+  --glass-shadow: 0 1px 2px rgba(20, 22, 26, 0.05), 0 1px 3px rgba(20, 22, 26, 0.04);
+  --glass-shadow-lg: 0 4px 12px rgba(20, 22, 26, 0.07), 0 8px 24px rgba(20, 22, 26, 0.06);
+
+  --btn-primary-bg: var(--accent-primary);
+  --btn-primary-shadow: none;
+  --btn-primary-shadow-hover: none;
 }

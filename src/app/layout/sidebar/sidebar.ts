@@ -9,8 +9,8 @@ import { FormField } from '../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../shared/ui/atoms/input/input';
 import { AuthService } from '../../core/services/auth.service';
 import { MobileNavService } from '../../core/services/mobile-nav.service';
-import { CajaService } from '../../core/services/caja.service';
 import { ToastService } from '../../core/services/toast.service';
+import { Tema, ThemeService } from '../../core/services/theme.service';
 import { ModuloPermiso } from '../../core/models/auth.model';
 import { CONFIG_GROUPS } from '../../core/models/configuracion-menu.model';
 
@@ -43,8 +43,14 @@ const NAV_ITEMS: NavItem[] = [
 export class Sidebar {
   protected readonly auth = inject(AuthService);
   protected readonly mobileNav = inject(MobileNavService);
-  private readonly cajaService = inject(CajaService);
+  protected readonly themeService = inject(ThemeService);
   private readonly toast = inject(ToastService);
+
+  protected readonly temas: { valor: Tema; etiqueta: string }[] = [
+    { valor: 'glass', etiqueta: 'Glass' },
+    { valor: 'saas-dark', etiqueta: 'SaaS oscuro' },
+    { valor: 'saas-light', etiqueta: 'SaaS claro' },
+  ];
   /** Solo los ítems cuyo módulo el usuario puede VER (Dashboard no tiene permiso asociado, siempre se muestra) y que no sean exclusivos de un negocio si el usuario es de tier SISTEMA. */
   protected readonly navItems = computed(() =>
     NAV_ITEMS.filter(
@@ -58,9 +64,6 @@ export class Sidebar {
   protected readonly configuracionVisible = computed(() =>
     MODULOS_CONFIGURACION.some((m) => this.auth.tienePermiso(m, 'VER')),
   );
-
-  /** Con un turno de caja abierto, el sidebar pasa a modo off-canvas/hamburguesa en cualquier tamaño de pantalla. */
-  protected readonly hamburgerMode = computed(() => this.cajaService.turnoAbierto() !== null);
 
   protected readonly showPinModal = signal(false);
   protected readonly pin = signal('');

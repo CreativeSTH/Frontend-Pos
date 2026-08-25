@@ -2,7 +2,6 @@
   <button
     type="button"
     class="topbar__menu-btn"
-    [class.topbar__menu-btn--visible]="hamburgerMode()"
     (click)="mobileNav.toggle()"
     aria-label="Abrir menú"
   >
@@ -14,6 +13,9 @@
     @if (subtitle()) {
       <p>{{ subtitle() }}</p>
     }
+  </div>
+  <div class="topbar__center">
+    <ng-content select="[topbar-center]" />
   </div>
   <div class="topbar__actions">
     @if (mostrarCampana()) {

@@ -5,10 +5,16 @@
   width: 38px;
   height: 38px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  background: var(--btn-primary-bg);
   color: var(--text-on-accent);
   font-family: var(--font-display);
   font-weight: var(--fw-semibold);
   font-size: var(--fs-sm);
   flex-shrink: 0;
+}
+
+.ds-avatar--sm {
+  width: 26px;
+  height: 26px;
+  font-size: 0.625rem;
 }

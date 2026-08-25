@@ -1,10 +1,11 @@
 @use 'mixins' as mix;
 
+/* Flota DENTRO del catálogo (.pos-catalog es position:relative), no de toda la ventana. */
 .pos-domicilios-wrapper {
-  position: fixed;
-  left: var(--space-6);
-  bottom: var(--space-6);
-  z-index: 60;
+  position: absolute;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-dropdown);
 }
 
 .pos-domicilios-btn {

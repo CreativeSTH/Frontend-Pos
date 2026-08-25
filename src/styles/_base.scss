@@ -51,13 +51,28 @@ button {
   font-family: inherit;
 }
 
-/* Fondo "aurora" fijo: manchas de luz difusas detrás de los paneles de vidrio. */
+/* Fondo "aurora" fijo: manchas de luz difusas detrás de los paneles de vidrio.
+   Es un efecto propio del tema Glass — en SaaS 2027 (oscuro o claro) el fondo
+   debe quedar plano, sin manchas de color, así que las ocultamos por tema. */
 .app-aurora {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   background: var(--bg-void);
+}
+
+[data-theme='saas-dark'] .app-aurora,
+[data-theme='saas-light'] .app-aurora {
+  &::before,
+  &::after {
+    display: none;
+  }
+}
+
+[data-theme='saas-dark'] .app-aurora__spot,
+[data-theme='saas-light'] .app-aurora__spot {
+  display: none;
 }
 
 .app-aurora::before,

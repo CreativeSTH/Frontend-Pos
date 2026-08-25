@@ -3,12 +3,13 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 @Component({
   selector: 'ds-avatar',
   standalone: true,
-  template: `<span class="ds-avatar">{{ initials() }}</span>`,
+  template: `<span class="ds-avatar" [class.ds-avatar--sm]="size() === 'sm'">{{ initials() }}</span>`,
   styleUrl: './avatar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Avatar {
   readonly name = input<string>('');
+  readonly size = input<'sm' | 'md'>('md');
 
   protected readonly initials = computed(() => {
     const parts = this.name().trim().split(/\s+/).filter(Boolean);

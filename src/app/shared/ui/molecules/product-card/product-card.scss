@@ -4,11 +4,10 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  padding: 0;
+  padding: var(--space-3);
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   @include mix.glass-panel;
-  overflow: hidden;
   cursor: pointer;
   text-align: left;
   transition:
@@ -38,9 +37,11 @@
 .product-card__image {
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 1.6 / 1;
   overflow: hidden;
-  background: linear-gradient(160deg, rgba(var(--accent-primary-rgb), 0.16), rgba(var(--accent-secondary-rgb), 0.1));
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-2);
+  background: var(--glass-bg-active);
 
   img {
     width: 100%;
@@ -49,16 +50,6 @@
     display: block;
     transition: transform 500ms var(--ease-emphasized);
   }
-
-  /* Sombreado sutil en el borde inferior de la imagen para que se funda con el footer. */
-  &::after {
-    content: '';
-    position: absolute;
-    inset: auto 0 0 0;
-    height: 40%;
-    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.28));
-    pointer-events: none;
-  }
 }
 
 .product-card__stock {
@@ -66,10 +57,13 @@
   top: var(--space-2);
   right: var(--space-2);
   padding: 2px var(--space-2);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-badge);
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
-  color: var(--text-primary);
+  /* Fijo en blanco a propósito: este fondo negro no cambia con el tema
+     (funciona sobre cualquier foto), así que el texto tampoco debe hacerlo
+     — con var(--text-primary) quedaba negro-sobre-negro en SaaS Claro. */
+  color: #fff;
   font-size: var(--fs-xs);
   font-weight: var(--fw-medium);
 
@@ -84,8 +78,8 @@
   top: var(--space-2);
   left: var(--space-2);
   padding: 2px var(--space-2);
-  border-radius: var(--radius-full);
-  background: linear-gradient(120deg, var(--accent-primary), var(--accent-secondary));
+  border-radius: var(--radius-badge);
+  background: var(--btn-primary-bg);
   color: white;
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
@@ -97,39 +91,38 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-tertiary);
 }
 
 .product-card__footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .product-card__name {
   min-width: 0;
   font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
   color: var(--text-primary);
+  line-height: 1.25;
   @include mix.text-truncate;
 }
 
 .product-card__price {
-  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
   font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-semibold);
-  color: var(--accent-cyan);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--accent-primary);
 }
 
 .product-card__price-promo {
-  flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
+  align-items: baseline;
+  gap: var(--space-2);
 }
 
 .product-card__price-before {
@@ -140,7 +133,7 @@
 
 .product-card__price-now {
   font-family: var(--font-display);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   font-weight: var(--fw-bold);
-  color: var(--accent-cyan);
+  color: var(--accent-primary);
 }

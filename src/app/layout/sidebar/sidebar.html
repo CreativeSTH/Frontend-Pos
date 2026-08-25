@@ -1,11 +1,10 @@
 @if (mobileNav.isOpen()) {
-  <div class="sidebar-backdrop" [class.sidebar-backdrop--active]="hamburgerMode()" (click)="mobileNav.close()"></div>
+  <div class="sidebar-backdrop" (click)="mobileNav.close()"></div>
 }
 
-<aside class="sidebar" [class.sidebar--open]="mobileNav.isOpen()" [class.sidebar--hamburger-mode]="hamburgerMode()">
-  <div class="sidebar__brand">
-    <span class="sidebar__brand-mark">POS</span>
-    <span class="sidebar__brand-name">System</span>
+<aside class="sidebar" [class.sidebar--open]="mobileNav.isOpen()">
+  <div class="sidebar__brand" title="POS System">
+    <ds-icon name="dashboard" [size]="17" />
   </div>
 
   <nav class="sidebar__nav">
@@ -15,16 +14,14 @@
           class="sidebar__item"
           [routerLink]="item.route"
           routerLinkActive="sidebar__item--active"
+          [title]="item.label"
           (click)="mobileNav.close()"
         >
           <ds-icon [name]="item.icon" [size]="19" />
-          <span>{{ item.label }}</span>
         </a>
       } @else {
-        <span class="sidebar__item sidebar__item--disabled">
+        <span class="sidebar__item sidebar__item--disabled" [title]="item.label + ' (Pronto)'">
           <ds-icon [name]="item.icon" [size]="19" />
-          <span>{{ item.label }}</span>
-          <span class="sidebar__soon">Pronto</span>
         </span>
       }
     }
@@ -36,26 +33,34 @@
         class="sidebar__item"
         routerLink="/configuracion"
         routerLinkActive="sidebar__item--active"
+        title="Configuración"
         (click)="mobileNav.close()"
       >
         <ds-icon name="settings" [size]="19" />
-        <span>Configuración</span>
       </a>
     }
-    <button type="button" class="sidebar__item sidebar__item--button" (click)="abrirCambioCajero()">
+    <button type="button" class="sidebar__item sidebar__item--button" title="Cambiar de cajero" (click)="abrirCambioCajero()">
       <ds-icon name="lock" [size]="19" />
-      <span>Cambiar de cajero</span>
     </button>
-  </div>
 
-  <div class="sidebar__user">
-    <ds-avatar [name]="auth.usuario()?.nombre ?? ''" />
-    <div class="sidebar__user-info">
-      <span class="sidebar__user-name">{{ auth.usuario()?.nombre }}</span>
-      <span class="sidebar__user-role">{{ auth.usuario()?.rolNombre }}</span>
+    <div class="sidebar__temas" title="Tema visual">
+      @for (t of temas; track t.valor) {
+        <button
+          type="button"
+          class="sidebar__tema-dot"
+          [class.sidebar__tema-dot--active]="themeService.tema() === t.valor"
+          [attr.data-tema]="t.valor"
+          [title]="t.etiqueta"
+          (click)="themeService.cambiarTema(t.valor)"
+        ></button>
+      }
     </div>
-    <button type="button" class="sidebar__logout" (click)="logout()" title="Cerrar sesión">
-      <ds-icon name="log-out" [size]="18" />
+
+    <div class="sidebar__user" [title]="(auth.usuario()?.nombre ?? '') + ' · ' + (auth.usuario()?.rolNombre ?? '')">
+      <ds-avatar [name]="auth.usuario()?.nombre ?? ''" size="sm" />
+    </div>
+    <button type="button" class="sidebar__item sidebar__item--button sidebar__item--danger" title="Cerrar sesión" (click)="logout()">
+      <ds-icon name="log-out" [size]="19" />
     </button>
   </div>
 </aside>

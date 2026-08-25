@@ -1,12 +1,34 @@
-<div class="pos-fab-group">
-  <button type="button" class="pos-pausar-caja-fab" (click)="showConfirmarPausarCaja.set(true)" title="Pausar caja">
-    <ds-icon name="pause" [size]="20" />
-    <span>Pausar caja</span>
+<div class="pos-user-menu" [class.pos-user-menu--open]="menuAbierto()">
+  <button type="button" class="pos-user-menu__trigger" (click)="menuAbierto.set(!menuAbierto())">
+    <ds-avatar [name]="auth.usuario()?.nombre ?? ''" size="sm" />
+    <span>{{ auth.usuario()?.nombre }}</span>
+    <ds-icon name="chevron-down" [size]="14" />
   </button>
-  <button type="button" class="pos-cerrar-caja-fab" (click)="showConfirmarCerrarCaja.set(true)" title="Cerrar caja">
-    <ds-icon name="lock" [size]="20" />
-    <span>Cerrar caja</span>
-  </button>
+
+  @if (menuAbierto()) {
+    <div class="pos-user-menu__backdrop" (click)="menuAbierto.set(false)"></div>
+    <div class="pos-user-menu__panel">
+      <div class="pos-user-menu__head">
+        <ds-avatar [name]="auth.usuario()?.nombre ?? ''" />
+        <div>
+          <strong>{{ auth.usuario()?.nombre }}</strong>
+          <span>{{ auth.usuario()?.rolNombre }} · Turno abierto</span>
+        </div>
+      </div>
+      <button type="button" class="pos-user-menu__item" (click)="menuAbierto.set(false); showConfirmarPausarCaja.set(true)">
+        <ds-icon name="pause" [size]="16" />
+        Pausar caja
+      </button>
+      <button
+        type="button"
+        class="pos-user-menu__item pos-user-menu__item--danger"
+        (click)="menuAbierto.set(false); showConfirmarCerrarCaja.set(true)"
+      >
+        <ds-icon name="lock" [size]="16" />
+        Cerrar caja
+      </button>
+    </div>
+  }
 </div>
 
 @if (showConfirmarPausarCaja()) {

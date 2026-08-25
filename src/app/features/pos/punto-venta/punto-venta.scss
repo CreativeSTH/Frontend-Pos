@@ -1,5 +1,56 @@
 @use 'mixins' as mix;
 
+/*
+  El punto de venta no scrollea como página completa: riel, topbar y carrito
+  quedan fijos al alto de la pantalla y solo el grid de productos scrollea
+  internamente — si no, con muchos productos "Cobrar" termina varias
+  pantallas más abajo. `:host` ocupa el 100% de `.dashboard-shell__content`
+  (que ya viene con overflow-y:auto — al no desbordar, ese scroll externo
+  nunca se activa) y reparte esa altura hacia `.pos-layout`.
+*/
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+app-topbar {
+  flex-shrink: 0;
+}
+
+/* Selector de sucursal del topbar: mismo look "sin borde" que el botón de
+   usuario, no la caja con borde que usa ds-select en formularios normales.
+   ::ng-deep porque .ds-select/.ds-select__trigger viven en el estilo
+   encapsulado del propio componente — solo aplica a esta instancia. */
+.pos-sucursal-select {
+  ::ng-deep .ds-select {
+    height: auto;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    transition: background var(--duration-base) var(--ease-standard);
+
+    &:hover,
+    &:focus-within {
+      background: var(--glass-bg);
+      border-color: transparent;
+      box-shadow: none;
+    }
+  }
+
+  ::ng-deep .ds-select__trigger {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+    color: var(--text-secondary);
+  }
+
+  ::ng-deep .ds-select__icon {
+    color: var(--text-secondary);
+  }
+}
+
 .pos-loading {
   display: flex;
   align-items: center;
@@ -11,48 +62,42 @@
 .pos-layout {
   display: grid;
   grid-template-columns: 1fr 380px;
-  gap: var(--space-6);
-  align-items: start;
+  gap: 0;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
 
   @include mix.tablet-down {
     grid-template-columns: 1fr;
+    gap: var(--space-6);
+    flex: none;
+    min-height: auto;
   }
 }
 
+/*
+  El carrito se separa del catálogo con esta línea (no con gap+card propia)
+  y respira con su propio padding-right — así el catálogo queda "central"
+  mientras el carrito sangra hasta el borde derecho (ver .pos-cart).
+*/
 .pos-catalog {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-}
+  min-height: 0;
+  padding-right: var(--space-8);
+  border-right: 1px solid var(--glass-border);
 
-.pos-usuario-activo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
-  border-radius: var(--radius-full);
-  background: var(--glass-bg);
-
-  ds-avatar {
-    width: 28px;
-    height: 28px;
-
-    ::ng-deep .ds-avatar {
-      width: 28px;
-      height: 28px;
-      font-size: var(--fs-xs);
-    }
-  }
-
-  span {
-    font-size: var(--fs-sm);
-    font-weight: var(--fw-medium);
-    color: var(--text-secondary);
+  @include mix.tablet-down {
+    padding-right: 0;
+    border-right: none;
   }
 }
 
 .pos-catalog-filtros {
   display: flex;
+  flex-shrink: 0;
   gap: var(--space-3);
 
   ds-search-bar {
@@ -65,19 +110,33 @@
   }
 }
 
+/* El grid de productos es la única región que scrollea dentro del POS. */
+app-catalogo-grid-pos {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-2);
+  @include mix.scrollbar-thin;
+}
+
 /* Carrito */
+/*
+  Sangra hasta el borde superior/derecho/inferior de la ventana — igual que el
+  topbar (mismo padding de `.dashboard-shell__content` a cancelar), para que
+  el riel, el topbar y el carrito lean como un mismo marco y el catálogo
+  quede como el único bloque con aire alrededor.
+*/
 .pos-cart {
-  position: sticky;
-  top: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  @include mix.glass-panel-elevated;
+  margin: calc(-1 * var(--space-8)) calc(-1 * var(--space-10)) calc(-1 * var(--space-8)) 0;
+  padding: var(--space-5) var(--space-10) var(--space-8) var(--space-8);
 
   @include mix.tablet-down {
-    position: static;
+    margin: 0;
+    padding: var(--space-5);
   }
 }
 
@@ -96,15 +155,26 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  max-height: 340px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   @include mix.scrollbar-thin;
+}
+
+.pos-cart > ds-empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pos-cart-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  @include mix.glass-panel;
 }
 
 .pos-cart-item__info {
@@ -128,15 +198,18 @@
 .pos-cart-item__qty {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   flex-shrink: 0;
+  padding: 2px;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg-active);
 
   button {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border: none;
-    border-radius: var(--radius-sm);
-    background: var(--glass-bg);
+    border-radius: 50%;
+    background: var(--bg-elevated);
     color: var(--text-primary);
     cursor: pointer;
 
@@ -149,6 +222,7 @@
     min-width: 18px;
     text-align: center;
     font-size: var(--fs-sm);
+    font-weight: var(--fw-semibold);
   }
 }
 

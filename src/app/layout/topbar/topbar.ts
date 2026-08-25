@@ -3,7 +3,6 @@ import { Router } from '@angular/router';
 import { Icon } from '../../shared/ui/atoms/icon/icon';
 import { Badge, BadgeTone } from '../../shared/ui/atoms/badge/badge';
 import { MobileNavService } from '../../core/services/mobile-nav.service';
-import { CajaService } from '../../core/services/caja.service';
 import { AlertasService } from '../../core/services/alertas.service';
 import { ListaPedidosService } from '../../core/services/lista-pedidos.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -31,15 +30,11 @@ export class Topbar {
   readonly subtitle = input<string | undefined>(undefined);
 
   protected readonly mobileNav = inject(MobileNavService);
-  private readonly cajaService = inject(CajaService);
   protected readonly alertasService = inject(AlertasService);
   private readonly listaPedidosService = inject(ListaPedidosService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
-
-  /** Igual que en Sidebar: con turno de caja abierto, el botón hamburguesa se ve en cualquier tamaño de pantalla. */
-  protected readonly hamburgerMode = computed(() => this.cajaService.turnoAbierto() !== null);
 
   /** Un usuario de tier SISTEMA no pertenece a ningún negocio, así que no tiene alertas que ver. */
   protected readonly mostrarCampana = computed(

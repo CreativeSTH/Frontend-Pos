@@ -37,7 +37,7 @@
 
 .ds-switch--checked {
   .ds-switch__track {
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    background: var(--btn-primary-bg);
     border-color: transparent;
   }
 

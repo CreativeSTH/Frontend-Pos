@@ -15,7 +15,6 @@ import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Icon } from '../../../shared/ui/atoms/icon/icon';
 import { Badge } from '../../../shared/ui/atoms/badge/badge';
-import { Avatar } from '../../../shared/ui/atoms/avatar/avatar';
 import { Thumbnail } from '../../../shared/ui/atoms/thumbnail/thumbnail';
 import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
@@ -85,7 +84,6 @@ interface LineaCarrito {
     Button,
     Icon,
     Badge,
-    Avatar,
     Thumbnail,
     SearchBar,
     EmptyState,

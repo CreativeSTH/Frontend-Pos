@@ -56,11 +56,11 @@
 /* Variante primaria: degradado con glow, sin bordes de color plano */
 .ds-btn--primary {
   color: var(--text-on-accent);
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  box-shadow: 0 8px 24px rgba(var(--accent-primary-rgb), 0.35);
+  background: var(--btn-primary-bg);
+  box-shadow: var(--btn-primary-shadow);
 
   &:hover:not(:disabled) {
-    box-shadow: 0 10px 30px rgba(var(--accent-primary-rgb), 0.5);
+    box-shadow: var(--btn-primary-shadow-hover);
   }
 }
 
