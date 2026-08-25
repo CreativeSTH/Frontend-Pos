@@ -50,6 +50,10 @@
   --z-modal: 400;
   --z-select-panel: 450;
   --z-toast: 500;
+
+  /* Scrim del backdrop de modales — intencionalmente igual en los 3 temas
+     (dimmer universal detrás de cualquier diálogo, no una superficie "glass"). */
+  --overlay-scrim: rgba(3, 4, 8, 0.6);
 }
 
 /*

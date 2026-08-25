@@ -64,6 +64,9 @@
   height: 26px;
   border: none;
   border-radius: 50%;
+  /* Fijo a propósito (no un token de tema): este botón flota sobre una foto
+     subida por el usuario, tiene que verse igual sin importar el tema activo —
+     mismo criterio que product-card.scss (.product-card__stock). */
   background: rgba(3, 4, 8, 0.65);
   backdrop-filter: blur(6px);
   color: #fff;

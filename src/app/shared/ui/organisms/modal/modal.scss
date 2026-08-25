@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-4);
-  background: rgba(3, 4, 8, 0.6);
+  background: var(--overlay-scrim);
   backdrop-filter: blur(6px);
   animation: ds-fade-in var(--duration-base) var(--ease-standard);
 }
