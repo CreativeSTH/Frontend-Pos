@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, forwardRef, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, forwardRef, input, signal } from '@angular/core';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 
 @Component({
@@ -17,9 +17,12 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 })
 export class Switch implements ControlValueAccessor {
   readonly label = input<string | undefined>(undefined);
+  /** Deshabilitado "a mano" (fuera de un `formControl.disable()`) — ej. mientras no se cumple una precondición. */
+  readonly disabledInput = input<boolean>(false, { alias: 'disabled' });
 
   protected readonly checked = signal(false);
-  protected readonly disabled = signal(false);
+  private readonly disabledByForms = signal(false);
+  protected readonly disabled = computed(() => this.disabledInput() || this.disabledByForms());
 
   private onChange: (value: boolean) => void = () => {};
   private onTouched: () => void = () => {};
@@ -45,6 +48,6 @@ export class Switch implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled.set(isDisabled);
+    this.disabledByForms.set(isDisabled);
   }
 }

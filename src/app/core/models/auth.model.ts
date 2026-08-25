@@ -21,7 +21,8 @@ export type ModuloPermiso =
   | 'METODOS_PAGO'
   | 'GRAFICOS'
   | 'FACTURACION'
-  | 'CUPONES';
+  | 'CUPONES'
+  | 'PAGOS';
 
 export type AccionPermiso = 'VER' | 'CREAR' | 'EDITAR' | 'ELIMINAR';
 

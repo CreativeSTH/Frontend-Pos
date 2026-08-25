@@ -58,6 +58,7 @@ export const CONFIG_GROUPS: ConfiguracionGroup[] = [
       { label: 'Facturación', description: 'Formatos de recibo y factura', icon: 'file-text', route: '/configuracion/facturacion', modulo: 'FACTURACION' },
       { label: 'Cupones y descuentos', description: 'Cupones de código y promociones automáticas por sucursal, categoría o producto', icon: 'tag', route: '/configuracion/cupones', modulo: 'CUPONES' },
       { label: 'Dispositivos', description: 'Impresora, cajón monedero y lector de código de barras', icon: 'printer', route: '/configuracion/dispositivos', modulo: 'CAJA' },
+      { label: 'Pagos con Wompi', description: 'Credenciales y activación de la pasarela de pago Wompi', icon: 'credit-card', route: '/configuracion/pagos-wompi', modulo: 'PAGOS', accion: 'EDITAR' },
       { label: 'Negocios', description: 'Gestión de negocios de la plataforma', icon: 'store', route: '/negocios', modulo: 'NEGOCIOS' },
     ],
   },

@@ -139,7 +139,7 @@
 }
 
 @if (showCobro()) {
-  <ds-modal title="Cobrar venta" size="md" (close)="showCobro.set(false)">
+  <ds-modal title="Cobrar venta" size="md" (close)="pagandoConWompi() ? null : showCobro.set(false)">
     @if (descuentoVenta() > 0 || descuentoCupon() > 0) {
       <div class="cobro-subtotal-row">
         <span>Subtotal</span>
@@ -160,97 +160,100 @@
     }
     <div class="cobro-total">{{ formatMoney(total()) }}</div>
 
-    <div class="cobro-tipo-tabs">
-      <button
-        type="button"
-        class="cobro-tipo-tab"
-        [class.cobro-tipo-tab--active]="tipoVenta() === 'CONTADO'"
-        (click)="seleccionarTipoVenta('CONTADO')"
-      >
-        Contado
-      </button>
-      <button
-        type="button"
-        class="cobro-tipo-tab"
-        [class.cobro-tipo-tab--active]="tipoVenta() === 'CREDITO'"
-        (click)="seleccionarTipoVenta('CREDITO')"
-      >
-        Crédito
-      </button>
-    </div>
+    <div class="cobro-cuerpo" [class.cobro-cuerpo--bloqueado]="pagandoConWompi()" [inert]="pagandoConWompi()">
+      <div class="cobro-tipo-tabs">
+        <button
+          type="button"
+          class="cobro-tipo-tab"
+          [class.cobro-tipo-tab--active]="tipoVenta() === 'CONTADO'"
+          (click)="seleccionarTipoVenta('CONTADO')"
+        >
+          Contado
+        </button>
+        <button
+          type="button"
+          class="cobro-tipo-tab"
+          [class.cobro-tipo-tab--active]="tipoVenta() === 'CREDITO'"
+          (click)="seleccionarTipoVenta('CREDITO')"
+        >
+          Crédito
+        </button>
+      </div>
 
-    <div class="cobro-tipo-tabs cobro-tipo-tabs--comprobante">
-      <button
-        type="button"
-        class="cobro-tipo-tab"
-        [class.cobro-tipo-tab--active]="tipoComprobante() === 'RECIBO'"
-        (click)="seleccionarTipoComprobante('RECIBO')"
-      >
-        <ds-icon name="receipt" [size]="14" /> Recibo
-      </button>
-      <button
-        type="button"
-        class="cobro-tipo-tab"
-        [class.cobro-tipo-tab--active]="tipoComprobante() === 'FACTURA'"
-        (click)="seleccionarTipoComprobante('FACTURA')"
-      >
-        <ds-icon name="file-text" [size]="14" /> Factura
-      </button>
-    </div>
+      <div class="cobro-tipo-tabs cobro-tipo-tabs--comprobante">
+        <button
+          type="button"
+          class="cobro-tipo-tab"
+          [class.cobro-tipo-tab--active]="tipoComprobante() === 'RECIBO'"
+          (click)="seleccionarTipoComprobante('RECIBO')"
+        >
+          <ds-icon name="receipt" [size]="14" /> Recibo
+        </button>
+        <button
+          type="button"
+          class="cobro-tipo-tab"
+          [class.cobro-tipo-tab--active]="tipoComprobante() === 'FACTURA'"
+          (click)="seleccionarTipoComprobante('FACTURA')"
+        >
+          <ds-icon name="file-text" [size]="14" /> Factura
+        </button>
+      </div>
 
-    <div class="cobro-descuento-switch">
-      <ds-switch
-        label="Aplicar descuento a la venta"
-        [ngModel]="descuentoActivo()"
-        (ngModelChange)="alternarDescuentoActivo($event)"
-      />
-    </div>
-    @if (descuentoActivo()) {
-      <ds-form-field label="Descuento en la venta">
-        <ds-input
-          type="number"
-          icon="banknote"
-          [ngModel]="descuentoVenta()"
-          (ngModelChange)="actualizarDescuentoVenta($event)"
+      <div class="cobro-descuento-switch">
+        <ds-switch
+          label="Aplicar descuento a la venta"
+          [ngModel]="descuentoActivo()"
+          (ngModelChange)="alternarDescuentoActivo($event)"
         />
-      </ds-form-field>
-      @if (requierePinDescuento()) {
-        <ds-form-field label="PIN de un administrador" hint="Tu usuario no tiene permisos para aplicar descuentos directamente">
+      </div>
+      @if (descuentoActivo()) {
+        <ds-form-field label="Descuento en la venta">
           <ds-input
-            type="password"
-            icon="lock"
-            placeholder="••••"
-            [ngModel]="pinAutorizacionDescuento()"
-            (ngModelChange)="pinAutorizacionDescuento.set($event)"
+            type="number"
+            icon="banknote"
+            [ngModel]="descuentoVenta()"
+            (ngModelChange)="actualizarDescuentoVenta($event)"
           />
         </ds-form-field>
-      }
-    }
-
-    <div class="cobro-descuento-switch">
-      <ds-switch label="Cupón de descuento" [ngModel]="cuponActivo()" (ngModelChange)="alternarCupon($event)" />
-    </div>
-    @if (cuponActivo()) {
-      <div class="cobro-cupon-row">
-        @if (!cuponAplicado()) {
-          <ds-input
-            icon="tag"
-            placeholder="Código del cupón"
-            [ngModel]="codigoCupon()"
-            (ngModelChange)="codigoCupon.set($event)"
-          />
-          <ds-button variant="glass" [loading]="validandoCupon()" (click)="redimirCupon()">Redimir</ds-button>
-        } @else {
-          <div class="cobro-cupon-aplicado">
-            <ds-icon name="tag" [size]="14" />
-            <span>{{ cuponAplicado()?.codigo }}</span>
-          </div>
-          <ds-button variant="ghost" icon="x" (click)="quitarCupon()">Quitar</ds-button>
+        @if (requierePinDescuento()) {
+          <ds-form-field label="PIN de un administrador" hint="Tu usuario no tiene permisos para aplicar descuentos directamente">
+            <ds-input
+              type="password"
+              icon="lock"
+              placeholder="••••"
+              [ngModel]="pinAutorizacionDescuento()"
+              (ngModelChange)="pinAutorizacionDescuento.set($event)"
+            />
+          </ds-form-field>
         }
+      }
+
+      <div class="cobro-descuento-switch">
+        <ds-switch label="Cupón de descuento" [ngModel]="cuponActivo()" (ngModelChange)="alternarCupon($event)" />
       </div>
-    }
+      @if (cuponActivo()) {
+        <div class="cobro-cupon-row">
+          @if (!cuponAplicado()) {
+            <ds-input
+              icon="tag"
+              placeholder="Código del cupón"
+              [ngModel]="codigoCupon()"
+              (ngModelChange)="codigoCupon.set($event)"
+            />
+            <ds-button variant="glass" [loading]="validandoCupon()" (click)="redimirCupon()">Redimir</ds-button>
+          } @else {
+            <div class="cobro-cupon-aplicado">
+              <ds-icon name="tag" [size]="14" />
+              <span>{{ cuponAplicado()?.codigo }}</span>
+            </div>
+            <ds-button variant="ghost" icon="x" (click)="quitarCupon()">Quitar</ds-button>
+          }
+        </div>
+      }
+    </div>
 
     @if (tipoVenta() === 'CONTADO') {
+      <div class="cobro-cuerpo" [class.cobro-cuerpo--bloqueado]="pagandoConWompi()" [inert]="pagandoConWompi()">
       <div class="cobro-pagos">
         @for (pago of pagos(); track $index; let pagoIndex = $index) {
           @if (pago.metodoPago === nombreEfectivo()) {
@@ -321,7 +324,97 @@
         <ds-icon name="plus" [size]="14" />
         Agregar método de pago
       </button>
+      </div>
 
+      @if (configWompi()?.activo && (configWompi()?.qrHabilitado || configWompi()?.nequiHabilitado || pagandoConWompi())) {
+        <div class="cobro-wompi">
+          @if (!pagandoConWompi()) {
+            <div class="cobro-wompi__botones">
+              @if (configWompi()?.qrHabilitado) {
+                <ds-button variant="glass" icon="barcode" [fullWidth]="true" (click)="iniciarQrWompi()">
+                  Pagar con QR
+                </ds-button>
+              }
+              @if (configWompi()?.nequiHabilitado) {
+                <ds-button variant="glass" icon="wallet" [fullWidth]="true" (click)="elegirNequi()">
+                  Pagar con Nequi
+                </ds-button>
+              }
+            </div>
+          } @else if (pasoWompi() === 'esperando') {
+            <div class="cobro-wompi__pendiente">
+              @if (metodoWompiEnCurso() === 'QR') {
+                @if (iniciandoPagoWompi()) {
+                  <ds-spinner [size]="28" />
+                  <span class="cobro-wompi__mensaje">Iniciando pago con QR...</span>
+                } @else if (qrWompiImagen()) {
+                  <img [src]="qrWompiImagen()" alt="Código QR de pago Wompi" class="cobro-wompi__qr" />
+                  <span class="cobro-wompi__mensaje">
+                    Escaneá el código con tu app bancaria para pagar {{ formatMoney(total()) }}
+                  </span>
+                  <div class="cobro-wompi__esperando">
+                    <ds-spinner [size]="16" />
+                    <span>Esperando confirmación del pago...</span>
+                  </div>
+                } @else {
+                  <span class="cobro-wompi__error">
+                    Wompi no devolvió el código QR. Cancelá e intentá de nuevo, o probá con otro método de pago.
+                  </span>
+                }
+              } @else if (metodoWompiEnCurso() === 'NEQUI') {
+                @if (!nequiTelefonoConfirmado()) {
+                  <ds-form-field label="Teléfono Nequi (10 dígitos)">
+                    <ds-input
+                      [ngModel]="telefonoNequi()"
+                      (ngModelChange)="telefonoNequi.set($event)"
+                      (keydown.enter)="confirmarTelefonoNequi()"
+                      placeholder="3001234567"
+                    />
+                  </ds-form-field>
+                  <ds-button variant="primary" (click)="confirmarTelefonoNequi()">Confirmar</ds-button>
+                } @else if (iniciandoPagoWompi()) {
+                  <ds-spinner [size]="28" />
+                  <span class="cobro-wompi__mensaje">Iniciando pago con Nequi...</span>
+                } @else {
+                  <ds-spinner [size]="28" />
+                  <span class="cobro-wompi__mensaje">
+                    Esperando confirmación en la app Nequi de {{ telefonoNequi() }}...
+                  </span>
+                }
+              }
+              <ds-button variant="ghost" (click)="cancelarPagoWompi()">Cancelar</ds-button>
+            </div>
+          } @else {
+            <!-- Resultado ya conocido (aprobado o declinado) — secuencia automática, sin botón de cancelar: no queda nada que cancelar. -->
+            <div class="cobro-wompi__pendiente">
+              @switch (pasoWompi()) {
+                @case ('recibido') {
+                  <ds-icon name="check" [size]="28" class="cobro-wompi__icono cobro-wompi__icono--exito" />
+                  <span class="cobro-wompi__mensaje">Pago recibido</span>
+                }
+                @case ('confirmando') {
+                  <ds-spinner [size]="28" />
+                  <span class="cobro-wompi__mensaje">Confirmando venta...</span>
+                }
+                @case ('fallido') {
+                  <ds-icon name="alert-triangle" [size]="28" class="cobro-wompi__icono cobro-wompi__icono--error" />
+                  <span class="cobro-wompi__error">Pago fallido o cancelado</span>
+                }
+                @case ('retomando') {
+                  <ds-spinner [size]="28" />
+                  <span class="cobro-wompi__mensaje">Retomando venta...</span>
+                }
+                @case ('cerrando') {
+                  <ds-spinner [size]="28" />
+                  <span class="cobro-wompi__mensaje">Cerrando pago Wompi...</span>
+                }
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <div class="cobro-cuerpo" [class.cobro-cuerpo--bloqueado]="pagandoConWompi()" [inert]="pagandoConWompi()">
       @if (faltante() > 0) {
         <div class="cobro-resultado cobro-resultado--danger">
           <span class="cobro-resultado__label">Falta por pagar</span>
@@ -392,6 +485,7 @@
           }
         }
       }
+      </div>
     } @else {
       <ds-form-field label="Cliente">
         <ds-select [ngModel]="clienteId()" (ngModelChange)="onClienteChange($event)">
@@ -453,8 +547,13 @@
     }
 
     <div modal-footer>
-      <ds-button variant="ghost" (click)="showCobro.set(false)">Cancelar</ds-button>
-      <ds-button variant="primary" [loading]="procesando() || creandoClienteVenta()" (click)="confirmarCobro()">
+      <ds-button variant="ghost" [disabled]="pagandoConWompi()" (click)="showCobro.set(false)">Cancelar</ds-button>
+      <ds-button
+        variant="primary"
+        [disabled]="pagandoConWompi()"
+        [loading]="procesando() || creandoClienteVenta()"
+        (click)="confirmarCobro()"
+      >
         {{ tipoVenta() === 'CREDITO' ? 'Registrar venta a crédito' : 'Confirmar pago' }}
       </ds-button>
     </div>

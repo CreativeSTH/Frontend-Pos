@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   HostListener,
   computed,
   effect,
@@ -10,7 +11,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { Subscription, forkJoin } from 'rxjs';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Icon } from '../../../shared/ui/atoms/icon/icon';
@@ -22,6 +23,7 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { Switch } from '../../../shared/ui/atoms/switch/switch';
+import { Spinner } from '../../../shared/ui/atoms/spinner/spinner';
 import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { ProductosService } from '../../../core/services/productos.service';
 import { CategoriasService } from '../../../core/services/categorias.service';
@@ -36,6 +38,7 @@ import { ClientesService } from '../../../core/services/clientes.service';
 import { CuponesService } from '../../../core/services/cupones.service';
 import { PrintAgentService } from '../../../core/services/print-agent.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PagosWompiService } from '../../../core/services/pagos-wompi.service';
 import {
   VentasSuspendidasService,
   LineaCarritoSuspendida,
@@ -52,6 +55,7 @@ import { MetodoPago } from '../../../core/models/metodo-pago.model';
 import { Cliente, VerificarCreditoResponse } from '../../../core/models/cliente.model';
 import { CreateDireccionClientePayload, DireccionCliente } from '../../../core/models/direccion-cliente.model';
 import { PrecioVigente } from '../../../core/models/promocion.model';
+import { ConfiguracionWompi, MetodoPagoWompi } from '../../../core/models/pago-wompi.model';
 import { PanelDomiciliosPos } from './panel-domicilios-pos/panel-domicilios-pos';
 import { TurnoCajaPos } from './turno-caja-pos/turno-caja-pos';
 import { VentasSuspendidasPos } from './ventas-suspendidas-pos/ventas-suspendidas-pos';
@@ -91,6 +95,7 @@ interface LineaCarrito {
     Input,
     Select,
     Switch,
+    Spinner,
     Modal,
     FormsModule,
     PanelDomiciliosPos,
@@ -120,6 +125,8 @@ export class PuntoVenta {
   private readonly toast = inject(ToastService);
   private readonly alertasService = inject(AlertasService);
   private readonly route = inject(ActivatedRoute);
+  private readonly pagosWompi = inject(PagosWompiService);
+  private readonly destroyRef = inject(DestroyRef);
 
   /** Referencia al buscador para devolverle el foco tras cada acción — así el lector de código de barras (que solo "escribe" donde esté el cursor) siempre tiene dónde caer. */
   private readonly buscador = viewChild<SearchBar>('buscador');
@@ -302,9 +309,53 @@ export class PuntoVenta {
   /** Lo que le queda por cubrir a la fila de efectivo antes de que el cajero escriba nada en ella — base para sugerir montos rápidos. */
   protected readonly montoPendienteEfectivo = computed(() => Math.max(0, this.total() - this.montoOtrosMetodos()));
 
+  // ---------- Pago con Wompi (QR / Nequi) ----------
+
+  /**
+   * `null` mientras se carga o si el negocio nunca configuró Wompi (o si el cajero no tiene el
+   * permiso `PAGOS:VER` — ver `cargarConfigWompi()`, se carga aparte del resto en `load()` a
+   * propósito: si esta llamada falla, el punto de venta entero no debe romperse, solo no se
+   * muestran los botones de Wompi).
+   */
+  protected readonly configWompi = signal<ConfiguracionWompi | null>(null);
+  /** `true` entre que el cajero elige QR/Nequi y la venta se cierra sola o se cancela — bloquea el resto del modal de cobro. */
+  protected readonly pagandoConWompi = signal(false);
+  protected readonly metodoWompiEnCurso = signal<MetodoPagoWompi | null>(null);
+  /** Solo para QR — normalizado a un `src` de `<img>` usable (ver `iniciarPagoWompi`). */
+  protected readonly qrWompiImagen = signal<string | null>(null);
+  /** Solo para NEQUI, antes y durante el ingreso del teléfono. */
+  protected readonly telefonoNequi = signal('');
+  /** Solo para NEQUI — separa la sub-vista "pedir teléfono" de "esperando confirmación en la app". */
+  protected readonly nequiTelefonoConfirmado = signal(false);
+  /** `true` mientras la llamada HTTP a `iniciarPago` está en vuelo (distinto de "ya se llamó, esperando el evento realtime"). */
+  protected readonly iniciandoPagoWompi = signal(false);
+
+  /**
+   * Paso visible del flujo de pago Wompi, para que el cajero siempre sepa qué está pasando en vez
+   * de solo un spinner genérico:
+   * - `esperando`: se llamó a `iniciarPago` y/o se está esperando que el cliente pague (QR
+   *   escaneado o Nequi con notificación enviada) — es el único paso donde `cancelarPagoWompi()`
+   *   tiene sentido.
+   * - `recibido`/`confirmando`: Wompi ya aprobó el pago, registrando la venta (automático).
+   * - `fallido`/`retomando`/`cerrando`: Wompi declinó o el cliente canceló — secuencia automática
+   *   y breve (con timeouts cortos, ver `manejarResultadoWompi`) antes de volver al modal normal.
+   */
+  protected readonly pasoWompi = signal<
+    'esperando' | 'recibido' | 'confirmando' | 'fallido' | 'retomando' | 'cerrando'
+  >('esperando');
+
+  /** Suscripción activa a `esperarResultado()` — se cancela a mano al cancelar el pago o al destruirse el componente, para que un resultado tardío de una venta ya cancelada no le pise el carrito a una venta nueva. */
+  private wompiSub: Subscription | null = null;
+  /** Timeouts de la secuencia visual `fallido → retomando → cerrando` — se limpian junto con `wompiSub` para no dejar un `setTimeout` colgado pisando el estado de una venta nueva. */
+  private wompiTimeouts: ReturnType<typeof setTimeout>[] = [];
+
   constructor() {
     this.load();
+    this.cargarConfigWompi();
     this.domicilioSolicitadoPorQuery.set(this.route.snapshot.queryParamMap.get('domicilio') === '1');
+
+    /** Si el componente se destruye con un pago Wompi pendiente (ej. el cajero navega a otra pantalla), no dejar el listener vivo — `PagosWompiService` es un singleton `providedIn: 'root'`, el `Subject` interno sigue vivo más allá de este componente. */
+    this.destroyRef.onDestroy(() => this.wompiSub?.unsubscribe());
 
     /** Persiste el carrito en localStorage (scopeado por negocio) para sobrevivir a un refresh del navegador o al logout forzado por un PIN incorrecto — ver auth.interceptor.ts. */
     effect(() => {
@@ -399,6 +450,20 @@ export class PuntoVenta {
         this.loading.set(false);
         this.toast.error('No se pudo cargar el punto de venta');
       },
+    });
+  }
+
+  /**
+   * Aparte del `forkJoin` de `load()` a propósito: el endpoint exige `PAGOS:VER` (ver
+   * `pagos.controller.ts`), permiso que el rol "Cajero" sembrado por defecto NO tiene hoy
+   * (`permisos-cajero.constant.ts` no incluye el módulo PAGOS) — si esta llamada falla (403 u
+   * otro error), el punto de venta entero no debe romperse, solo no se muestran los botones de
+   * Wompi (igual que si el negocio nunca lo configuró).
+   */
+  private cargarConfigWompi(): void {
+    this.pagosWompi.obtenerConfiguracion().subscribe({
+      next: (config) => this.configWompi.set(config),
+      error: () => this.configWompi.set(null),
     });
   }
 
@@ -591,6 +656,7 @@ export class PuntoVenta {
     this.clienteVentaActivo.set(false);
     this.reiniciarClienteVenta();
     this.reiniciarDomicilio();
+    this.reiniciarPagoWompi();
     this.showCobro.set(true);
   }
 
@@ -926,6 +992,167 @@ export class PuntoVenta {
     return [...otros, { metodoPago: this.nombreEfectivo()!, monto: this.efectivoAplicado() }];
   }
 
+  // ---------- Pago con Wompi (QR / Nequi) ----------
+
+  private reiniciarPagoWompi(): void {
+    this.wompiSub?.unsubscribe();
+    this.wompiSub = null;
+    this.wompiTimeouts.forEach((timeout) => clearTimeout(timeout));
+    this.wompiTimeouts = [];
+    this.pagandoConWompi.set(false);
+    this.metodoWompiEnCurso.set(null);
+    this.qrWompiImagen.set(null);
+    this.telefonoNequi.set('');
+    this.nequiTelefonoConfirmado.set(false);
+    this.iniciandoPagoWompi.set(false);
+    this.pasoWompi.set('esperando');
+  }
+
+  /**
+   * Las mismas validaciones que ya corre `confirmarCobro()` para cupón/PIN de descuento/cliente
+   * de venta contado — se repiten acá (no se extrae un helper compartido para no tocar
+   * `confirmarCobro()`, que ya está aprobado y probado) porque, a diferencia del pago en
+   * efectivo/tarjeta manual, un pago Wompi cobra la plata ANTES de que `confirmarCobro()` corra
+   * (dispara sola al confirmarse — ver `suscribirConfirmacionWompi`). Si alguna de estas
+   * validaciones fallara recién ahí, quedaría una venta cobrada por Wompi que nunca se registra.
+   * Bloquear acá, antes de cobrarle nada al cliente, es la única forma segura de evitarlo.
+   */
+  private wompiPuedeIniciar(): boolean {
+    if (this.cuponActivo() && !this.cuponAplicado()) {
+      this.toast.error('Redimí el cupón antes de pagar con Wompi, o desactivá el switch');
+      return false;
+    }
+    if (this.descuentoActivo() && this.descuentoVenta() > 0 && this.requierePinDescuento()) {
+      if (!/^\d{4,6}$/.test(this.pinAutorizacionDescuento())) {
+        this.toast.error('Ingresá el PIN de un administrador para aplicar el descuento antes de pagar con Wompi');
+        return false;
+      }
+    }
+    if (this.clienteVentaActivo() && this.clienteVentaEtapa() !== 'seleccionado') {
+      this.toast.error('Guardá o seleccioná el cliente antes de pagar con Wompi');
+      return false;
+    }
+    return true;
+  }
+
+  protected iniciarQrWompi(): void {
+    if (!this.wompiPuedeIniciar()) return;
+    this.pagandoConWompi.set(true);
+    this.metodoWompiEnCurso.set('QR');
+    this.qrWompiImagen.set(null);
+    this.iniciarPagoWompi('QR', {});
+  }
+
+  /** Solo abre la sub-vista de "pedir teléfono" — `iniciarPago` no se llama hasta `confirmarTelefonoNequi()`. */
+  protected elegirNequi(): void {
+    if (!this.wompiPuedeIniciar()) return;
+    this.pagandoConWompi.set(true);
+    this.metodoWompiEnCurso.set('NEQUI');
+    this.telefonoNequi.set('');
+    this.nequiTelefonoConfirmado.set(false);
+  }
+
+  protected confirmarTelefonoNequi(): void {
+    const telefono = this.telefonoNequi().trim();
+    if (!/^\d{10}$/.test(telefono)) {
+      this.toast.error('Ingresá un teléfono de Nequi válido (10 dígitos)');
+      return;
+    }
+    this.nequiTelefonoConfirmado.set(true);
+    this.iniciarPagoWompi('NEQUI', { phone_number: telefono });
+  }
+
+  private iniciarPagoWompi(metodo: MetodoPagoWompi, datosMetodo: Record<string, unknown>): void {
+    this.iniciandoPagoWompi.set(true);
+    this.pagosWompi
+      .iniciarPago({ montoEnCentavos: Math.round(this.total() * 100), metodo, datosMetodo })
+      .subscribe({
+        next: (resultado) => {
+          this.iniciandoPagoWompi.set(false);
+          if (metodo === 'QR') {
+            const qr = resultado.extra?.['qr_image'];
+            // Wompi documenta `qr_image` como SVG codificado en base64 (no PNG) — se cubre
+            // también el caso de que ya venga con el prefijo `data:` completo. Si no vino nada
+            // (se agotó el polling del backend, ver `PagosService.esperarQrImagen`), se deja
+            // `null`: la vista de espera muestra el estado de error en vez de un <img> roto.
+            this.qrWompiImagen.set(
+              typeof qr === 'string' && qr.length > 0
+                ? qr.startsWith('data:')
+                  ? qr
+                  : `data:image/svg+xml;base64,${qr}`
+                : null,
+            );
+          }
+          this.suscribirConfirmacionWompi(resultado.referencia);
+        },
+        error: (err) => {
+          this.iniciandoPagoWompi.set(false);
+          this.reiniciarPagoWompi();
+          this.toast.error(err.error?.message ?? 'No se pudo iniciar el pago con Wompi');
+        },
+      });
+  }
+
+  /**
+   * Se resuelve la primera vez que llega el resultado TERMINAL (aprobado o declinado) de esta
+   * referencia puntual. Si se aprobó: reemplaza `pagos` por la única línea Wompi y dispara
+   * `confirmarCobro()` sola, sin esperar un segundo click del cajero (el dinero ya se cobró
+   * afuera) — reusa el 100% de la validación que ya corre `confirmarCobro()`
+   * (crédito/cupón/descuento) sin reimplementar `registrarVenta()`. Nota: `pagandoConWompi` NO se
+   * apaga acá — sigue bloqueando el resto del modal durante el paso `confirmando` (la llamada a
+   * `registrarVenta()`); se apaga en el `next`/`error` de esa llamada (ver `registrarVenta`), así
+   * el cajero nunca ve el modal desbloqueado a mitad de una venta que Wompi ya cobró.
+   */
+  private suscribirConfirmacionWompi(referencia: string): void {
+    this.wompiSub?.unsubscribe();
+    this.wompiSub = this.pagosWompi.esperarResultado(referencia).subscribe(({ aprobado }) => {
+      this.wompiSub = null;
+      if (!aprobado) {
+        this.manejarPagoWompiFallido();
+        return;
+      }
+      this.pasoWompi.set('recibido');
+      const metodo = this.metodoWompiEnCurso();
+      this.pagos.set([{ metodoPago: `Wompi - ${metodo}`, monto: this.total() }]);
+      this.pasoWompi.set('confirmando');
+      this.confirmarCobro();
+    });
+  }
+
+  /**
+   * Secuencia visual breve tras un pago declinado/cancelado por Wompi — los timeouts no
+   * corresponden a trabajo real (ya no hay nada pendiente), solo le dan al cajero un momento para
+   * leer cada paso antes de volver al modal de cobro normal. Guardados en `wompiTimeouts` para
+   * poder cancelarlos si el cajero cierra el modal o arranca un pago nuevo antes de que termine
+   * (`reiniciarPagoWompi` los limpia).
+   */
+  private manejarPagoWompiFallido(): void {
+    this.pasoWompi.set('fallido');
+    this.toast.error('El pago con Wompi fue rechazado o cancelado');
+    this.wompiTimeouts.push(
+      setTimeout(() => {
+        this.pasoWompi.set('retomando');
+        this.wompiTimeouts.push(
+          setTimeout(() => {
+            this.pasoWompi.set('cerrando');
+            this.wompiTimeouts.push(setTimeout(() => this.reiniciarPagoWompi(), 500));
+          }, 700),
+        );
+      }, 900),
+    );
+  }
+
+  /**
+   * Botón "Cancelar" mientras `pagandoConWompi()` es `true` — no avisa a Wompi ni al backend (la
+   * `TransaccionPago` queda `PENDIENTE` del lado del backend, igual que cualquier pago Wompi que
+   * el cliente nunca completa). Lo importante es desuscribirse: si Wompi confirma DESPUÉS de que
+   * el cajero ya canceló y siguió con otra venta, una suscripción vieja no debe pisarle el
+   * carrito a la venta nueva.
+   */
+  protected cancelarPagoWompi(): void {
+    this.reiniciarPagoWompi();
+  }
+
   protected confirmarCobro(): void {
     if (this.procesando() || this.creandoClienteVenta()) return;
     const sucursal = this.sucursal();
@@ -1025,6 +1252,10 @@ export class PuntoVenta {
       })
       .subscribe({
         next: (venta) => {
+          // Sin efecto si la venta no vino de Wompi (todos los signals ya están en su default) —
+          // si sí vino, esto es lo que finalmente apaga `pagandoConWompi` y desbloquea el modal,
+          // recién ahora que la venta quedó registrada de verdad (ver `suscribirConfirmacionWompi`).
+          this.reiniciarPagoWompi();
           this.procesando.set(false);
           this.showCobro.set(false);
           this.cambioVentaCompletada.set(cambioVenta);
@@ -1037,6 +1268,11 @@ export class PuntoVenta {
           this.alertasService.refrescarConteo().subscribe();
         },
         error: (err) => {
+          // Caso raro pero real: Wompi ya cobró (pasos `recibido`/`confirmando`) y la venta falla
+          // acá por otro motivo (stock, etc.) — sin esto el modal quedaría bloqueado para siempre
+          // en `confirmando`. `pagos` no se toca: la línea Wompi ya cargada permite reintentar
+          // con un click en "Confirmar pago" sin volver a cobrarle al cliente.
+          this.reiniciarPagoWompi();
           this.procesando.set(false);
           this.toast.error(err.error?.message ?? 'No se pudo registrar la venta');
         },

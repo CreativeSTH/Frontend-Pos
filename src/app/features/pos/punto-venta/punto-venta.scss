@@ -437,6 +437,77 @@ app-catalogo-grid-pos {
   }
 }
 
+.cobro-cuerpo--bloqueado {
+  opacity: 0.4;
+  filter: saturate(0.6);
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+
+.cobro-wompi {
+  margin-bottom: var(--space-4);
+}
+
+.cobro-wompi__botones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cobro-wompi__pendiente {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  text-align: center;
+
+  ds-form-field {
+    width: 100%;
+  }
+}
+
+.cobro-wompi__qr {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  /* Fondo blanco fijo (no un token de glass) — un QR necesita contraste real
+     para ser escaneable, no puede depender del tema activo. Mismo criterio
+     que ya usa recibo-preview.scss para el papel del recibo. */
+  background: #fff;
+}
+
+.cobro-wompi__mensaje {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.cobro-wompi__icono--exito {
+  color: var(--accent-success);
+}
+
+.cobro-wompi__icono--error {
+  color: var(--accent-danger);
+}
+
+.cobro-wompi__esperando {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  font-size: var(--fs-xs);
+  color: var(--text-tertiary);
+}
+
+.cobro-wompi__error {
+  font-size: var(--fs-sm);
+  color: var(--accent-danger);
+}
+
 .cobro-aviso {
   display: flex;
   justify-content: space-between;

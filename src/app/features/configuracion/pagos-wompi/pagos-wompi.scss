@@ -1,0 +1,56 @@
+.pagos-wompi-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  color: var(--text-secondary);
+}
+
+.pagos-wompi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: var(--space-5);
+  padding: var(--space-5);
+  align-items: start;
+}
+
+.pagos-wompi-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+
+  .ds-panel__header {
+    h2 {
+      margin: 0 0 var(--space-1);
+      font-size: var(--fs-md);
+      font-weight: var(--fw-semibold);
+      color: var(--text-primary);
+    }
+
+    p {
+      margin: 0;
+      font-size: var(--fs-sm);
+      color: var(--text-secondary);
+    }
+  }
+}
+
+.pagos-wompi-acciones {
+  margin-top: var(--space-2);
+}
+
+.pagos-wompi-switch {
+  display: flex;
+  align-items: center;
+}
+
+.pagos-wompi-nota {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+}

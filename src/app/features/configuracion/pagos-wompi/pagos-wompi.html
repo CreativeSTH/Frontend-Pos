@@ -1,0 +1,125 @@
+<app-topbar title="Pagos con Wompi" subtitle="Credenciales y activación de la pasarela de pago Wompi para este negocio" />
+
+@if (cargando()) {
+  <div class="pagos-wompi-loading">
+    <ds-icon name="credit-card" [size]="28" />
+    <span>Cargando configuración de Wompi...</span>
+  </div>
+} @else {
+  <div class="pagos-wompi-grid">
+    <section class="ds-panel pagos-wompi-panel">
+      <header class="ds-panel__header">
+        <div>
+          <h2>Credenciales</h2>
+          <p>Se consiguen en el panel de comercios de Wompi (sandbox o producción, según corresponda).</p>
+        </div>
+      </header>
+
+      <ds-form-field label="Llave pública">
+        <ds-input [ngModel]="llavePublica()" (ngModelChange)="llavePublica.set($event)" placeholder="pub_test_..." />
+      </ds-form-field>
+
+      <ds-form-field
+        label="Llave privada"
+        [hint]="configurado() ? 'Ya configurada — hay que volver a ingresarla para guardar cambios.' : undefined"
+      >
+        <ds-input
+          type="password"
+          [ngModel]="llavePrivada()"
+          (ngModelChange)="llavePrivada.set($event)"
+          [placeholder]="configurado() ? '•••• ya configurada' : 'prv_test_...'"
+        />
+      </ds-form-field>
+
+      <ds-form-field
+        label="Llave secreta de eventos"
+        [hint]="configurado() ? 'Ya configurada — hay que volver a ingresarla para guardar cambios.' : undefined"
+      >
+        <ds-input
+          type="password"
+          [ngModel]="llaveSecretaEventos()"
+          (ngModelChange)="llaveSecretaEventos.set($event)"
+          [placeholder]="configurado() ? '•••• ya configurada' : 'events_test_...'"
+        />
+      </ds-form-field>
+
+      <ds-form-field
+        label="Llave de integridad"
+        [hint]="
+          configurado()
+            ? 'Ya configurada — hay que volver a ingresarla para guardar cambios.'
+            : 'Firma cada transacción — sin ella Wompi rechaza el cobro.'
+        "
+      >
+        <ds-input
+          type="password"
+          [ngModel]="llaveIntegridad()"
+          (ngModelChange)="llaveIntegridad.set($event)"
+          [placeholder]="configurado() ? '•••• ya configurada' : 'integrity_test_...'"
+        />
+      </ds-form-field>
+
+      <div class="pagos-wompi-acciones">
+        <ds-button variant="primary" [loading]="guardando()" (click)="guardar()">Guardar credenciales</ds-button>
+      </div>
+    </section>
+
+    <section class="ds-panel pagos-wompi-panel">
+      <header class="ds-panel__header">
+        <div>
+          <h2>Activación</h2>
+          <p>Con Wompi activo, el punto de venta ofrece cobrar con QR y Nequi — PSE y tarjeta quedan reservados para una futura tienda online.</p>
+        </div>
+      </header>
+
+      <div class="pagos-wompi-switch">
+        <ds-switch
+          label="Wompi activo"
+          [ngModel]="activo()"
+          [disabled]="!configurado() || cambiandoEstado()"
+          (ngModelChange)="alternarActivo($event)"
+        />
+      </div>
+
+      @if (!configurado()) {
+        <p class="pagos-wompi-nota" title="Guardá las 4 credenciales antes de activar Wompi">
+          Guardá las 4 credenciales antes de poder activarlo.
+        </p>
+      }
+    </section>
+
+    <section class="ds-panel pagos-wompi-panel">
+      <header class="ds-panel__header">
+        <div>
+          <h2>Métodos habilitados</h2>
+          <p>Elegí qué métodos de pago de Wompi quedan disponibles para este negocio.</p>
+        </div>
+      </header>
+
+      <div class="pagos-wompi-switch">
+        <ds-switch label="QR" [ngModel]="qrHabilitado()" (ngModelChange)="qrHabilitado.set($event)" />
+      </div>
+
+      <div class="pagos-wompi-switch">
+        <ds-switch label="Nequi" [ngModel]="nequiHabilitado()" (ngModelChange)="nequiHabilitado.set($event)" />
+      </div>
+
+      <div class="pagos-wompi-switch">
+        <ds-switch label="PSE" [ngModel]="pseHabilitado()" (ngModelChange)="pseHabilitado.set($event)" />
+      </div>
+
+      <div class="pagos-wompi-switch">
+        <ds-switch
+          label="Tarjeta de crédito"
+          [ngModel]="tarjetaHabilitado()"
+          (ngModelChange)="tarjetaHabilitado.set($event)"
+        />
+      </div>
+
+      <p class="pagos-wompi-nota">
+        El punto de venta hoy solo ofrece cobrar con QR y Nequi. PSE y tarjeta quedan listos para
+        cuando exista una tienda online — activarlos acá todavía no cambia nada en el cobro.
+      </p>
+    </section>
+  </div>
+}

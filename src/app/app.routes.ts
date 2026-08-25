@@ -211,6 +211,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/cupones/cupones-wizard/cupones-wizard').then((m) => m.CuponesWizard),
       },
+      {
+        path: 'configuracion/pagos-wompi',
+        canActivate: [permisoGuard('PAGOS', 'EDITAR')],
+        loadComponent: () =>
+          import('./features/configuracion/pagos-wompi/pagos-wompi').then((m) => m.PagosWompi),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

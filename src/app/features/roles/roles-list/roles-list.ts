@@ -43,6 +43,7 @@ const ETIQUETAS_MODULO: Record<ModuloPermiso, string> = {
   GRAFICOS: 'Gráficos',
   FACTURACION: 'Facturación',
   CUPONES: 'Cupones y descuentos',
+  PAGOS: 'Pagos con Wompi',
 };
 
 const ETIQUETAS_ACCION: Record<AccionPermiso, string> = {
