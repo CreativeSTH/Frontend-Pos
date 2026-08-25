@@ -2,7 +2,12 @@
   @if (!auth.esSistema()) {
     @if (turnoAbierto()) {
       <ds-badge tone="success">Caja abierta</ds-badge>
-      <ds-button variant="glass" size="sm" (click)="showConfirmarCerrarTurno.set(true)">Cerrar turno</ds-button>
+      <ds-button
+        variant="glass"
+        size="sm"
+        [disabled]="showConfirmarCerrarTurno() || showCerrarTurno()"
+        (click)="showConfirmarCerrarTurno.set(true)"
+      >Cerrar turno</ds-button>
     } @else {
       <ds-badge tone="neutral">Caja cerrada</ds-badge>
       <ds-button variant="primary" size="sm" icon="cash-register" (click)="showAbrirTurno.set(true)">
