@@ -921,6 +921,7 @@ export class PuntoVenta {
   }
 
   protected confirmarCobro(): void {
+    if (this.procesando() || this.creandoClienteVenta()) return;
     const sucursal = this.sucursal();
     const bodega = this.bodega();
     const turno = this.turno();
