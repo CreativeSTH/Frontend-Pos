@@ -159,7 +159,7 @@ export class PuntoVenta {
   protected readonly abriendoTurno = signal(false);
 
   protected readonly search = signal('');
-  protected readonly carrito = signal<LineaCarrito[]>([]);
+  protected readonly carrito = signal<LineaCarrito[]>(this.leerCarritoStorage());
   protected readonly procesando = signal(false);
 
   protected readonly showCobro = signal(false);
@@ -305,6 +305,12 @@ export class PuntoVenta {
   constructor() {
     this.load();
     this.domicilioSolicitadoPorQuery.set(this.route.snapshot.queryParamMap.get('domicilio') === '1');
+
+    /** Persiste el carrito en localStorage (scopeado por negocio) para sobrevivir a un refresh del navegador o al logout forzado por un PIN incorrecto — ver auth.interceptor.ts. */
+    effect(() => {
+      const negocioId = this.auth.usuario()?.negocioId;
+      localStorage.setItem(this.claveCarrito(negocioId), JSON.stringify(this.carrito()));
+    });
 
     /** Apenas se resuelve un cliente real durante una sesión "Nuevo domicilio" (desde /domicilios), prende el switch solo. */
     effect(() => {
@@ -1053,6 +1059,20 @@ export class PuntoVenta {
       }
       return actualizado;
     });
+  }
+
+  private claveCarrito(negocioId: string | null | undefined): string {
+    return `pos:carrito-activo:${negocioId ?? 'anon'}`;
+  }
+
+  /** Hidrata el carrito guardado (si hay uno) al construir el componente — sobrevive a un refresh del navegador. */
+  private leerCarritoStorage(): LineaCarrito[] {
+    try {
+      const raw = localStorage.getItem(this.claveCarrito(this.auth.usuario()?.negocioId));
+      return raw ? (JSON.parse(raw) as LineaCarrito[]) : [];
+    } catch {
+      return [];
+    }
   }
 
   protected imprimirFactura(venta: Venta): void {
