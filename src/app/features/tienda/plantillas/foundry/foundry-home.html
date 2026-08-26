@@ -1,0 +1,61 @@
+<div class="foundry-topbar">TIENDA ONLINE · PEDÍ Y RETIRÁ O RECIBÍ EN TU DIRECCIÓN</div>
+
+<header class="foundry-nav">
+  @if (tienda.logoUrl()) {
+    <img class="foundry-nav__logo" [src]="tienda.logoUrl()" alt="Logo" />
+  } @else {
+    <span class="foundry-nav__wordmark">Tienda</span>
+  }
+  <nav class="foundry-nav__links">
+    <a [routerLink]="['/tienda', tienda.negocioId()]">CATÁLOGO</a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'cuenta']">CUENTA</a>
+  </nav>
+  <a [routerLink]="['/tienda', tienda.negocioId(), 'carrito']" class="foundry-nav__cart">
+    <ds-icon name="shopping-bag" [size]="16" /> {{ carrito.items().length }}
+  </a>
+</header>
+
+<section class="foundry-hero">
+  <p class="foundry-hero__eyebrow">Catálogo online</p>
+  <h1>Todo lo que necesitás,<br /><em>en un solo lugar.</em></h1>
+  <a class="foundry-hero__cta" [routerLink]="['/tienda', tienda.negocioId()]" fragment="catalogo">Ver catálogo completo</a>
+</section>
+
+<section class="foundry-grid-section" id="catalogo">
+  <h2>Catálogo</h2>
+  @if (tienda.productos().length === 0) {
+    <p class="foundry-vacio">Todavía no hay productos disponibles.</p>
+  } @else {
+    <div class="foundry-grid">
+      @for (producto of tienda.productos(); track producto.id) {
+        <article class="foundry-card">
+          <a [routerLink]="['/tienda', tienda.negocioId(), 'producto', producto.id]">
+            <div class="foundry-card__ph" [style.background-image]="producto.imagenUrl ? 'url(' + producto.imagenUrl + ')' : null"></div>
+            <p class="foundry-card__nm">{{ producto.nombre }}</p>
+            <p class="foundry-card__pr">$ {{ producto.precioVenta | number: '1.0-0' }}</p>
+          </a>
+          <button type="button" (click)="agregarAlCarrito(producto)">Agregar</button>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+<footer class="foundry-foot">
+  <div class="foundry-foot__top">
+    <div class="foundry-foot__col">
+      @if (tienda.logoUrl()) {
+        <img [src]="tienda.logoUrl()" alt="Logo" />
+      } @else {
+        <h4>Tienda</h4>
+      }
+    </div>
+    <div class="foundry-foot__col">
+      <h4>Ayuda</h4>
+      <a [routerLink]="['/tienda', tienda.negocioId(), 'envios']">Envíos</a>
+      <a [routerLink]="['/tienda', tienda.negocioId(), 'terminos']">Términos</a>
+      <a [routerLink]="['/tienda', tienda.negocioId(), 'tratamiento-datos']">Tratamiento de datos</a>
+    </div>
+  </div>
+  <div class="foundry-foot__bottom">&copy; {{ 2026 }}</div>
+</footer>
