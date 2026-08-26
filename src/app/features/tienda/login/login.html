@@ -1,0 +1,21 @@
+<div class="auth-form">
+  <h1>Iniciar sesión</h1>
+
+  <label>
+    Teléfono
+    <input type="tel" [ngModel]="telefono()" (ngModelChange)="telefono.set($event)" />
+  </label>
+
+  <label>
+    Contraseña
+    <input type="password" [ngModel]="password()" (ngModelChange)="password.set($event)" />
+  </label>
+
+  @if (error()) {
+    <p class="auth-error">{{ error() }}</p>
+  }
+
+  <button type="button" [disabled]="enviando()" (click)="enviar()">Iniciar sesión</button>
+
+  <a [routerLink]="['/tienda', negocioId, 'registro']">¿No tenés cuenta? Registrate</a>
+</div>

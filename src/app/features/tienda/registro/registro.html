@@ -1,0 +1,26 @@
+<div class="auth-form">
+  <h1>Crear cuenta</h1>
+
+  <label>
+    Nombre
+    <input type="text" [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" />
+  </label>
+
+  <label>
+    Teléfono
+    <input type="tel" [ngModel]="telefono()" (ngModelChange)="telefono.set($event)" />
+  </label>
+
+  <label>
+    Contraseña
+    <input type="password" [ngModel]="password()" (ngModelChange)="password.set($event)" />
+  </label>
+
+  @if (error()) {
+    <p class="auth-error">{{ error() }}</p>
+  }
+
+  <button type="button" [disabled]="enviando()" (click)="enviar()">Crear cuenta</button>
+
+  <a [routerLink]="['/tienda', negocioId, 'login']">¿Ya tenés cuenta? Iniciá sesión</a>
+</div>

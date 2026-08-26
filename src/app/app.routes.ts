@@ -243,6 +243,14 @@ export const routes: Routes = [
         path: 'carrito',
         loadComponent: () => import('./features/tienda/carrito/carrito').then((m) => m.TiendaCarrito),
       },
+      {
+        path: 'login',
+        loadComponent: () => import('./features/tienda/login/login').then((m) => m.TiendaLogin),
+      },
+      {
+        path: 'registro',
+        loadComponent: () => import('./features/tienda/registro/registro').then((m) => m.TiendaRegistro),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
