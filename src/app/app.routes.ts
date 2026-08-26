@@ -234,6 +234,15 @@ export const routes: Routes = [
         path: '',
         loadComponent: () => import('./features/tienda/catalogo/catalogo').then((m) => m.TiendaCatalogo),
       },
+      {
+        path: 'producto/:productoId',
+        loadComponent: () =>
+          import('./features/tienda/producto-detalle/producto-detalle').then((m) => m.TiendaProductoDetalle),
+      },
+      {
+        path: 'carrito',
+        loadComponent: () => import('./features/tienda/carrito/carrito').then((m) => m.TiendaCarrito),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

@@ -1,0 +1,16 @@
+<a [routerLink]="['/tienda', negocioId]">&larr; Volver al catálogo</a>
+
+@if (cargando()) {
+  <p>Cargando...</p>
+} @else if (!producto()) {
+  <p>Producto no encontrado.</p>
+} @else {
+  <article class="detalle">
+    <h1>{{ producto()!.nombre }}</h1>
+    @if (producto()!.descripcion) {
+      <p>{{ producto()!.descripcion }}</p>
+    }
+    <p class="detalle-precio">$ {{ producto()!.precioVenta | number: '1.0-0' }}</p>
+    <button type="button" (click)="agregarAlCarrito()">Agregar al carrito</button>
+  </article>
+}

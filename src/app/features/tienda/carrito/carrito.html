@@ -1,0 +1,25 @@
+<a [routerLink]="['/tienda', negocioId]">&larr; Seguir comprando</a>
+
+<h1>Tu carrito</h1>
+
+@if (carrito.items().length === 0) {
+  <p>Todavía no agregaste productos.</p>
+} @else {
+  <ul class="carrito-lista">
+    @for (item of carrito.items(); track item.productoId) {
+      <li class="carrito-item">
+        <span>{{ item.nombre }}</span>
+        <input
+          type="number"
+          min="0"
+          [value]="item.cantidad"
+          (change)="carrito.actualizarCantidad(item.productoId, +$any($event.target).value)"
+        />
+        <span>$ {{ item.precioUnitario * item.cantidad | number: '1.0-0' }}</span>
+        <button type="button" (click)="carrito.quitar(item.productoId)">Quitar</button>
+      </li>
+    }
+  </ul>
+  <p class="carrito-total">Total: $ {{ carrito.total() | number: '1.0-0' }}</p>
+  <p class="carrito-nota">El pago todavía no está disponible — vuelve pronto.</p>
+}
