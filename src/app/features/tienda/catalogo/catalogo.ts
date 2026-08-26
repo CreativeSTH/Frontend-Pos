@@ -1,50 +1,22 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { CatalogoPublicoService } from '../../../core/services/catalogo-publico.service';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CarritoTiendaService } from '../../../core/services/carrito-tienda.service';
-import { ProductoCatalogo } from '../../../core/models/catalogo-publico.model';
+import { TiendaContextService } from '../../../core/services/tienda-context.service';
 
 @Component({
   selector: 'app-tienda-catalogo',
   standalone: true,
-  imports: [RouterLink, DecimalPipe],
-  templateUrl: './catalogo.html',
-  styleUrl: './catalogo.scss',
+  imports: [],
+  template: '',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TiendaCatalogo implements OnInit {
+export class TiendaCatalogo {
   private readonly route = inject(ActivatedRoute);
-  private readonly catalogoService = inject(CatalogoPublicoService);
+  protected readonly tienda = inject(TiendaContextService);
   protected readonly carrito = inject(CarritoTiendaService);
-
   protected readonly negocioId = this.route.snapshot.paramMap.get('negocioId')!;
-  protected readonly cargando = signal(true);
-  protected readonly activa = signal(true);
-  protected readonly productos = signal<ProductoCatalogo[]>([]);
 
-  ngOnInit(): void {
+  constructor() {
     this.carrito.cargarNegocio(this.negocioId);
-    this.catalogoService.obtenerCatalogo(this.negocioId).subscribe({
-      next: (catalogo) => {
-        this.activa.set(catalogo.activa);
-        this.productos.set(catalogo.productos);
-        this.cargando.set(false);
-      },
-      error: () => {
-        this.activa.set(false);
-        this.cargando.set(false);
-      },
-    });
-  }
-
-  protected agregarAlCarrito(producto: ProductoCatalogo): void {
-    this.carrito.agregar({
-      productoId: producto.id,
-      nombre: producto.nombre,
-      precioUnitario: producto.precioVenta,
-      porcentajeImpuesto: producto.porcentajeImpuesto,
-      imagenUrl: producto.imagenUrl,
-    });
   }
 }
