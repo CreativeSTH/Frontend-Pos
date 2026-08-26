@@ -111,3 +111,65 @@
     border: 1px solid var(--glass-bg-hover);
   }
 }
+
+.tienda-online-media {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.tienda-online-media__preview {
+  height: 48px;
+  margin-bottom: var(--space-2);
+  display: block;
+}
+
+.tienda-online-banners {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.tienda-online-banners__item {
+  position: relative;
+
+  img {
+    width: 90px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: var(--radius-sm, 6px);
+  }
+
+  button {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 5px;
+    cursor: pointer;
+  }
+}
+
+.tienda-online-legales {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+
+  textarea {
+    width: 100%;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-bg-hover);
+    border-radius: var(--radius-sm, 6px);
+    color: inherit;
+    font: inherit;
+    padding: var(--space-2);
+    resize: vertical;
+  }
+}

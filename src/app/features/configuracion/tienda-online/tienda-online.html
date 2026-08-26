@@ -94,6 +94,44 @@
         }
       </div>
 
+      <div class="tienda-online-media">
+        <ds-form-field label="Logo">
+          @if (configuracion()?.logoUrl) {
+            <img class="tienda-online-media__preview" [src]="resolverImagen(configuracion()!.logoUrl!)" alt="Logo actual" />
+          }
+          <input type="file" accept="image/png,image/jpeg,image/webp" [disabled]="subiendoLogo()" (change)="subirLogo($event)" />
+        </ds-form-field>
+
+        <ds-form-field label="Banners del carrusel (hasta 4)">
+          @if ((configuracion()?.banners?.length ?? 0) > 0) {
+            <div class="tienda-online-banners">
+              @for (banner of configuracion()!.banners; track banner; let i = $index) {
+                <div class="tienda-online-banners__item">
+                  <img [src]="resolverImagen(banner)" alt="Banner" />
+                  <button type="button" (click)="eliminarBanner(i)">Quitar</button>
+                </div>
+              }
+            </div>
+          }
+          @if ((configuracion()?.banners?.length ?? 0) < 4) {
+            <input type="file" accept="image/png,image/jpeg,image/webp" [disabled]="subiendoBanner()" (change)="subirBanner($event)" />
+          }
+        </ds-form-field>
+      </div>
+
+      <div class="tienda-online-legales">
+        <ds-form-field label="Términos y condiciones">
+          <textarea rows="4" [ngModel]="terminos()" (ngModelChange)="terminos.set($event)"></textarea>
+        </ds-form-field>
+        <ds-form-field label="Tratamiento de datos personales">
+          <textarea rows="4" [ngModel]="tratamientoDatos()" (ngModelChange)="tratamientoDatos.set($event)"></textarea>
+        </ds-form-field>
+        <ds-form-field label="Política de envíos">
+          <textarea rows="4" [ngModel]="politicaEnvios()" (ngModelChange)="politicaEnvios.set($event)"></textarea>
+        </ds-form-field>
+        <ds-button variant="primary" [loading]="guardandoLegales()" (click)="guardarLegales()">Guardar textos legales</ds-button>
+      </div>
+
       <div class="tienda-online-preview">
         <span class="tienda-online-preview__label">Preview en vivo</span>
         <div class="tienda-online-preview__frame">

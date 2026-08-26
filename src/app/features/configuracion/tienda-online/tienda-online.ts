@@ -16,6 +16,7 @@ import { ConfiguracionTiendaOnline, PLANTILLAS, PlantillaTienda } from '../../..
 import { Bodega } from '../../../core/models/bodega.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { TiendaHomeSwitch } from '../../tienda/home-switch/home-switch';
+import { environment } from '../../../../environments/environment';
 
 const NUEVA_BODEGA = '__nueva__';
 
@@ -39,6 +40,12 @@ export class TiendaOnlineConfig {
   protected readonly plantillas = PLANTILLAS;
   private readonly tiendaContext = inject(TiendaContextService);
   protected readonly guardandoPlantilla = signal(false);
+  protected readonly subiendoLogo = signal(false);
+  protected readonly subiendoBanner = signal(false);
+  protected readonly guardandoLegales = signal(false);
+  protected readonly terminos = signal('');
+  protected readonly tratamientoDatos = signal('');
+  protected readonly politicaEnvios = signal('');
 
   protected readonly cargando = signal(true);
   protected readonly cambiandoEstado = signal(false);
@@ -70,6 +77,9 @@ export class TiendaOnlineConfig {
       next: (config) => {
         this.configuracion.set(config);
         this.bodegaSeleccionada.set(config.bodegaId ?? '');
+        this.terminos.set(config.terminos ?? '');
+        this.tratamientoDatos.set(config.tratamientoDatos ?? '');
+        this.politicaEnvios.set(config.politicaEnvios ?? '');
         this.cargarBodegasYSucursales();
         this.actualizarPreview();
       },
@@ -131,6 +141,77 @@ export class TiendaOnlineConfig {
         this.toast.error(err.error?.message ?? 'No se pudo guardar la plantilla');
       },
     });
+  }
+
+  /** El backend devuelve rutas relativas (`/uploads/...`) — se resuelven acá para las miniaturas de logo/banners que muestra este mismo editor. */
+  protected resolverImagen(url: string): string {
+    return `${environment.assetsUrl}${url}`;
+  }
+
+  protected subirLogo(evento: Event): void {
+    const archivo = (evento.target as HTMLInputElement).files?.[0];
+    if (!archivo) return;
+    this.subiendoLogo.set(true);
+    this.tiendaOnlineService.subirLogo(archivo).subscribe({
+      next: ({ logoUrl }) => {
+        this.subiendoLogo.set(false);
+        this.configuracion.update((c) => (c ? { ...c, logoUrl } : c));
+        this.actualizarPreview();
+        this.toast.success('Logo actualizado');
+      },
+      error: (err) => {
+        this.subiendoLogo.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo subir el logo');
+      },
+    });
+  }
+
+  protected subirBanner(evento: Event): void {
+    const archivo = (evento.target as HTMLInputElement).files?.[0];
+    if (!archivo) return;
+    this.subiendoBanner.set(true);
+    this.tiendaOnlineService.subirBanner(archivo).subscribe({
+      next: ({ banners }) => {
+        this.subiendoBanner.set(false);
+        this.configuracion.update((c) => (c ? { ...c, banners } : c));
+        this.actualizarPreview();
+        this.toast.success('Banner agregado');
+      },
+      error: (err) => {
+        this.subiendoBanner.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo subir el banner');
+      },
+    });
+  }
+
+  protected eliminarBanner(index: number): void {
+    this.tiendaOnlineService.eliminarBanner(index).subscribe({
+      next: ({ banners }) => {
+        this.configuracion.update((c) => (c ? { ...c, banners } : c));
+        this.actualizarPreview();
+      },
+      error: (err) => this.toast.error(err.error?.message ?? 'No se pudo quitar el banner'),
+    });
+  }
+
+  protected guardarLegales(): void {
+    this.guardandoLegales.set(true);
+    this.tiendaOnlineService
+      .actualizarLegales({
+        terminos: this.terminos(),
+        tratamientoDatos: this.tratamientoDatos(),
+        politicaEnvios: this.politicaEnvios(),
+      })
+      .subscribe({
+        next: () => {
+          this.guardandoLegales.set(false);
+          this.toast.success('Textos legales guardados');
+        },
+        error: (err) => {
+          this.guardandoLegales.set(false);
+          this.toast.error(err.error?.message ?? 'No se pudieron guardar los textos');
+        },
+      });
   }
 
   /** Sincroniza `TiendaContextService` con la config actual del editor para que el preview embebido (`TiendaHomeSwitch`) refleje selecciones sin guardar todavía. */
