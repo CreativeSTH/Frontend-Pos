@@ -1,3 +1,5 @@
+import { PlantillaTienda } from './tienda-online.model';
+
 export interface ProductoCatalogo {
   id: string;
   nombre: string;
@@ -10,4 +12,10 @@ export interface ProductoCatalogo {
 export interface CatalogoTienda {
   activa: boolean;
   productos: ProductoCatalogo[];
+  plantilla: PlantillaTienda;
+  logoUrl: string | null;
+  banners: string[];
+  terminos: string | null;
+  tratamientoDatos: string | null;
+  politicaEnvios: string | null;
 }

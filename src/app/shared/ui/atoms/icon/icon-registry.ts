@@ -84,6 +84,7 @@ export const ICONS: Record<string, string> = {
     '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
   activity:
     '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+  heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8Z"/>',
 };
 
 export type IconName = keyof typeof ICONS;
