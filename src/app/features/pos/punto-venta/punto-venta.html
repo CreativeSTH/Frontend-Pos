@@ -27,8 +27,8 @@
 
 @if (loading()) {
   <div class="pos-loading">
-    <ds-icon name="layers" [size]="28" />
-    <span>Cargando punto de venta...</span>
+    <ds-spinner [size]="28" />
+    <span>Iniciando su punto de venta...</span>
   </div>
 } @else if (!turno()) {
   <ds-empty-state
@@ -650,7 +650,7 @@
   <ds-modal title="Venta completada" size="sm" (close)="imprimiendo() ? null : nuevaVenta()">
     @if (imprimiendo()) {
       <div class="imprimiendo-overlay">
-        <ds-icon name="printer" [size]="32" />
+        <ds-spinner [size]="32" />
         <span>Imprimiendo {{ venta.tipoComprobanteEmitido === 'FACTURA' ? 'factura' : 'recibo' }}...</span>
       </div>
     } @else {
