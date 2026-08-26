@@ -156,9 +156,16 @@ export class PuntoVenta {
       this.sucursales()[0] ??
       null,
   );
+  /**
+   * `null` si la sucursal activa todavía no tiene una bodega propia — a propósito, sin fallback a
+   * `this.bodegas()[0]`: `bodegas()` trae TODAS las bodegas del negocio (todas las sucursales
+   * juntas), así que "la primera" podía pertenecer a otra sucursal — el catálogo/stock/venta
+   * terminaban resolviendo silenciosamente contra la bodega equivocada. `confirmarCobro()` ya
+   * bloquea la venta cuando `bodega` es `null` con un mensaje específico, así que no hace falta
+   * ningún guard nuevo acá.
+   */
   protected readonly bodega = computed<Bodega | null>(
-    () =>
-      this.bodegas().find((b) => b.sucursalId === this.sucursal()?.id) ?? this.bodegas()[0] ?? null,
+    () => this.bodegas().find((b) => b.sucursalId === this.sucursal()?.id) ?? null,
   );
 
   protected readonly showAbrirTurno = signal(false);
@@ -1185,8 +1192,19 @@ export class PuntoVenta {
     const sucursal = this.sucursal();
     const bodega = this.bodega();
     const turno = this.turno();
-    if (!sucursal || !bodega || !turno) {
-      this.toast.error('Falta configurar sucursal, bodega o turno de caja');
+    // Separados (en vez de un solo mensaje genérico) para que quien lo vea sepa exactamente qué
+    // falta resolver — en particular el caso de "esta sucursal no tiene bodega propia" (ver el
+    // comentario en `bodega` más arriba), que antes quedaba indistinguible de "no hay turno".
+    if (!sucursal) {
+      this.toast.error('No se pudo determinar la sucursal activa');
+      return;
+    }
+    if (!bodega) {
+      this.toast.error('Esta sucursal no tiene una bodega asignada — configurala en Bodegas antes de vender');
+      return;
+    }
+    if (!turno) {
+      this.toast.error('Abrí un turno de caja antes de cobrar');
       return;
     }
 
