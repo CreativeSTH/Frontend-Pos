@@ -1,0 +1,10 @@
+@if (tienda.cargando()) {
+  <p class="tienda-cargando">Cargando...</p>
+} @else if (!tienda.activa()) {
+  <p class="tienda-cargando">Esta tienda no está disponible todavía.</p>
+} @else {
+  @switch (tienda.plantilla()) {
+    @case ('aurora') { <app-aurora-home /> }
+    @default { <app-aurora-home /> }
+  }
+}

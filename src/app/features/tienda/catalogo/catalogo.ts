@@ -2,21 +2,22 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CarritoTiendaService } from '../../../core/services/carrito-tienda.service';
 import { TiendaContextService } from '../../../core/services/tienda-context.service';
+import { TiendaHomeSwitch } from '../home-switch/home-switch';
 
 @Component({
   selector: 'app-tienda-catalogo',
   standalone: true,
-  imports: [],
-  template: '',
+  imports: [TiendaHomeSwitch],
+  template: '<app-tienda-home-switch />',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TiendaCatalogo {
   private readonly route = inject(ActivatedRoute);
   protected readonly tienda = inject(TiendaContextService);
-  protected readonly carrito = inject(CarritoTiendaService);
-  protected readonly negocioId = this.route.snapshot.paramMap.get('negocioId')!;
+  private readonly carrito = inject(CarritoTiendaService);
 
   constructor() {
-    this.carrito.cargarNegocio(this.negocioId);
+    const negocioId = this.route.snapshot.paramMap.get('negocioId')!;
+    this.carrito.cargarNegocio(negocioId);
   }
 }

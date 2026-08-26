@@ -1,0 +1,18 @@
+@if (banners().length > 0) {
+  <div class="carousel">
+    <div class="carousel-track" [style.background-image]="'url(' + banners()[indice()] + ')'"></div>
+    @if (banners().length > 1) {
+      <div class="carousel-dots">
+        @for (banner of banners(); track banner; let i = $index) {
+          <button
+            type="button"
+            class="carousel-dot"
+            [class.active]="i === indice()"
+            (click)="irA(i)"
+            [attr.aria-label]="'Banner ' + (i + 1)"
+          ></button>
+        }
+      </div>
+    }
+  </div>
+}

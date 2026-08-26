@@ -1,0 +1,89 @@
+<header class="aurora-nav">
+  @if (tienda.logoUrl()) {
+    <img class="aurora-nav__logo" [src]="tienda.logoUrl()" alt="Logo" />
+  } @else {
+    <span class="aurora-nav__wordmark">Tienda</span>
+  }
+  <nav class="aurora-nav__links">
+    <a [routerLink]="['/tienda', tienda.negocioId()]">Catálogo</a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'cuenta']">Mi cuenta</a>
+  </nav>
+  <div class="aurora-nav__actions">
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'cuenta']" aria-label="Mi cuenta">
+      <ds-icon name="heart" [size]="18" />
+    </a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'carrito']" aria-label="Carrito">
+      <ds-icon name="shopping-bag" [size]="18" />
+      <span>{{ carrito.items().length }}</span>
+    </a>
+  </div>
+</header>
+
+<section class="aurora-hero">
+  <div class="aurora-hero__flex">
+    <div class="aurora-hero__text">
+      <p class="aurora-hero__eyebrow">Bienvenido</p>
+      <h1>Descubrí lo que tenemos para vos</h1>
+      <p class="aurora-hero__sub">Productos seleccionados, listos para pedir online.</p>
+      <a class="aurora-hero__cta" [routerLink]="['/tienda', tienda.negocioId()]" fragment="catalogo">
+        Ver catálogo
+      </a>
+    </div>
+    <div class="aurora-hero__media">
+      <div class="aurora-hero__orbit"></div>
+      @if (tienda.banners().length > 0) {
+        <app-banner-carousel class="aurora-hero__carousel" [banners]="tienda.banners()" />
+      }
+    </div>
+  </div>
+</section>
+
+<section class="aurora-grid-section" id="catalogo">
+  <h2>Catálogo</h2>
+  @if (tienda.productos().length === 0) {
+    <p class="aurora-vacio">Todavía no hay productos disponibles.</p>
+  } @else {
+    <div class="aurora-grid">
+      @for (producto of tienda.productos(); track producto.id) {
+        <article class="aurora-card">
+          <a [routerLink]="['/tienda', tienda.negocioId(), 'producto', producto.id]">
+            @if (producto.imagenUrl) {
+              <div class="aurora-card__ph" [style.background-image]="'url(' + producto.imagenUrl + ')'"></div>
+            } @else {
+              <div class="aurora-card__ph"></div>
+            }
+            <p class="aurora-card__nm">{{ producto.nombre }}</p>
+            <p class="aurora-card__pr">$ {{ producto.precioVenta | number: '1.0-0' }}</p>
+          </a>
+          <button type="button" (click)="agregarAlCarrito(producto)">Agregar al carrito</button>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+<footer class="aurora-foot">
+  <div class="aurora-foot__top">
+    <div class="aurora-foot__brand">
+      @if (tienda.logoUrl()) {
+        <img [src]="tienda.logoUrl()" alt="Logo" />
+      } @else {
+        <span>Tienda</span>
+      }
+    </div>
+    <div class="aurora-foot__col">
+      <h4>Tienda</h4>
+      <a [routerLink]="['/tienda', tienda.negocioId()]">Catálogo</a>
+      <a [routerLink]="['/tienda', tienda.negocioId(), 'carrito']">Carrito</a>
+    </div>
+    <div class="aurora-foot__col">
+      <h4>Ayuda</h4>
+      <a [routerLink]="['/tienda', tienda.negocioId(), 'envios']">Envíos</a>
+      <a [routerLink]="['/tienda', tienda.negocioId(), 'terminos']">Términos</a>
+      <a [routerLink]="['/tienda', tienda.negocioId(), 'tratamiento-datos']">Tratamiento de datos</a>
+    </div>
+  </div>
+  <div class="aurora-foot__bottom">
+    <span>&copy; {{ 2026 }}</span>
+  </div>
+</footer>
