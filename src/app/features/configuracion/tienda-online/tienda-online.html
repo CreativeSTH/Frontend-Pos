@@ -70,5 +70,36 @@
         </div>
       }
     </section>
+
+    <section class="ds-panel tienda-online-panel tienda-online-panel--ancho">
+      <header class="ds-panel__header">
+        <div>
+          <h2>Diseño de tu tienda</h2>
+          <p>Elegí una plantilla — podés cambiarla cuando quieras, tu logo y contenido se mantienen.</p>
+        </div>
+      </header>
+
+      <div class="tienda-online-plantillas">
+        @for (plantilla of plantillas; track plantilla.id) {
+          <button
+            type="button"
+            class="tienda-online-plantilla-card"
+            [class.tienda-online-plantilla-card--activa]="configuracion()?.plantilla === plantilla.id"
+            [disabled]="guardandoPlantilla()"
+            (click)="elegirPlantilla(plantilla.id)"
+          >
+            <strong>{{ plantilla.nombre }}</strong>
+            <span>{{ plantilla.descripcion }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="tienda-online-preview">
+        <span class="tienda-online-preview__label">Preview en vivo</span>
+        <div class="tienda-online-preview__frame">
+          <app-tienda-home-switch />
+        </div>
+      </div>
+    </section>
   </div>
 }

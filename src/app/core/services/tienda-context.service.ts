@@ -60,4 +60,25 @@ export class TiendaContextService {
       },
     });
   }
+
+  /**
+   * Usado solo por el editor de `/configuracion/tienda-online` (Task 14) para que el preview
+   * embebido refleje selecciones todavía no guardadas (plantilla elegida, logo recién subido)
+   * sin depender de una carga real por `negocioId` — el preview no es un storefront público real,
+   * es la misma UI mostrando datos locales del editor.
+   */
+  establecerPreview(datos: {
+    activa: boolean;
+    plantilla: PlantillaTienda;
+    logoUrl: string | null;
+    banners: string[];
+    productos: ProductoCatalogo[];
+  }): void {
+    this._activa.set(datos.activa);
+    this._plantilla.set(datos.plantilla);
+    this._logoUrl.set(absoluta(datos.logoUrl));
+    this._banners.set(datos.banners.map((b) => absoluta(b)!));
+    this._productos.set(datos.productos.map((p) => ({ ...p, imagenUrl: absoluta(p.imagenUrl) })));
+    this._cargando.set(false);
+  }
 }

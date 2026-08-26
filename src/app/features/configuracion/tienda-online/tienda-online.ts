@@ -11,16 +11,18 @@ import { BodegasService } from '../../../core/services/bodegas.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { ConfiguracionTiendaOnline } from '../../../core/models/tienda-online.model';
+import { TiendaContextService } from '../../../core/services/tienda-context.service';
+import { ConfiguracionTiendaOnline, PLANTILLAS, PlantillaTienda } from '../../../core/models/tienda-online.model';
 import { Bodega } from '../../../core/models/bodega.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
+import { TiendaHomeSwitch } from '../../tienda/home-switch/home-switch';
 
 const NUEVA_BODEGA = '__nueva__';
 
 @Component({
   selector: 'app-tienda-online',
   standalone: true,
-  imports: [Topbar, Button, Input, Select, Switch, FormField, FormsModule],
+  imports: [Topbar, Button, Input, Select, Switch, FormField, FormsModule, TiendaHomeSwitch],
   templateUrl: './tienda-online.html',
   styleUrl: './tienda-online.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +35,10 @@ export class TiendaOnlineConfig {
   private readonly sucursalesService = inject(SucursalesService);
   private readonly toast = inject(ToastService);
   private readonly authService = inject(AuthService);
+
+  protected readonly plantillas = PLANTILLAS;
+  private readonly tiendaContext = inject(TiendaContextService);
+  protected readonly guardandoPlantilla = signal(false);
 
   protected readonly cargando = signal(true);
   protected readonly cambiandoEstado = signal(false);
@@ -65,6 +71,7 @@ export class TiendaOnlineConfig {
         this.configuracion.set(config);
         this.bodegaSeleccionada.set(config.bodegaId ?? '');
         this.cargarBodegasYSucursales();
+        this.actualizarPreview();
       },
       error: () => {
         this.cargando.set(false);
@@ -108,6 +115,35 @@ export class TiendaOnlineConfig {
     }
 
     this.asignarBodega(seleccion);
+  }
+
+  protected elegirPlantilla(plantilla: PlantillaTienda): void {
+    this.guardandoPlantilla.set(true);
+    this.tiendaOnlineService.actualizarPlantilla(plantilla).subscribe({
+      next: () => {
+        this.guardandoPlantilla.set(false);
+        this.configuracion.update((c) => (c ? { ...c, plantilla } : c));
+        this.actualizarPreview();
+        this.toast.success('Plantilla guardada');
+      },
+      error: (err) => {
+        this.guardandoPlantilla.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo guardar la plantilla');
+      },
+    });
+  }
+
+  /** Sincroniza `TiendaContextService` con la config actual del editor para que el preview embebido (`TiendaHomeSwitch`) refleje selecciones sin guardar todavía. */
+  private actualizarPreview(): void {
+    const config = this.configuracion();
+    if (!config) return;
+    this.tiendaContext.establecerPreview({
+      activa: true,
+      plantilla: config.plantilla,
+      logoUrl: config.logoUrl,
+      banners: config.banners,
+      productos: [],
+    });
   }
 
   private asignarBodega(bodegaId: string): void {
