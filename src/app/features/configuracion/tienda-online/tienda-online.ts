@@ -10,6 +10,7 @@ import { TiendaOnlineService } from '../../../core/services/tienda-online.servic
 import { BodegasService } from '../../../core/services/bodegas.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { ConfiguracionTiendaOnline } from '../../../core/models/tienda-online.model';
 import { Bodega } from '../../../core/models/bodega.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
@@ -31,6 +32,7 @@ export class TiendaOnlineConfig {
   private readonly bodegasService = inject(BodegasService);
   private readonly sucursalesService = inject(SucursalesService);
   private readonly toast = inject(ToastService);
+  private readonly authService = inject(AuthService);
 
   protected readonly cargando = signal(true);
   protected readonly cambiandoEstado = signal(false);
@@ -45,6 +47,12 @@ export class TiendaOnlineConfig {
 
   protected readonly activo = computed(() => this.configuracion()?.activo ?? false);
   protected readonly hayBodega = computed(() => !!this.configuracion()?.bodegaId);
+
+  /** Origen actual del panel (no hardcodeado) — funciona igual en localhost que el día que esto viva en un dominio real. */
+  protected readonly linkTienda = computed(() => {
+    const negocioId = this.authService.usuario()?.negocioId;
+    return negocioId ? `${window.location.origin}/tienda/${negocioId}` : '';
+  });
 
   constructor() {
     this.cargar();
@@ -115,6 +123,17 @@ export class TiendaOnlineConfig {
         this.toast.error(err.error?.message ?? 'No se pudo guardar la bodega');
       },
     });
+  }
+
+  protected copiarLink(): void {
+    navigator.clipboard.writeText(this.linkTienda()).then(
+      () => this.toast.success('Link copiado'),
+      () => this.toast.error('No se pudo copiar el link'),
+    );
+  }
+
+  protected abrirTienda(): void {
+    window.open(this.linkTienda(), '_blank', 'noopener');
   }
 
   protected alternarActivo(valor: boolean): void {

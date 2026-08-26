@@ -61,6 +61,14 @@
       @if (!hayBodega()) {
         <p class="tienda-online-nota">Guardá una bodega antes de poder activarla.</p>
       }
+
+      @if (activo()) {
+        <div class="tienda-online-link">
+          <span class="tienda-online-link__url">{{ linkTienda() }}</span>
+          <ds-button variant="ghost" size="sm" icon="clipboard" (click)="copiarLink()">Copiar</ds-button>
+          <ds-button variant="ghost" size="sm" icon="arrow-up-right" (click)="abrirTienda()">Abrir</ds-button>
+        </div>
+      }
     </section>
   </div>
 }
