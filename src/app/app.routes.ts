@@ -225,5 +225,16 @@ export const routes: Routes = [
       },
     ],
   },
+  {
+    path: 'tienda/:negocioId',
+    loadComponent: () =>
+      import('./layout/storefront-layout/storefront-layout').then((m) => m.StorefrontLayout),
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/tienda/catalogo/catalogo').then((m) => m.TiendaCatalogo),
+      },
+    ],
+  },
   { path: '**', redirectTo: '' },
 ];

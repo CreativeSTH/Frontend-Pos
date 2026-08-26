@@ -1,0 +1,24 @@
+<header class="catalogo-header">
+  <h1>Tienda</h1>
+  <a [routerLink]="['/tienda', negocioId, 'carrito']">Carrito ({{ carrito.items().length }})</a>
+</header>
+
+@if (cargando()) {
+  <p class="catalogo-estado">Cargando...</p>
+} @else if (!activa()) {
+  <p class="catalogo-estado">Esta tienda no está disponible todavía.</p>
+} @else if (productos().length === 0) {
+  <p class="catalogo-estado">Todavía no hay productos disponibles.</p>
+} @else {
+  <div class="catalogo-grid">
+    @for (producto of productos(); track producto.id) {
+      <article class="catalogo-card">
+        <a [routerLink]="['/tienda', negocioId, 'producto', producto.id]">
+          <h2>{{ producto.nombre }}</h2>
+          <p class="catalogo-precio">$ {{ producto.precioVenta | number: '1.0-0' }}</p>
+        </a>
+        <button type="button" (click)="agregarAlCarrito(producto)">Agregar al carrito</button>
+      </article>
+    }
+  </div>
+}
