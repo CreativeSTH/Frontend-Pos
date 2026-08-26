@@ -5,6 +5,10 @@ import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  if (req.url.includes('/catalogo-cliente/')) {
+    return next(req);
+  }
+
   const authService = inject(AuthService);
   const router = inject(Router);
   const token = authService.token;
