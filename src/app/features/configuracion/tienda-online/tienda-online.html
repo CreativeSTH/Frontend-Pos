@@ -1,0 +1,66 @@
+<app-topbar title="Tienda online" subtitle="Bodega que alimenta el catálogo y activación de tu tienda" backTo="/configuracion" />
+
+@if (cargando()) {
+  <div class="tienda-online-loading">Cargando...</div>
+} @else {
+  <div class="tienda-online-grid">
+    <section class="ds-panel tienda-online-panel">
+      <header class="ds-panel__header">
+        <div>
+          <h2>Bodega</h2>
+          <p>Los productos con stock en esta bodega son los que va a mostrar la tienda online.</p>
+        </div>
+      </header>
+
+      <ds-form-field label="Bodega">
+        <ds-select [ngModel]="bodegaSeleccionada()" (ngModelChange)="bodegaSeleccionada.set($event)">
+          <option value="" disabled>Elegí una bodega</option>
+          @for (bodega of bodegas(); track bodega.id) {
+            <option [value]="bodega.id">{{ bodega.nombre }}</option>
+          }
+          <option [value]="NUEVA_BODEGA">+ Crear bodega nueva</option>
+        </ds-select>
+      </ds-form-field>
+
+      @if (bodegaSeleccionada() === NUEVA_BODEGA) {
+        <ds-form-field label="Sucursal de la bodega nueva">
+          <ds-select [ngModel]="sucursalNuevaBodega()" (ngModelChange)="sucursalNuevaBodega.set($event)">
+            <option value="" disabled>Elegí una sucursal</option>
+            @for (sucursal of sucursales(); track sucursal.id) {
+              <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+        <ds-form-field label="Nombre de la bodega nueva">
+          <ds-input [ngModel]="nombreNuevaBodega()" (ngModelChange)="nombreNuevaBodega.set($event)" placeholder="Bodega tienda online" />
+        </ds-form-field>
+      }
+
+      <div class="tienda-online-acciones">
+        <ds-button variant="primary" [loading]="guardandoBodega()" (click)="guardarBodega()">Guardar bodega</ds-button>
+      </div>
+    </section>
+
+    <section class="ds-panel tienda-online-panel">
+      <header class="ds-panel__header">
+        <div>
+          <h2>Activación</h2>
+          <p>Con la tienda online activa, el catálogo queda disponible (una vez que exista la tienda pública).</p>
+        </div>
+      </header>
+
+      <div class="tienda-online-switch">
+        <ds-switch
+          label="Tienda online activa"
+          [ngModel]="activo()"
+          [disabled]="!hayBodega() || cambiandoEstado()"
+          (ngModelChange)="alternarActivo($event)"
+        />
+      </div>
+
+      @if (!hayBodega()) {
+        <p class="tienda-online-nota">Guardá una bodega antes de poder activarla.</p>
+      }
+    </section>
+  </div>
+}

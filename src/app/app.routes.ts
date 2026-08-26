@@ -217,6 +217,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/configuracion/pagos-wompi/pagos-wompi').then((m) => m.PagosWompi),
       },
+      {
+        path: 'configuracion/tienda-online',
+        canActivate: [permisoGuard('TIENDA_ONLINE', 'EDITAR')],
+        loadComponent: () =>
+          import('./features/configuracion/tienda-online/tienda-online').then((m) => m.TiendaOnlineConfig),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

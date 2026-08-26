@@ -22,7 +22,8 @@ export type ModuloPermiso =
   | 'GRAFICOS'
   | 'FACTURACION'
   | 'CUPONES'
-  | 'PAGOS';
+  | 'PAGOS'
+  | 'TIENDA_ONLINE';
 
 export type AccionPermiso = 'VER' | 'CREAR' | 'EDITAR' | 'ELIMINAR';
 
