@@ -146,6 +146,8 @@ export class PuntoVenta {
   protected readonly bodegas = signal<Bodega[]>([]);
   protected readonly turno = signal<TurnoCaja | null>(null);
   protected readonly stockPorProducto = signal<Map<string, number>>(new Map());
+  /** `true` mientras se (re)carga el stock de la bodega activa — ver el effect del constructor. */
+  protected readonly cargandoStock = signal(false);
   /** Promociones automáticas vigentes por producto en la bodega activa — ver efecto de carga en el constructor. */
   protected readonly preciosVigentes = signal<Map<string, PrecioVigente>>(new Map());
 
@@ -435,11 +437,21 @@ export class PuntoVenta {
         this.stockPorProducto.set(new Map());
         return;
       }
+      // Mientras esto está en vuelo, el catálogo todavía no sabe si un producto tiene o no stock
+      // en la bodega nueva — mostrar "Sin resultados" en ese instante es engañoso (parece que no
+      // hay nada para vender, cuando en realidad todavía no se terminó de consultar). El grid
+      // muestra tarjetas fantasma mientras `cargandoStock` es true, ver `catalogo-grid-pos`.
+      this.cargandoStock.set(true);
       this.inventarioService.findAll(bodegaId).subscribe({
         next: (items) => {
           const mapa = new Map<string, number>();
           for (const item of items) mapa.set(item.productoId, Number(item.cantidad));
           this.stockPorProducto.set(mapa);
+          this.cargandoStock.set(false);
+        },
+        error: () => {
+          this.cargandoStock.set(false);
+          this.toast.error('No se pudo cargar el stock de esta bodega');
         },
       });
     });

@@ -1,8 +1,18 @@
-@if (productos().length === 0) {
+@if (cargando()) {
+  <div class="pos-grid">
+    @for (_ of tarjetasSkeleton; track $index) {
+      <div class="pos-card-skeleton">
+        <ds-skeleton height="100%" radius="var(--radius-sm)" />
+        <ds-skeleton height="1em" width="70%" />
+        <ds-skeleton height="1.1em" width="45%" />
+      </div>
+    }
+  </div>
+} @else if (productos().length === 0) {
   <ds-empty-state icon="box" title="Sin resultados" description="Prueba con otro nombre o código." />
 } @else {
   <div class="pos-grid">
-    @for (producto of productos(); track producto.id) {
+    @for (producto of productosVisibles(); track producto.id) {
       <ds-product-card
         [imageSrc]="imageUrl(producto.imagenUrl)"
         [name]="producto.nombre"
@@ -14,4 +24,7 @@
       />
     }
   </div>
+  @if (hayMas()) {
+    <div #sentinela class="pos-grid-sentinela"></div>
+  }
 }

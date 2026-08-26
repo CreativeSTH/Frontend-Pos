@@ -1,0 +1,22 @@
+.ds-skeleton {
+  display: inline-block;
+  background: var(--glass-bg-hover);
+  animation: ds-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ds-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-skeleton {
+    animation: none;
+    opacity: 0.8;
+  }
+}
