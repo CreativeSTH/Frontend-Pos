@@ -1,0 +1,9 @@
+<div class="tienda-legal">
+  <a [routerLink]="['/tienda', negocioId]">&larr; Volver a la tienda</a>
+  <h1>{{ titulo }}</h1>
+  @if (contenido()) {
+    <p class="tienda-legal__texto">{{ contenido() }}</p>
+  } @else {
+    <p class="tienda-legal__vacio">Esta tienda todavía no cargó este contenido.</p>
+  }
+</div>

@@ -257,6 +257,21 @@ export const routes: Routes = [
         canActivate: [clienteAuthGuard],
         loadComponent: () => import('./features/tienda/cuenta/cuenta').then((m) => m.TiendaCuenta),
       },
+      {
+        path: 'terminos',
+        data: { campo: 'terminos' },
+        loadComponent: () => import('./features/tienda/legal/legal').then((m) => m.TiendaLegal),
+      },
+      {
+        path: 'tratamiento-datos',
+        data: { campo: 'tratamientoDatos' },
+        loadComponent: () => import('./features/tienda/legal/legal').then((m) => m.TiendaLegal),
+      },
+      {
+        path: 'envios',
+        data: { campo: 'politicaEnvios' },
+        loadComponent: () => import('./features/tienda/legal/legal').then((m) => m.TiendaLegal),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

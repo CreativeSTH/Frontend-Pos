@@ -1,0 +1,23 @@
+.tienda-legal {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+
+  a {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 {
+    margin-bottom: 1rem;
+  }
+}
+
+.tienda-legal__texto {
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.tienda-legal__vacio {
+  color: #888;
+}
