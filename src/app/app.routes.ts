@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard, guestGuard, landingGuard, soloNegocioGuard } from './core/guards/auth.guard';
 import { permisoGuard } from './core/guards/permiso.guard';
 import { sucursalGuard } from './core/guards/sucursal.guard';
+import { clienteAuthGuard } from './core/guards/cliente-auth.guard';
 
 export const routes: Routes = [
   // landingGuard siempre resuelve a un UrlTree (login, dashboard o punto-venta
@@ -250,6 +251,11 @@ export const routes: Routes = [
       {
         path: 'registro',
         loadComponent: () => import('./features/tienda/registro/registro').then((m) => m.TiendaRegistro),
+      },
+      {
+        path: 'cuenta',
+        canActivate: [clienteAuthGuard],
+        loadComponent: () => import('./features/tienda/cuenta/cuenta').then((m) => m.TiendaCuenta),
       },
     ],
   },

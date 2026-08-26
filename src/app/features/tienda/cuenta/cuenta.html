@@ -1,0 +1,31 @@
+<h1>Mi cuenta</h1>
+
+<p>Hola, {{ clienteAuthService.clienteActual()?.nombre }}</p>
+
+<section>
+  <h2>Direcciones</h2>
+  @if (direcciones().length === 0) {
+    <p>Todavía no guardaste ninguna dirección.</p>
+  } @else {
+    <ul>
+      @for (direccion of direcciones(); track direccion.id) {
+        <li>{{ direccion.direccionLinea1 }} @if (direccion.predeterminada) { (predeterminada) }</li>
+      }
+    </ul>
+  }
+
+  <input
+    type="text"
+    placeholder="Nueva dirección"
+    [ngModel]="nuevaDireccion()"
+    (ngModelChange)="nuevaDireccion.set($event)"
+  />
+  <button type="button" [disabled]="guardandoDireccion()" (click)="agregarDireccion()">Agregar dirección</button>
+</section>
+
+<section>
+  <h2>Mis pedidos</h2>
+  <p>Todavía no tenés pedidos.</p>
+</section>
+
+<button type="button" (click)="cerrarSesion()">Cerrar sesión</button>
