@@ -1,0 +1,63 @@
+<header class="atelier-nav">
+  @if (tienda.logoUrl()) {
+    <img class="atelier-nav__logo" [src]="tienda.logoUrl()" alt="Logo" />
+  } @else {
+    <span>Tienda</span>
+  }
+  <nav class="atelier-nav__links">
+    <a [routerLink]="['/tienda', tienda.negocioId()]">Colección</a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'cuenta']">Cuenta</a>
+  </nav>
+  <a [routerLink]="['/tienda', tienda.negocioId(), 'carrito']" class="atelier-nav__cart">
+    <ds-icon name="shopping-bag" [size]="16" /> {{ carrito.items().length }}
+  </a>
+</header>
+
+<section class="atelier-hero">
+  <div class="atelier-hero__media">
+    @if (tienda.banners().length > 0) {
+      <app-banner-carousel [banners]="tienda.banners()" />
+    }
+  </div>
+  <div class="atelier-hero__cap">
+    <p class="atelier-hero__eyebrow">Bienvenida</p>
+    <h1>Piezas con<br />intención</h1>
+    <p class="atelier-hero__sub">Descubrí la colección completa, curada para vos.</p>
+    <a class="atelier-hero__cta" [routerLink]="['/tienda', tienda.negocioId()]" fragment="catalogo">Explorar</a>
+  </div>
+</section>
+
+<div class="atelier-divider"></div>
+
+<section class="atelier-grid-section" id="catalogo">
+  <h2>Catálogo</h2>
+  @if (tienda.productos().length === 0) {
+    <p class="atelier-vacio">Todavía no hay productos disponibles.</p>
+  } @else {
+    <div class="atelier-grid">
+      @for (producto of tienda.productos(); track producto.id) {
+        <article class="atelier-card">
+          <a [routerLink]="['/tienda', tienda.negocioId(), 'producto', producto.id]">
+            <div class="atelier-card__ph" [style.background-image]="producto.imagenUrl ? 'url(' + producto.imagenUrl + ')' : null"></div>
+            <p class="atelier-card__nm">{{ producto.nombre }}</p>
+            <p class="atelier-card__pr">$ {{ producto.precioVenta | number: '1.0-0' }}</p>
+          </a>
+          <button type="button" (click)="agregarAlCarrito(producto)">Agregar</button>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+<footer class="atelier-foot">
+  @if (tienda.logoUrl()) {
+    <img [src]="tienda.logoUrl()" alt="Logo" class="atelier-foot__logo" />
+  } @else {
+    <div class="atelier-foot__wm">Tienda</div>
+  }
+  <div class="atelier-foot__links">
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'terminos']">Términos</a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'envios']">Envíos y cambios</a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'tratamiento-datos']">Tratamiento de datos</a>
+  </div>
+</footer>
