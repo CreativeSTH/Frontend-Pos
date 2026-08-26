@@ -2,6 +2,12 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { CatalogoPublicoService } from './catalogo-publico.service';
 import { ProductoCatalogo } from '../models/catalogo-publico.model';
 import { PlantillaTienda } from '../models/tienda-online.model';
+import { environment } from '../../../environments/environment';
+
+/** El backend devuelve rutas relativas (`/uploads/...`) para logo/banners/imagen de producto — se resuelven acá una sola vez para que ninguna plantilla tenga que saber de `environment.assetsUrl`. */
+function absoluta(url: string | null): string | null {
+  return url ? `${environment.assetsUrl}${url}` : null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class TiendaContextService {
@@ -38,12 +44,14 @@ export class TiendaContextService {
       next: (catalogo) => {
         this._activa.set(catalogo.activa);
         this._plantilla.set(catalogo.plantilla);
-        this._logoUrl.set(catalogo.logoUrl);
-        this._banners.set(catalogo.banners);
+        this._logoUrl.set(absoluta(catalogo.logoUrl));
+        this._banners.set(catalogo.banners.map((b) => absoluta(b)!));
         this._terminos.set(catalogo.terminos);
         this._tratamientoDatos.set(catalogo.tratamientoDatos);
         this._politicaEnvios.set(catalogo.politicaEnvios);
-        this._productos.set(catalogo.productos);
+        this._productos.set(
+          catalogo.productos.map((p) => ({ ...p, imagenUrl: absoluta(p.imagenUrl) })),
+        );
         this._cargando.set(false);
       },
       error: () => {
