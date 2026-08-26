@@ -1,0 +1,63 @@
+<header class="nocturne-nav">
+  @if (tienda.logoUrl()) {
+    <img class="nocturne-nav__logo" [src]="tienda.logoUrl()" alt="Logo" />
+  } @else {
+    <span class="nocturne-nav__wordmark">TIENDA</span>
+  }
+  <nav class="nocturne-nav__links">
+    <a [routerLink]="['/tienda', tienda.negocioId()]">Colección</a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'cuenta']">Cuenta</a>
+  </nav>
+  <a [routerLink]="['/tienda', tienda.negocioId(), 'carrito']" aria-label="Carrito">
+    <ds-icon name="shopping-bag" [size]="18" />
+  </a>
+</header>
+
+<section class="nocturne-hero">
+  <div class="nocturne-hero__flex">
+    <div class="nocturne-hero__text">
+      <p class="nocturne-hero__eyebrow">Bienvenido</p>
+      <h1>Calidad que se nota,<br />sin distracciones.</h1>
+      <a class="nocturne-hero__cta" [routerLink]="['/tienda', tienda.negocioId()]" fragment="catalogo">Ver colección</a>
+    </div>
+    <div class="nocturne-hero__media">
+      <div class="nocturne-hero__rings"></div>
+      @if (tienda.banners().length > 0) {
+        <app-banner-carousel class="nocturne-hero__carousel" [banners]="tienda.banners()" />
+      }
+    </div>
+  </div>
+</section>
+
+<section class="nocturne-list-section" id="catalogo">
+  <h2>Piezas de la casa</h2>
+  @if (tienda.productos().length === 0) {
+    <p class="nocturne-vacio">Todavía no hay productos disponibles.</p>
+  } @else {
+    <div class="nocturne-list">
+      @for (producto of tienda.productos(); track producto.id) {
+        <article class="nocturne-row">
+          <a [routerLink]="['/tienda', tienda.negocioId(), 'producto', producto.id]">
+            <div class="nocturne-row__ph" [style.background-image]="producto.imagenUrl ? 'url(' + producto.imagenUrl + ')' : null"></div>
+            <p class="nocturne-row__nm">{{ producto.nombre }}</p>
+            <p class="nocturne-row__pr">$ {{ producto.precioVenta | number: '1.0-0' }}</p>
+          </a>
+          <button type="button" (click)="agregarAlCarrito(producto)">Agregar</button>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+<footer class="nocturne-foot">
+  @if (tienda.logoUrl()) {
+    <img [src]="tienda.logoUrl()" alt="Logo" class="nocturne-foot__logo" />
+  } @else {
+    <div class="nocturne-foot__wm">TIENDA</div>
+  }
+  <div class="nocturne-foot__links">
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'terminos']">Términos</a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'envios']">Envíos</a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'tratamiento-datos']">Tratamiento de datos</a>
+  </div>
+</footer>

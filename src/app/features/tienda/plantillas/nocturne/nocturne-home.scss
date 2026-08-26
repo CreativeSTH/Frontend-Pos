@@ -1,0 +1,74 @@
+:host { display: block; font-family: 'Inter', sans-serif; background: #120d0a; color: #f3eae1; }
+
+.nocturne-nav {
+  display: flex; justify-content: space-between; align-items: center; padding: 16px 22px;
+  &__wordmark { font-family: 'Unbounded', sans-serif; font-weight: 700; font-size: 13px; }
+  &__logo { height: 24px; }
+  &__links { display: none; gap: 22px; font-size: 11px; color: #c9b8ab; flex: 1; justify-content: center; a { color: inherit; text-decoration: none; } }
+  a[aria-label='Carrito'] { color: inherit; }
+}
+
+.nocturne-hero {
+  position: relative; padding: 34px 22px 30px; overflow: hidden;
+
+  &__flex { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  &__text { display: flex; flex-direction: column; align-items: center; }
+  &__eyebrow { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #e3a455; font-weight: 600; margin: 0; }
+  h1 { font-family: 'Unbounded', sans-serif; font-size: 26px; line-height: 1.15; text-align: center; margin: 10px auto 0; max-width: 280px; font-weight: 700; }
+
+  &__media { position: relative; width: 190px; height: 190px; margin: 22px auto 0; border-radius: 50%; overflow: hidden; }
+  &__rings {
+    position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(227, 164, 85, 0.14); pointer-events: none;
+    &::before, &::after { content: ''; position: absolute; border-radius: 50%; border: 1px solid rgba(227, 164, 85, 0.1); }
+    &::before { inset: -20px; }
+    &::after { inset: -40px; border-color: rgba(227, 164, 85, 0.16); }
+  }
+  &__carousel { position: absolute; inset: 0; border-radius: 50%; }
+
+  &__cta { display: block; width: fit-content; margin: 20px auto 0; background: #e3a455; color: #120d0a; font-weight: 700; font-size: 11.5px; padding: 9px 20px; border-radius: 30px; text-decoration: none; }
+}
+
+.nocturne-list-section {
+  padding: 0 22px 22px;
+  h2 { font-family: 'Unbounded', sans-serif; font-size: 14px; margin-bottom: 14px; font-weight: 500; color: #e3a455; }
+}
+
+.nocturne-vacio { color: #a8968a; font-size: 13px; text-align: center; padding: 24px 0; }
+
+.nocturne-list { display: flex; flex-direction: column; gap: 10px; }
+
+.nocturne-row {
+  display: flex; align-items: center; gap: 12px; background: #1c1512; border: 1px solid rgba(227, 164, 85, 0.12); border-radius: 12px; padding: 10px;
+
+  a { display: flex; align-items: center; gap: 12px; flex: 1; color: inherit; text-decoration: none; }
+  &__ph { width: 58px; height: 58px; border-radius: 8px; flex: 0 0 auto; background: #2a1f18 center/cover; }
+  &__nm { font-size: 12px; font-weight: 600; margin: 0; flex: 1; }
+  &__pr { font-size: 12px; font-weight: 700; color: #e3a455; white-space: nowrap; margin: 0; }
+  button { background: transparent; border: 1px solid rgba(227, 164, 85, 0.4); color: #f3eae1; font-size: 10.5px; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+}
+
+.nocturne-foot {
+  text-align: center; padding: 28px 22px 22px; border-top: 1px solid rgba(227, 164, 85, 0.14);
+  &__wm { font-family: 'Unbounded', sans-serif; font-size: 15px; letter-spacing: 0.02em; margin-bottom: 10px; }
+  &__logo { height: 26px; margin-bottom: 10px; }
+  &__links { display: flex; justify-content: center; gap: 16px; font-size: 10px; a { color: #c9b8ab; text-decoration: none; } }
+}
+
+@media (min-width: 860px) {
+  .nocturne-nav__links { display: flex; }
+  .nocturne-hero {
+    padding: 50px 46px;
+    &__flex { flex-direction: row; align-items: center; text-align: left; justify-content: space-between; gap: 40px; }
+    &__text { align-items: flex-start; }
+    h1 { text-align: left; margin: 10px 0 0; max-width: 340px; font-size: 36px; }
+    &__media { margin: 0; flex: 0 0 auto; width: 260px; height: 260px; }
+    &__cta { margin: 22px 0 0; }
+  }
+  .nocturne-list-section { padding: 0 46px 30px; }
+  .nocturne-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .nocturne-row {
+    flex-direction: column; align-items: flex-start; padding: 14px;
+    a { flex-direction: column; align-items: flex-start; width: 100%; }
+    &__ph { width: 100%; height: 110px; border-radius: 10px; }
+  }
+}
