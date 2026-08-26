@@ -1,0 +1,58 @@
+<header class="meadow-nav">
+  @if (tienda.logoUrl()) {
+    <img class="meadow-nav__logo" [src]="tienda.logoUrl()" alt="Logo" />
+  } @else {
+    <span class="meadow-nav__wordmark">Tienda</span>
+  }
+  <nav class="meadow-nav__links">
+    <a [routerLink]="['/tienda', tienda.negocioId()]">Vitrina</a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'cuenta']">Cuenta</a>
+  </nav>
+  <a [routerLink]="['/tienda', tienda.negocioId(), 'carrito']" aria-label="Carrito">
+    <ds-icon name="shopping-bag" [size]="16" />
+  </a>
+</header>
+
+<section class="meadow-hero">
+  <div class="meadow-hero__stamp">HECHO<br />A MANO</div>
+  <p class="meadow-hero__eyebrow">Bienvenido</p>
+  <h1>Lo que hacemos, hecho con cuidado.</h1>
+  <p>Productos frescos, listos para pedir online.</p>
+  <a class="meadow-hero__cta" [routerLink]="['/tienda', tienda.negocioId()]" fragment="catalogo">Ver vitrina</a>
+</section>
+
+<section class="meadow-grid-section" id="catalogo">
+  <h2>Catálogo</h2>
+  @if (tienda.productos().length === 0) {
+    <p class="meadow-vacio">Todavía no hay productos disponibles.</p>
+  } @else {
+    <div class="meadow-grid">
+      @for (producto of tienda.productos(); track producto.id) {
+        <article class="meadow-card">
+          <a [routerLink]="['/tienda', tienda.negocioId(), 'producto', producto.id]">
+            <div class="meadow-card__ph" [style.background-image]="producto.imagenUrl ? 'url(' + producto.imagenUrl + ')' : null"></div>
+            <p class="meadow-card__nm">{{ producto.nombre }}</p>
+            <p class="meadow-card__pr">$ {{ producto.precioVenta | number: '1.0-0' }}</p>
+          </a>
+          <button type="button" (click)="agregarAlCarrito(producto)">Agregar</button>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+<footer class="meadow-foot">
+  <div class="meadow-foot__top">
+    @if (tienda.logoUrl()) {
+      <img [src]="tienda.logoUrl()" alt="Logo" />
+    } @else {
+      <div class="meadow-foot__wm">Tienda</div>
+    }
+  </div>
+  <div class="meadow-foot__links">
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'terminos']">Términos</a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'envios']">Envíos</a>
+    <a [routerLink]="['/tienda', tienda.negocioId(), 'tratamiento-datos']">Tratamiento de datos</a>
+  </div>
+  <div class="meadow-foot__bottom">&copy; {{ 2026 }}</div>
+</footer>

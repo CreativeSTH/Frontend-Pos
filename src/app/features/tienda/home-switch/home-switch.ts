@@ -4,11 +4,12 @@ import { AuroraHome } from '../plantillas/aurora/aurora-home';
 import { AtelierHome } from '../plantillas/atelier/atelier-home';
 import { FoundryHome } from '../plantillas/foundry/foundry-home';
 import { NocturneHome } from '../plantillas/nocturne/nocturne-home';
+import { MeadowHome } from '../plantillas/meadow/meadow-home';
 
 @Component({
   selector: 'app-tienda-home-switch',
   standalone: true,
-  imports: [AuroraHome, AtelierHome, FoundryHome, NocturneHome],
+  imports: [AuroraHome, AtelierHome, FoundryHome, NocturneHome, MeadowHome],
   templateUrl: './home-switch.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,0 +1,61 @@
+:host { display: block; font-family: 'DM Sans', sans-serif; background: #fbf6ec; color: #2b2417; }
+
+.meadow-nav {
+  display: flex; justify-content: space-between; align-items: center; padding: 16px 20px;
+  &__wordmark { font-family: 'DM Serif Display', serif; font-size: 17px; color: #3f5233; }
+  &__logo { height: 26px; }
+  &__links { display: none; gap: 20px; font-size: 12px; color: #3f5233; flex: 1; padding-left: 20px; a { color: inherit; text-decoration: none; } }
+  a[aria-label='Carrito'] { color: #3f5233; }
+}
+
+.meadow-hero {
+  margin: 0 18px 20px; border-radius: 22px; background: #3f5233; color: #fbf6ec; padding: 26px 20px; position: relative; overflow: hidden;
+
+  &__eyebrow { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #d9a441; font-weight: 700; margin: 0; }
+  h1 { font-family: 'DM Serif Display', serif; font-size: 27px; line-height: 1.15; margin: 8px 0 10px; max-width: 260px; }
+  p:not(.meadow-hero__eyebrow) { font-size: 11.5px; color: #d8dfc9; max-width: 240px; line-height: 1.5; margin-bottom: 14px; }
+  &__cta { display: inline-block; background: #d9a441; color: #2b2417; font-weight: 700; font-size: 11.5px; padding: 9px 16px; border-radius: 30px; text-decoration: none; }
+  &__stamp {
+    position: absolute; right: 14px; bottom: 14px; width: 64px; height: 64px; border: 1.5px dashed rgba(251, 246, 236, 0.5);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; text-align: center; line-height: 1.3; color: #f2e7c9; padding: 4px;
+  }
+}
+
+.meadow-grid-section {
+  padding: 0 20px 20px;
+  h2 { font-family: 'DM Serif Display', serif; font-size: 18px; margin-bottom: 12px; color: #3f5233; }
+}
+
+.meadow-vacio { color: #5b6b4e; font-size: 13px; text-align: center; padding: 24px 0; }
+
+.meadow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.meadow-card {
+  background: #fff; border-radius: 16px; padding: 10px; box-shadow: 0 4px 14px rgba(63, 82, 51, 0.08);
+  a { color: inherit; text-decoration: none; }
+  &__ph { height: 92px; border-radius: 12px; margin-bottom: 8px; background: #eee1c4 center/cover; }
+  &__nm { font-size: 11.5px; font-weight: 700; margin: 0; }
+  &__pr { font-size: 11.5px; color: #b5661f; margin: 3px 0 8px; font-weight: 700; }
+  button { width: 100%; background: transparent; border: 1px solid rgba(63, 82, 51, 0.25); color: #2b2417; font-size: 11px; padding: 7px; border-radius: 8px; cursor: pointer; }
+}
+
+.meadow-foot {
+  background: #3f5233; color: #fbf6ec; padding: 24px 20px 18px;
+  &__top img { height: 24px; }
+  &__wm { font-family: 'DM Serif Display', serif; font-size: 16px; }
+  &__links { display: flex; gap: 16px; font-size: 10px; margin: 16px 0; a { color: #f2e7c9; text-decoration: none; } }
+  &__bottom { font-size: 9.5px; color: #a9b79b; border-top: 1px solid rgba(251, 246, 236, 0.15); padding-top: 12px; }
+}
+
+@media (min-width: 860px) {
+  .meadow-nav__links { display: flex; }
+  .meadow-hero {
+    padding: 44px 50px; margin: 0 30px 26px;
+    h1 { font-size: 42px; max-width: 480px; }
+    p:not(.meadow-hero__eyebrow) { max-width: 400px; font-size: 13.5px; }
+    &__stamp { width: 84px; height: 84px; right: 40px; bottom: 34px; font-size: 9.5px; }
+  }
+  .meadow-grid-section { padding: 0 30px 26px; }
+  .meadow-grid { grid-template-columns: repeat(4, 1fr); }
+  .meadow-foot { padding: 26px 30px 20px; }
+}
