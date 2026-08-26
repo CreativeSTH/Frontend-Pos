@@ -166,7 +166,8 @@ export class PuntoVenta {
   protected readonly abriendoTurno = signal(false);
 
   protected readonly search = signal('');
-  protected readonly carrito = signal<LineaCarrito[]>(this.leerCarritoStorage());
+  /** Arranca vacío a propósito — la hidratación real la maneja el effect scopeado por sucursal del constructor (ver `sucursalIdCarritoActual`), no este valor inicial. */
+  protected readonly carrito = signal<LineaCarrito[]>([]);
   protected readonly procesando = signal(false);
 
   protected readonly showCobro = signal(false);
@@ -349,6 +350,9 @@ export class PuntoVenta {
   /** Timeouts de la secuencia visual `fallido → retomando → cerrando` — se limpian junto con `wompiSub` para no dejar un `setTimeout` colgado pisando el estado de una venta nueva. */
   private wompiTimeouts: ReturnType<typeof setTimeout>[] = [];
 
+  /** Sucursal para la que está hidratado `carrito()` ahora mismo — distingue "cambió la sucursal" de "el cajero editó el carrito" dentro del mismo effect, ver constructor. */
+  private sucursalIdCarritoActual: string | null = null;
+
   constructor() {
     this.load();
     this.cargarConfigWompi();
@@ -357,10 +361,33 @@ export class PuntoVenta {
     /** Si el componente se destruye con un pago Wompi pendiente (ej. el cajero navega a otra pantalla), no dejar el listener vivo — `PagosWompiService` es un singleton `providedIn: 'root'`, el `Subject` interno sigue vivo más allá de este componente. */
     this.destroyRef.onDestroy(() => this.wompiSub?.unsubscribe());
 
-    /** Persiste el carrito en localStorage (scopeado por negocio) para sobrevivir a un refresh del navegador o al logout forzado por un PIN incorrecto — ver auth.interceptor.ts. */
+    /**
+     * El carrito activo vive scopeado por sucursal (localStorage), no solo por negocio — antes de
+     * este fix, dos sucursales del mismo negocio compartían el mismo carrito: cambiar de sede sin
+     * vaciarlo dejaba en pantalla productos de la sucursal anterior (bug real reportado: el backend
+     * rechaza la venta al confirmar el pago por no haber inventario en esa bodega, pero recién ahí,
+     * después de que el cajero completó todo el flujo de cobro).
+     *
+     * Un solo effect maneja las dos mitades del problema para no depender de en qué orden corran
+     * dos effects separados: si `sucursal()` cambió de verdad respecto de `sucursalIdCarritoActual`,
+     * re-hidrata desde el storage de la sucursal nueva (vacío si nunca tuvo uno) y no persiste nada
+     * en esa misma vuelta — persistir el carrito viejo bajo la clave nueva pisaría el carrito real de
+     * la sucursal a la que se está entrando. En cualquier otra vuelta (edición normal del carrito,
+     * sucursal sin cambios) persiste como siempre. Sobrevive a un refresh del navegador o al logout
+     * forzado por un PIN incorrecto — ver auth.interceptor.ts.
+     */
     effect(() => {
       const negocioId = this.auth.usuario()?.negocioId;
-      localStorage.setItem(this.claveCarrito(negocioId), JSON.stringify(this.carrito()));
+      const sucursalId = this.sucursal()?.id ?? null;
+      const carritoActual = this.carrito();
+
+      if (sucursalId !== this.sucursalIdCarritoActual) {
+        this.sucursalIdCarritoActual = sucursalId;
+        this.carrito.set(this.leerCarritoStorage(negocioId, sucursalId));
+        return;
+      }
+
+      localStorage.setItem(this.claveCarrito(negocioId, sucursalId), JSON.stringify(carritoActual));
     });
 
     /** Apenas se resuelve un cliente real durante una sesión "Nuevo domicilio" (desde /domicilios), prende el switch solo. */
@@ -1297,14 +1324,17 @@ export class PuntoVenta {
     });
   }
 
-  private claveCarrito(negocioId: string | null | undefined): string {
-    return `pos:carrito-activo:${negocioId ?? 'anon'}`;
+  private claveCarrito(negocioId: string | null | undefined, sucursalId: string | null | undefined): string {
+    return `pos:carrito-activo:${negocioId ?? 'anon'}:${sucursalId ?? 'anon'}`;
   }
 
-  /** Hidrata el carrito guardado (si hay uno) al construir el componente — sobrevive a un refresh del navegador. */
-  private leerCarritoStorage(): LineaCarrito[] {
+  /** Hidrata el carrito guardado de una sucursal puntual (si hay uno) — llamado desde el effect del constructor, tanto al iniciar como al cambiar de sucursal. */
+  private leerCarritoStorage(
+    negocioId: string | null | undefined,
+    sucursalId: string | null | undefined,
+  ): LineaCarrito[] {
     try {
-      const raw = localStorage.getItem(this.claveCarrito(this.auth.usuario()?.negocioId));
+      const raw = localStorage.getItem(this.claveCarrito(negocioId, sucursalId));
       return raw ? (JSON.parse(raw) as LineaCarrito[]) : [];
     } catch {
       return [];

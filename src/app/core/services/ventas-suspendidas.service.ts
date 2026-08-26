@@ -1,5 +1,6 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
 import { AuthService } from './auth.service';
+import { SucursalContextService } from './sucursal-context.service';
 
 export interface LineaCarritoSuspendida {
   productoId: string;
@@ -25,22 +26,27 @@ export interface VentaSuspendida {
  * — solo se guarda el ticket en memoria hasta que se retoma o se descarta.
  * Vive en un servicio (no en el componente) para sobrevivir si el cajero
  * navega a otra pantalla del POS y vuelve. Persiste en localStorage
- * (clave scopeada por negocioId, porque el mismo navegador puede entrar
- * como soporte a varios negocios) para sobrevivir también a un refresh
- * del navegador o al logout forzado por un PIN incorrecto (ver
- * auth.interceptor.ts) — el `effect()` re-hidrata sola si cambia el
- * negocio activo, mismo patrón que AlertasService/RealtimeService.
+ * (clave scopeada por negocioId **y sucursalId** — antes solo por negocioId,
+ * lo que hacía que una venta suspendida en una sede apareciera como
+ * "retomable" en cualquier otra sede del mismo negocio, mismo bug real que
+ * tenía el carrito activo de `punto-venta.ts`, mismo fix) para sobrevivir
+ * también a un refresh del navegador o al logout forzado por un PIN
+ * incorrecto (ver auth.interceptor.ts) — el `effect()` re-hidrata sola si
+ * cambia el negocio o la sucursal activa, mismo patrón que
+ * AlertasService/RealtimeService.
  */
 @Injectable({ providedIn: 'root' })
 export class VentasSuspendidasService {
   private readonly auth = inject(AuthService);
+  private readonly sucursalContext = inject(SucursalContextService);
   private readonly _ventas = signal<VentaSuspendida[]>([]);
   readonly ventas = this._ventas.asReadonly();
 
   constructor() {
     effect(() => {
       const negocioId = this.auth.usuario()?.negocioId;
-      this._ventas.set(this.leerStorage(negocioId));
+      const sucursalId = this.sucursalContext.sucursalId();
+      this._ventas.set(this.leerStorage(negocioId, sucursalId));
     });
   }
 
@@ -74,13 +80,16 @@ export class VentasSuspendidasService {
     this.guardarStorage(lista);
   }
 
-  private clave(negocioId: string | null | undefined): string {
-    return `pos:ventas-suspendidas:${negocioId ?? 'anon'}`;
+  private clave(negocioId: string | null | undefined, sucursalId: string | null | undefined): string {
+    return `pos:ventas-suspendidas:${negocioId ?? 'anon'}:${sucursalId ?? 'anon'}`;
   }
 
-  private leerStorage(negocioId: string | null | undefined): VentaSuspendida[] {
+  private leerStorage(
+    negocioId: string | null | undefined,
+    sucursalId: string | null | undefined,
+  ): VentaSuspendida[] {
     try {
-      const raw = localStorage.getItem(this.clave(negocioId));
+      const raw = localStorage.getItem(this.clave(negocioId, sucursalId));
       return raw ? (JSON.parse(raw) as VentaSuspendida[]) : [];
     } catch {
       return [];
@@ -88,6 +97,9 @@ export class VentasSuspendidasService {
   }
 
   private guardarStorage(lista: VentaSuspendida[]): void {
-    localStorage.setItem(this.clave(this.auth.usuario()?.negocioId), JSON.stringify(lista));
+    localStorage.setItem(
+      this.clave(this.auth.usuario()?.negocioId, this.sucursalContext.sucursalId()),
+      JSON.stringify(lista),
+    );
   }
 }
