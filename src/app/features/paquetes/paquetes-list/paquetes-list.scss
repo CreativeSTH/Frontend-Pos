@@ -1,17 +1,15 @@
-@use 'mixins' as mix;
-
 .paquetes-loading {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 3rem;
+  gap: var(--space-3);
+  padding: var(--space-12);
   justify-content: center;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
 }
 
 .paquetes-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
 
   &__btn {
     display: inline-flex;
@@ -39,5 +37,5 @@
 .paquete-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
 }
