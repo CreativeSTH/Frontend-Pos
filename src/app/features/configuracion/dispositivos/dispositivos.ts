@@ -36,6 +36,7 @@ export class Dispositivos {
 
   protected readonly printerType = signal<'epson' | 'star'>('epson');
   protected readonly printerName = signal<string>('');
+  protected readonly paperWidth = signal<58 | 80>(58);
   protected readonly guardando = signal(false);
   protected readonly probandoImpresion = signal(false);
 
@@ -61,8 +62,14 @@ export class Dispositivos {
       this.printAgent.obtenerConfig().subscribe((config) => {
         this.printerType.set(config.printerType ?? 'epson');
         this.printerName.set(config.printerName ?? '');
+        this.paperWidth.set(config.paperWidth ?? 58);
       });
     });
+  }
+
+  /** `ds-select` proyecta `<option value="...">` como string plano — hay que convertir a número antes de guardarlo. */
+  protected setPaperWidth(valor: string): void {
+    this.paperWidth.set(Number(valor) === 80 ? 80 : 58);
   }
 
   protected reintentar(): void {
@@ -72,7 +79,11 @@ export class Dispositivos {
   protected guardarConfig(): void {
     this.guardando.set(true);
     this.printAgent
-      .guardarConfig({ printerType: this.printerType(), printerName: this.printerName() || undefined })
+      .guardarConfig({
+        printerType: this.printerType(),
+        printerName: this.printerName() || undefined,
+        paperWidth: this.paperWidth(),
+      })
       .subscribe({
         next: () => {
           this.guardando.set(false);

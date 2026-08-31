@@ -18,6 +18,8 @@ export interface AgentStatus {
 export interface AgentPrinterConfig {
   printerType?: 'epson' | 'star';
   printerName?: string;
+  /** Ancho físico del papel en mm — determina cuántos caracteres por línea entran y el ancho máximo del logo. Default en pos-agent: 58. */
+  paperWidth?: 58 | 80;
 }
 
 /** Opciones que solo existen en el momento de la venta original — no se pueden reconstruir en una reimpresión. */
@@ -69,7 +71,11 @@ export class PrintAgentService {
    * no reconstruyen nada por su cuenta.
    */
   imprimirTicket(contenido: ReciboContenido, opciones: OpcionesImpresion = {}): Observable<PrintResult> {
-    return this.obtenerLogoBase64(contenido.negocio.logoUrl).pipe(
+    // Se consulta el ancho de papel configurado ANTES de tocar el logo — pos-agent es la fuente de
+    // verdad de qué impresora hay conectada a esta PC (ver Configuración > Dispositivos), y el
+    // ancho máximo del logo depende de eso (384pt en 58mm, 576pt en 80mm).
+    return this.obtenerConfig().pipe(
+      switchMap((config) => this.obtenerLogoBase64(contenido.negocio.logoUrl, config.paperWidth)),
       switchMap((logoBase64) => {
         const payload = {
           tipo: contenido.tipo,
@@ -103,22 +109,78 @@ export class PrintAgentService {
     );
   }
 
-  /** Descarga el logo como blob y lo codifica en base64 — pos-agent no tiene acceso propio al backend. */
-  private obtenerLogoBase64(logoUrl?: string): Observable<string | undefined> {
+  /**
+   * Ancho de papel (mm) → ancho máximo de imagen en puntos que el cabezal puede imprimir en una
+   * línea (58mm a 203dpi ≈ 384 puntos; 80mm ≈ 576 — mismos 2 valores que usa `pos-agent` del lado
+   * del texto, ver `printer.js::PUNTOS_POR_ANCHO`; no hay forma de compartir la tabla entre ambos
+   * runtimes, así que queda duplicada a propósito, mismo criterio que el resto del proyecto usa
+   * para constantes chicas que cruzan repos). Sin este tope, un logo subido a resolución normal
+   * (ej. 400×110, ya confirmado real en un negocio de prueba) hace que `pos-agent` mande a la
+   * impresora un comando ESC/POS de imagen más ancho de lo que el cabezal puede imprimir en una
+   * línea — el firmware de la impresora no lo rechaza, sigue leyendo los bytes "sobrantes" del
+   * comando como si fueran texto normal, y eso es lo que sale como números/letras sueltas en vez
+   * del logo (bug real diagnosticado, no una sospecha).
+   */
+  private readonly LOGO_ANCHO_MAXIMO_PX: Record<58 | 80, number> = { 58: 384, 80: 576 };
+
+  /**
+   * Descarga el logo como blob y lo redimensiona/normaliza para impresión
+   * térmica — pos-agent no tiene acceso propio al backend, así que este
+   * downscale tiene que pasar por acá antes de mandarlo. Reescalar el ANCHO
+   * es lo que corrige el bug de arriba; convertir a PNG real de paso también
+   * cierra un problema latente: el formulario de logo acepta JPG/WEBP
+   * además de PNG (`upload.config.ts`), pero `node-thermal-printer` en
+   * pos-agent solo sabe decodificar PNG (`PNG.sync.read`) — un logo subido
+   * en otro formato fallaba en silencio (se loguea el error y se imprime sin
+   * logo). No se convierte a escala de grises acá: `node-thermal-printer` ya
+   * binariza pixel por pixel con la fórmula de luminancia estándar antes de
+   * mandarlo a la impresora (confirmado leyendo su código fuente), así que
+   * hacerlo dos veces sería redundante.
+   */
+  private obtenerLogoBase64(logoUrl: string | undefined, paperWidth: 58 | 80 | undefined): Observable<string | undefined> {
     if (!logoUrl) return of(undefined);
     return this.http.get(`${environment.assetsUrl}${logoUrl}`, { responseType: 'blob' }).pipe(
-      switchMap((blob) => from(this.blobABase64(blob))),
-      // Si falla la descarga del logo, se imprime igual sin él — no debe bloquear la venta.
+      switchMap((blob) => from(this.redimensionarLogoParaImpresora(blob, this.LOGO_ANCHO_MAXIMO_PX[paperWidth ?? 58]))),
+      // Si falla la descarga o el redimensionado del logo, se imprime igual sin él — no debe bloquear la venta.
       catchError(() => of(undefined)),
     );
   }
 
-  private blobABase64(blob: Blob): Promise<string> {
+  private redimensionarLogoParaImpresora(blob: Blob, anchoMaximoPx: number): Promise<string> {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve((reader.result as string).split(',')[1] ?? '');
-      reader.onerror = () => reject(new Error('No se pudo leer el logo'));
-      reader.readAsDataURL(blob);
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        try {
+          const anchoOriginal = img.naturalWidth;
+          const altoOriginal = img.naturalHeight;
+          if (!anchoOriginal || !altoOriginal) {
+            reject(new Error('El logo no tiene dimensiones válidas'));
+            return;
+          }
+          const ancho = Math.min(anchoOriginal, anchoMaximoPx);
+          const alto = Math.max(1, Math.round(altoOriginal * (ancho / anchoOriginal)));
+
+          const canvas = document.createElement('canvas');
+          canvas.width = ancho;
+          canvas.height = alto;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('No se pudo redimensionar el logo'));
+            return;
+          }
+          ctx.drawImage(img, 0, 0, ancho, alto);
+          resolve(canvas.toDataURL('image/png').split(',')[1] ?? '');
+        } catch (err) {
+          reject(err instanceof Error ? err : new Error('No se pudo redimensionar el logo'));
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('No se pudo leer el logo'));
+      };
+      img.src = url;
     });
   }
 

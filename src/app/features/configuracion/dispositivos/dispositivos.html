@@ -53,6 +53,13 @@
           </ds-select>
         </ds-form-field>
 
+        <ds-form-field label="Ancho de papel" hint="Ajusta cuánto texto entra por línea y el tamaño máximo del logo — una impresora de 58mm configurada como 80mm (o al revés) achica la letra o corta el logo.">
+          <ds-select [ngModel]="paperWidth().toString()" (ngModelChange)="setPaperWidth($event)">
+            <option value="58">58mm (angosta — la más común)</option>
+            <option value="80">80mm (ancha)</option>
+          </ds-select>
+        </ds-form-field>
+
         <div class="dispositivos-acciones">
           <ds-button variant="primary" [loading]="guardando()" (click)="guardarConfig()">Guardar</ds-button>
           <ds-button variant="glass" icon="printer" [loading]="probandoImpresion()" (click)="probarImpresion()">
