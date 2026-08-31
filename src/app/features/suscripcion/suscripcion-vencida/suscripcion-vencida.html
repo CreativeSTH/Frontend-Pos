@@ -1,0 +1,9 @@
+<div class="suscripcion-vencida">
+  <h1>Tu período de prueba/suscripción venció</h1>
+  @if (suscripcion(); as s) {
+    <p>Tu plan actual es <strong>{{ s.paquete.nombre }}</strong> — {{ formatMoney(s.paquete.precioMensual) }}/mes.</p>
+  }
+  <p>Reactivá tu cuenta para seguir usando el sistema.</p>
+  <ds-button variant="primary" [loading]="pagando()" (click)="reactivarConQr()">Pagar y reactivar (QR)</ds-button>
+  <button type="button" class="suscripcion-vencida__salir" (click)="cerrarSesion()">Cerrar sesión</button>
+</div>

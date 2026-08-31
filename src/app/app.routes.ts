@@ -28,6 +28,16 @@ export const routes: Routes = [
           import('./features/sucursal-selector/sucursal-selector').then((m) => m.SucursalSelector),
       },
       {
+        // Sin permisoGuard a propósito: cualquier usuario logueado de un
+        // negocio bloqueado (VENCIDA) tiene que poder llegar acá, sin
+        // importar qué permisos tenga.
+        path: 'suscripcion-vencida',
+        loadComponent: () =>
+          import('./features/suscripcion/suscripcion-vencida/suscripcion-vencida').then(
+            (m) => m.SuscripcionVencida,
+          ),
+      },
+      {
         // Sin sucursalGuard a propósito: ese guard redirige acá cuando sucursales.length === 0 —
         // si esta ruta también lo tuviera, se generaría un loop de redirección infinito.
         path: 'asistente',

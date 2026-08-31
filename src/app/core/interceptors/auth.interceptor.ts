@@ -17,6 +17,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error) => {
+      if (error.status === 402 && !req.url.includes('/suscripcion/')) {
+        router.navigateByUrl('/suscripcion-vencida');
+        return throwError(() => error);
+      }
       if (error.status === 401) {
         // Antes de perder la pantalla actual: si el POS tiene una venta en curso, que se guarde
         // sola como suspendida en vez de desaparecer sin rastro. Evento en vez de llamar a un
