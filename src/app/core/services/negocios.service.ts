@@ -1,10 +1,15 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
 import { CreateNegocioPayload, Negocio, UpdateNegocioPayload } from '../models/negocio.model';
+import { RegistroPublicoPayload } from '../models/suscripcion.model';
 
 @Injectable({ providedIn: 'root' })
 export class NegociosService {
   private readonly api = inject(ApiService);
+
+  registroPublico(payload: RegistroPublicoPayload) {
+    return this.api.post<{ mensaje: string }>('/negocios/registro-publico', payload);
+  }
 
   findAll() {
     return this.api.get<Negocio[]>('/negocios');

@@ -77,6 +77,16 @@ export class AuthService {
     return this.api.post<LoginResponse>('/auth/pin-switch', { pin }).pipe(tap((response) => this.guardarSesion(response)));
   }
 
+  confirmarEmail(token: string) {
+    return this.api
+      .get<LoginResponse>(`/auth/verificar-email?token=${encodeURIComponent(token)}`)
+      .pipe(tap((response) => this.guardarSesion(response)));
+  }
+
+  reenviarVerificacion(email: string) {
+    return this.api.post<{ mensaje: string }>('/auth/reenviar-verificacion', { email });
+  }
+
   /** Emite una sesión como el Administrador del negocio elegido, guardando la sesión de plataforma actual aparte. */
   entrarComoNegocio(negocioId: string) {
     return this.api.post<LoginResponse>(`/auth/entrar-negocio/${negocioId}`, {}).pipe(
