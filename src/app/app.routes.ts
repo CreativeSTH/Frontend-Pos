@@ -280,5 +280,15 @@ export const routes: Routes = [
       },
     ],
   },
+  {
+    // Sin layout ni guestGuard a propósito: confirmarEmail() guarda una
+    // sesión nueva al terminar, así que esta ruta tiene que ser alcanzable
+    // sin importar si ya había (o no) otra sesión activa en el navegador —
+    // guestGuard redirigiría a un usuario ya logueado antes de que la
+    // pantalla pudiera siquiera mostrarse.
+    path: 'verificar-email',
+    loadComponent: () =>
+      import('./features/auth/verificar-email/verificar-email').then((m) => m.VerificarEmail),
+  },
   { path: '**', redirectTo: '' },
 ];

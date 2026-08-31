@@ -1,0 +1,16 @@
+<div class="verificar-email">
+  @if (estado() === 'verificando') {
+    <ds-spinner [size]="32" />
+    <p>Confirmando tu cuenta...</p>
+  } @else if (estado() === 'reenviado') {
+    <ds-icon name="mail" [size]="32" />
+    <h1>Te reenviamos el correo</h1>
+    <p>Revisá tu bandeja de entrada (y spam) y hacé click en el nuevo link.</p>
+  } @else {
+    <ds-icon name="alert-triangle" [size]="32" />
+    <h1>Este link ya no es válido</h1>
+    <p>Puede haber expirado (24hs) o ya haberse usado. Escribí tu correo para que te mandemos uno nuevo:</p>
+    <input type="email" placeholder="tu@correo.com" (input)="setEmail($any($event.target).value)" />
+    <ds-button variant="primary" [loading]="reenviando()" (click)="reenviar()">Reenviar correo</ds-button>
+  }
+</div>
