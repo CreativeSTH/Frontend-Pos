@@ -17,7 +17,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error) => {
-      if (error.status === 402 && !req.url.includes('/suscripcion/')) {
+      if (error.status === 402 && !req.url.includes('/suscripcion/') && router.url !== '/suscripcion-vencida') {
+        // La guarda de `router.url` evita navegaciones repetidas mientras el usuario ya está en
+        // esta pantalla — el resto del layout autenticado sigue polleando en segundo plano
+        // (AlertasService, CajaService) y cada poll con el negocio todavía VENCIDA volvería a
+        // caer acá.
         router.navigateByUrl('/suscripcion-vencida');
         return throwError(() => error);
       }

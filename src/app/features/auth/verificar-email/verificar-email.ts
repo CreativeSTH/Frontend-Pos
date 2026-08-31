@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Icon } from '../../../shared/ui/atoms/icon/icon';
 import { Spinner } from '../../../shared/ui/atoms/spinner/spinner';
@@ -17,6 +18,7 @@ export class VerificarEmail {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
 
   protected readonly estado = signal<'verificando' | 'error' | 'reenviado'>('verificando');
   protected readonly reenviando = signal(false);
@@ -30,7 +32,10 @@ export class VerificarEmail {
     }
     this.auth.confirmarEmail(token).subscribe({
       next: () => this.router.navigateByUrl('/asistente'),
-      error: () => this.estado.set('error'),
+      error: (err) => {
+        this.estado.set('error');
+        this.toast.error(err.error?.message ?? 'El link de verificación es inválido o expiró');
+      },
     });
   }
 
@@ -42,8 +47,9 @@ export class VerificarEmail {
         this.reenviando.set(false);
         this.estado.set('reenviado');
       },
-      error: () => {
+      error: (err) => {
         this.reenviando.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo reenviar el correo, intentá de nuevo');
       },
     });
   }
