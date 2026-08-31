@@ -23,7 +23,8 @@ export type ModuloPermiso =
   | 'FACTURACION'
   | 'CUPONES'
   | 'PAGOS'
-  | 'TIENDA_ONLINE';
+  | 'TIENDA_ONLINE'
+  | 'PAQUETES';
 
 export type AccionPermiso = 'VER' | 'CREAR' | 'EDITAR' | 'ELIMINAR';
 
