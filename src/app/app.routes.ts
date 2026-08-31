@@ -176,6 +176,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'paquetes',
+        canActivate: [permisoGuard('PAQUETES')],
+        loadComponent: () =>
+          import('./features/paquetes/paquetes-list/paquetes-list').then((m) => m.PaquetesList),
+      },
+      {
         path: 'configuracion',
         loadComponent: () =>
           import('./features/configuracion/configuracion-list/configuracion-list').then(

@@ -60,6 +60,7 @@ export const CONFIG_GROUPS: ConfiguracionGroup[] = [
       { label: 'Dispositivos', description: 'Impresora, cajón monedero y lector de código de barras', icon: 'printer', route: '/configuracion/dispositivos', modulo: 'CAJA' },
       { label: 'Pagos con Wompi', description: 'Credenciales y activación de la pasarela de pago Wompi', icon: 'credit-card', route: '/configuracion/pagos-wompi', modulo: 'PAGOS', accion: 'EDITAR' },
       { label: 'Tienda online', description: 'Bodega y activación de tu catálogo público', icon: 'store', route: '/configuracion/tienda-online', modulo: 'TIENDA_ONLINE', accion: 'EDITAR' },
+      { label: 'Paquetes', description: 'Catálogo de planes que se pueden asignar a un negocio', icon: 'layers', route: '/paquetes', modulo: 'PAQUETES' },
       { label: 'Negocios', description: 'Gestión de negocios de la plataforma', icon: 'store', route: '/negocios', modulo: 'NEGOCIOS' },
     ],
   },

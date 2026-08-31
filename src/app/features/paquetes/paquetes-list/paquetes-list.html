@@ -1,0 +1,106 @@
+<app-topbar title="Paquetes" subtitle="Catálogo de planes que se pueden asignar a un negocio" backTo="/configuracion">
+  <ds-button variant="primary" icon="plus" (click)="openCreate()">Nuevo paquete</ds-button>
+</app-topbar>
+
+@if (loading()) {
+  <div class="paquetes-loading">
+    <ds-icon name="layers" [size]="28" />
+    <span>Cargando paquetes...</span>
+  </div>
+} @else if (paquetes().length === 0) {
+  <ds-empty-state icon="layers" title="Aún no hay paquetes" description="Crea el primero para poder asignarlo a un negocio.">
+    <ds-button variant="glass" icon="plus" (click)="openCreate()">Nuevo paquete</ds-button>
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Precio mensual</th>
+        <th>Facturación DIAN</th>
+        <th>Tienda online</th>
+        <th>Sucursales</th>
+        <th>Usuarios</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (paquete of paquetesPaginados(); track paquete.id) {
+        <tr>
+          <td>
+            {{ paquete.nombre }}
+            @if (paquete.esPaqueteFree) {
+              <ds-badge tone="neutral">Free — no se puede desactivar</ds-badge>
+            }
+          </td>
+          <td>{{ formatMoney(paquete.precioMensual) }}</td>
+          <td>
+            @if (paquete.facturacionDianHabilitada) {
+              <ds-badge tone="success">Sí — {{ paquete.documentosDianPorMes }} docs/mes</ds-badge>
+            } @else {
+              <ds-badge tone="neutral">—</ds-badge>
+            }
+          </td>
+          <td>
+            @if (paquete.tiendaOnlineHabilitada) {
+              <ds-badge tone="success">Sí</ds-badge>
+            } @else {
+              <ds-badge tone="neutral">—</ds-badge>
+            }
+          </td>
+          <td>{{ paquete.maxSucursales }}</td>
+          <td>{{ paquete.maxUsuarios }}</td>
+          <td class="paquetes-actions">
+            <button type="button" class="paquetes-actions__btn" (click)="openEdit(paquete)" title="Editar">
+              <ds-icon name="pencil" [size]="16" />
+            </button>
+            @if (!paquete.esPaqueteFree) {
+              <button type="button" class="paquetes-actions__btn paquetes-actions__btn--danger" (click)="eliminar(paquete)" title="Desactivar">
+                <ds-icon name="trash" [size]="16" />
+              </button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
+}
+
+@if (showForm()) {
+  <ds-modal [title]="editingId() ? 'Editar paquete' : 'Nuevo paquete'" size="sm" (close)="showForm.set(false)">
+    <form [formGroup]="form" class="paquete-form" (ngSubmit)="save()">
+      <ds-form-field label="Nombre">
+        <ds-input formControlName="nombre" placeholder="Ej. Profesional" />
+      </ds-form-field>
+
+      <ds-form-field label="Descripción (opcional)">
+        <ds-input formControlName="descripcion" />
+      </ds-form-field>
+
+      <ds-form-field label="Precio mensual (COP)">
+        <ds-input type="number" formControlName="precioMensual" />
+      </ds-form-field>
+
+      <ds-switch label="Facturación electrónica DIAN habilitada" formControlName="facturacionDianHabilitada" />
+      <ds-form-field label="Documentos DIAN por mes">
+        <ds-input type="number" formControlName="documentosDianPorMes" />
+      </ds-form-field>
+
+      <ds-switch label="Tienda online habilitada" formControlName="tiendaOnlineHabilitada" />
+
+      <ds-form-field label="Máximo de sucursales">
+        <ds-input type="number" formControlName="maxSucursales" />
+      </ds-form-field>
+
+      <ds-form-field label="Máximo de usuarios">
+        <ds-input type="number" formControlName="maxUsuarios" />
+      </ds-form-field>
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}
