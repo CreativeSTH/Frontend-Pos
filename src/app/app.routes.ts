@@ -235,6 +235,12 @@ export const routes: Routes = [
           import('./features/configuracion/pagos-wompi/pagos-wompi').then((m) => m.PagosWompi),
       },
       {
+        path: 'configuracion/medio-pago',
+        canActivate: [permisoGuard('NEGOCIO')],
+        loadComponent: () =>
+          import('./features/suscripcion/medio-pago/medio-pago').then((m) => m.MedioPago),
+      },
+      {
         path: 'configuracion/tienda-online',
         canActivate: [permisoGuard('TIENDA_ONLINE', 'EDITAR')],
         loadComponent: () =>
