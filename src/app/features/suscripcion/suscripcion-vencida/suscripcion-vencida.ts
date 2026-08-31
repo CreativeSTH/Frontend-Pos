@@ -48,6 +48,15 @@ export class SuscripcionVencida {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
+          // Si ya no está VENCIDA (se activó por otra vía — el webhook llegó tarde, se pagó desde
+          // otra pestaña, un admin la reactivó a mano), esta pantalla no aplica. Sin esto, recargar
+          // la página estando ya ACTIVA (justo lo que el mensaje de timeout de esperarPago() invita
+          // a hacer) muestra de nuevo "tu suscripción venció" con un botón que, dentro de la
+          // ventana de idempotencia del backend, respondería con un error contradictorio.
+          if (data.estado !== 'VENCIDA') {
+            this.router.navigateByUrl('/dashboard');
+            return;
+          }
           this.cargandoEstado.set(false);
           this.suscripcion.set(data);
         },
