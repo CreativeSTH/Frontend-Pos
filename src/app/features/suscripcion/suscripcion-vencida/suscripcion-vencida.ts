@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { SuscripcionService } from '../../../core/services/suscripcion.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -42,16 +43,19 @@ export class SuscripcionVencida {
   private cargarEstado(): void {
     this.cargandoEstado.set(true);
     this.errorCargaEstado.set(false);
-    this.suscripcionService.miEstado().subscribe({
-      next: (data) => {
-        this.cargandoEstado.set(false);
-        this.suscripcion.set(data);
-      },
-      error: () => {
-        this.cargandoEstado.set(false);
-        this.errorCargaEstado.set(true);
-      },
-    });
+    this.suscripcionService
+      .miEstado()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.cargandoEstado.set(false);
+          this.suscripcion.set(data);
+        },
+        error: () => {
+          this.cargandoEstado.set(false);
+          this.errorCargaEstado.set(true);
+        },
+      });
   }
 
   /**
@@ -69,6 +73,7 @@ export class SuscripcionVencida {
   protected reactivarConQr(): void {
     const suscripcion = this.suscripcion();
     if (!suscripcion) return;
+    this.detenerPolling(); // por si quedó un polling anterior corriendo (no debería, el botón queda oculto mientras hay QR, pero blinda contra ese caso)
     this.pagando.set(true);
     this.qrImagen.set(null);
     this.suscripcionService.reactivar({ metodo: 'QR', datosMetodo: {} }).subscribe({
@@ -97,30 +102,38 @@ export class SuscripcionVencida {
     let intentos = 0;
     this.pollHandle = setInterval(() => {
       intentos++;
-      this.suscripcionService.miEstado().subscribe({
-        next: (data) => {
-          if (data.estado !== 'VENCIDA') {
-            this.detenerPolling();
-            this.router.navigateByUrl('/dashboard');
-            return;
-          }
-          if (intentos >= POLL_MAX_INTENTOS) {
-            this.detenerPolling();
-            this.qrImagen.set(null);
-            this.toast.error('No confirmamos el pago a tiempo — si ya pagaste, esperá un momento y recargá la página. Si no, generá un código nuevo.');
-          }
-        },
-        // Un error puntual de red durante el polling no debe abortar la espera —
-        // se reintenta en la próxima vuelta, salvo que también se agote el presupuesto.
-        error: () => {
-          if (intentos >= POLL_MAX_INTENTOS) {
-            this.detenerPolling();
-            this.qrImagen.set(null);
-            this.toast.error('No pudimos confirmar el pago — generá un código nuevo para reintentar');
-          }
-        },
-      });
+      this.suscripcionService
+        .miEstado()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (data) => {
+            if (data.estado !== 'VENCIDA') {
+              this.detenerPolling();
+              this.router.navigateByUrl('/dashboard');
+              return;
+            }
+            if (intentos >= POLL_MAX_INTENTOS) this.agotarEsperaDePago();
+          },
+          // Un error puntual de red durante el polling no debe abortar la espera —
+          // se reintenta en la próxima vuelta, salvo que también se agote el presupuesto.
+          error: () => {
+            if (intentos >= POLL_MAX_INTENTOS) this.agotarEsperaDePago();
+          },
+        });
     }, POLL_MS);
+  }
+
+  /**
+   * Al agotar el presupuesto de polling del frontend (90s) NO se borra el QR ni se invita a
+   * generar uno nuevo — `SuscripcionesService.iniciarReactivacion` en el backend tiene su propia
+   * ventana de idempotencia de 10 minutos (evita cobros duplicados) y rechazaría exactamente ese
+   * intento con un mensaje contradictorio. El QR sigue siendo válido y pagable más allá de los
+   * 90s (un QR de Bancolombia vive bastante más que eso); esto solo detiene el polling activo del
+   * frontend, no invalida el pago.
+   */
+  private agotarEsperaDePago(): void {
+    this.detenerPolling();
+    this.toast.error('Seguimos sin confirmar el pago. Si ya pagaste, esperá unos segundos y recargá la página.');
   }
 
   private detenerPolling(): void {
