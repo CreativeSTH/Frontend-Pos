@@ -14,6 +14,8 @@ export interface ReactivarSuscripcionPayload {
   paqueteId?: string;
   metodo: 'QR' | 'NEQUI' | 'PSE' | 'TARJETA';
   datosMetodo: Record<string, unknown>;
+  guardarTarjeta?: boolean;
+  ultimosCuatroDigitos?: string;
 }
 
 export interface RegistroPublicoPayload {

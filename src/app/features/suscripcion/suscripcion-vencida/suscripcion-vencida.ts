@@ -6,6 +6,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Suscripcion } from '../../../core/models/suscripcion.model';
 import { Button } from '../../../shared/ui/atoms/button/button';
+import { TarjetaForm } from '../tarjeta-form/tarjeta-form';
 
 const POLL_MS = 2000;
 const POLL_MAX_INTENTOS = 45; // ~90s — mismo presupuesto de espera que un cajero tolera en el POS antes de que el pago se sienta colgado.
@@ -13,7 +14,7 @@ const POLL_MAX_INTENTOS = 45; // ~90s — mismo presupuesto de espera que un caj
 @Component({
   selector: 'app-suscripcion-vencida',
   standalone: true,
-  imports: [Button],
+  imports: [Button, TarjetaForm],
   templateUrl: './suscripcion-vencida.html',
   styleUrl: './suscripcion-vencida.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,6 +33,9 @@ export class SuscripcionVencida {
   protected readonly pagando = signal(false);
   protected readonly qrImagen = signal<string | null>(null);
   protected readonly esperandoConfirmacion = signal(false);
+
+  protected readonly mostrandoFormTarjeta = signal(false);
+  protected readonly guardarTarjeta = signal(true);
 
   private pollHandle: ReturnType<typeof setInterval> | null = null;
 
@@ -103,6 +107,36 @@ export class SuscripcionVencida {
         this.toast.error(err.error?.message ?? 'No se pudo iniciar el pago con Wompi');
       },
     });
+  }
+
+  /**
+   * Cobro con tarjeta guardando (opcionalmente) el medio de pago para débito automático.
+   *
+   * Nota sin confirmar contra el sandbox real de Wompi (ver spec/plan de esta pieza): no está
+   * 100% documentado si el cobro vía API directa contra una fuente de pago recién creada dispara
+   * un desafío 3DS visible (ej. una URL de redirect) en vez de resolver `APPROVED`/`DECLINED` de
+   * una. Por eso, en vez de asumir aprobación inmediata como hace el flujo de QR, acá SIEMPRE se
+   * cae al mismo polling de `esperarPago()` — si Wompi aprueba sincrónicamente, el primer poll ya
+   * lo va a ver; si hace falta un paso adicional que hoy no sabemos mostrar, al menos no se navega
+   * a `/dashboard` con un pago que en realidad sigue pendiente.
+   */
+  protected pagarConTarjeta(datos: { token: string; ultimosCuatroDigitos: string }): void {
+    this.pagando.set(true);
+    this.suscripcionService
+      .reactivar({
+        metodo: 'TARJETA',
+        datosMetodo: { token: datos.token, installments: 1 },
+        guardarTarjeta: this.guardarTarjeta(),
+        ultimosCuatroDigitos: datos.ultimosCuatroDigitos,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.esperarPago(),
+        error: (err) => {
+          this.pagando.set(false);
+          this.toast.error(err.error?.message ?? 'No se pudo procesar el pago con la tarjeta');
+        },
+      });
   }
 
   /** Polling corto contra /suscripcion/mi-estado hasta que la suscripción deje de estar VENCIDA o se agote el presupuesto de tiempo. */
