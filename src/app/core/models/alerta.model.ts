@@ -9,7 +9,8 @@ export type TipoAlerta =
   | 'PERSONALIZADA'
   | 'REGLA'
   | 'SUSCRIPCION_PROXIMO_COBRO'
-  | 'SUSCRIPCION_COBRO_FALLIDO';
+  | 'SUSCRIPCION_COBRO_FALLIDO'
+  | 'FACTURACION_DIAN_VENCIDA';
 
 export type SeveridadAlerta = 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA';
 

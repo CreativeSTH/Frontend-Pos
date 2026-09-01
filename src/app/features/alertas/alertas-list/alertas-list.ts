@@ -39,6 +39,7 @@ const ETIQUETAS_TIPO: Record<TipoAlerta, string> = {
   REGLA: 'Regla personalizada',
   SUSCRIPCION_PROXIMO_COBRO: 'Próximo cobro de suscripción',
   SUSCRIPCION_COBRO_FALLIDO: 'Cobro de suscripción fallido',
+  FACTURACION_DIAN_VENCIDA: 'Facturación DIAN sin resolver (48h)',
 };
 
 const TONOS_SEVERIDAD: Record<SeveridadAlerta, BadgeTone> = {
