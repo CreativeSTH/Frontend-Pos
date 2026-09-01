@@ -7,7 +7,9 @@ export type TipoAlerta =
   | 'VENTA_EN_MORA'
   | 'META_VENTAS_NO_ALCANZADA'
   | 'PERSONALIZADA'
-  | 'REGLA';
+  | 'REGLA'
+  | 'SUSCRIPCION_PROXIMO_COBRO'
+  | 'SUSCRIPCION_COBRO_FALLIDO';
 
 export type SeveridadAlerta = 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA';
 
