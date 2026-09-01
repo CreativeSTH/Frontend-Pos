@@ -37,6 +37,8 @@ const ETIQUETAS_TIPO: Record<TipoAlerta, string> = {
   META_VENTAS_NO_ALCANZADA: 'Meta de ventas no alcanzada',
   PERSONALIZADA: 'Personalizada',
   REGLA: 'Regla personalizada',
+  SUSCRIPCION_PROXIMO_COBRO: 'Próximo cobro de suscripción',
+  SUSCRIPCION_COBRO_FALLIDO: 'Cobro de suscripción fallido',
 };
 
 const TONOS_SEVERIDAD: Record<SeveridadAlerta, BadgeTone> = {
