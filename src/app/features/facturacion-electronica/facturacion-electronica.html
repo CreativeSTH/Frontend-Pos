@@ -19,8 +19,13 @@
         <ds-form-field label="Dirección">
           <ds-input formControlName="direccion" />
         </ds-form-field>
-        <ds-form-field label="Ciudad">
-          <ds-input formControlName="ciudad" />
+        <ds-form-field label="Municipio">
+          <ds-combobox
+            formControlName="municipioCodigo"
+            [options]="municipioOptions"
+            placeholder="Buscá tu municipio..."
+            icon="map-pin"
+          />
         </ds-form-field>
         <ds-switch label="Usar el certificado compartido de Alegra (recomendado)" formControlName="useAlegraCertificate" />
         @if (!formDatosNegocio.controls.useAlegraCertificate.value) {
@@ -72,6 +77,12 @@
         </ds-form-field>
         <ds-form-field label="Clave técnica">
           <ds-input formControlName="technicalKey" />
+        </ds-form-field>
+        <ds-form-field
+          label="TestSetId de la DIAN"
+          hint="Lo emite la DIAN en su portal de Habilitación (Paso 2) — ya viene precargado con el id público de sandbox para probar"
+        >
+          <ds-input formControlName="governmentTestSetId" />
         </ds-form-field>
         <div class="facturacion-dian-acciones">
           <ds-button variant="primary" type="submit" [loading]="guardando()">Guardar resolución</ds-button>

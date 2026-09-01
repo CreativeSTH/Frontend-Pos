@@ -6,10 +6,15 @@ import { FormField } from '../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../shared/ui/atoms/input/input';
 import { Switch } from '../../shared/ui/atoms/switch/switch';
 import { Icon } from '../../shared/ui/atoms/icon/icon';
+import { Combobox, ComboboxOption } from '../../shared/ui/molecules/combobox/combobox';
 import { Stepper, PasoStepper } from '../../shared/ui/molecules/stepper/stepper';
 import { FacturacionElectronicaService } from '../../core/services/facturacion-electronica.service';
 import { ToastService } from '../../core/services/toast.service';
 import { EstadoHabilitacion, HabilitacionFacturacionElectronica } from '../../core/models/facturacion-electronica.model';
+import { MUNICIPIOS_COLOMBIA } from '../../core/data/municipios-colombia.data';
+
+/** ID público de sandbox para el testset "pos" — no depende de trámite real, ver AlegraClientService.crearTestSet. */
+const GOVERNMENT_TEST_SET_ID_SANDBOX = 'a70562e0-631e-4ceb-aa65-36887b57dc17';
 
 /**
  * El backend solo tiene un estado intermedio (ESPERANDO_TRAMITE_DIAN) para dos
@@ -30,7 +35,7 @@ const PASO_POR_ESTADO: Record<EstadoHabilitacion, number> = {
 @Component({
   selector: 'app-facturacion-electronica',
   standalone: true,
-  imports: [Topbar, Button, FormField, Input, Switch, Icon, Stepper, ReactiveFormsModule],
+  imports: [Topbar, Button, FormField, Input, Switch, Icon, Combobox, Stepper, ReactiveFormsModule],
   templateUrl: './facturacion-electronica.html',
   styleUrl: './facturacion-electronica.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,10 +58,17 @@ export class FacturacionElectronicaWizard {
     { numero: 4, etiqueta: 'Confirmación' },
   ];
 
+  /** Opciones del combobox de municipio — código DIVIPOLA como value, nombre + departamento para buscar/mostrar. */
+  protected readonly municipioOptions: ComboboxOption[] = MUNICIPIOS_COLOMBIA.map((m) => ({
+    value: m.codigo,
+    label: m.nombre,
+    sublabel: m.departamentoNombre,
+  }));
+
   protected readonly formDatosNegocio = this.fb.nonNullable.group({
     razonSocial: ['', Validators.required],
     direccion: ['', Validators.required],
-    ciudad: ['', Validators.required],
+    municipioCodigo: ['', Validators.required],
     useAlegraCertificate: [true],
     certificadoPfxBase64: [''],
     certificadoPassword: [''],
@@ -70,6 +82,9 @@ export class FacturacionElectronicaWizard {
     rangoDesde: [1, Validators.required],
     rangoHasta: [100000, Validators.required],
     technicalKey: ['', Validators.required],
+    // Precargado con el id público de sandbox como conveniencia — el negocio lo
+    // reemplaza por el suyo real (emitido por la DIAN) al pasar a producción.
+    governmentTestSetId: [GOVERNMENT_TEST_SET_ID_SANDBOX, Validators.required],
   });
 
   constructor() {
@@ -101,13 +116,20 @@ export class FacturacionElectronicaWizard {
       this.formDatosNegocio.markAllAsTouched();
       return;
     }
-    this.guardando.set(true);
     const raw = this.formDatosNegocio.getRawValue();
+    const municipio = MUNICIPIOS_COLOMBIA.find((m) => m.codigo === raw.municipioCodigo);
+    if (!municipio) {
+      this.toast.error('Elegí un municipio de la lista');
+      return;
+    }
+    this.guardando.set(true);
     this.facturacionService
       .actualizarDatosNegocio({
         razonSocial: raw.razonSocial,
         direccion: raw.direccion,
-        ciudad: raw.ciudad,
+        ciudadNombre: municipio.nombre,
+        ciudadCodigo: municipio.codigo,
+        departamentoCodigo: municipio.departamentoCodigo,
         useAlegraCertificate: raw.useAlegraCertificate,
         certificadoPfxBase64: raw.certificadoPfxBase64 || undefined,
         certificadoPassword: raw.certificadoPassword || undefined,

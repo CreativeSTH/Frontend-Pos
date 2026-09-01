@@ -13,15 +13,23 @@ export interface HabilitacionFacturacionElectronica {
   razonSocial?: string;
   direccion?: string;
   ciudad?: string;
+  ciudadCodigo?: string;
+  departamentoCodigo?: string;
   useAlegraCertificate: boolean;
   resolucionNumero?: string;
+  governmentTestSetId?: string;
   errorMensaje?: string;
 }
 
 export interface DatosNegocioPayload {
   razonSocial: string;
   direccion: string;
-  ciudad: string;
+  /** Nombre del municipio, solo para mostrar — la validación real la hace ciudadCodigo. */
+  ciudadNombre: string;
+  /** Código DIVIPOLA del municipio (5 dígitos) — Alegra lo valida contra un enum estricto, no nombres libres. */
+  ciudadCodigo: string;
+  /** Código DIVIPOLA del departamento (2 dígitos), derivado del municipio elegido. */
+  departamentoCodigo: string;
   useAlegraCertificate: boolean;
   certificadoPfxBase64?: string;
   certificadoPassword?: string;
@@ -35,6 +43,8 @@ export interface ResolucionPayload {
   rangoDesde: number;
   rangoHasta: number;
   technicalKey: string;
+  /** TestSetId emitido por la DIAN en su portal de Habilitación (Paso 2 del trámite) — no lo genera Alegra. */
+  governmentTestSetId: string;
 }
 
 export type EstadoDocumentoElectronico = 'PENDIENTE' | 'ACEPTADO' | 'ACEPTADO_CON_OBSERVACIONES' | 'RECHAZADO' | 'ERROR';

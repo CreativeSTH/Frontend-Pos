@@ -1,0 +1,77 @@
+<div
+  class="ds-combobox"
+  [class.ds-combobox--invalid]="invalid()"
+  [class.ds-combobox--disabled]="disabled()"
+  [class.ds-combobox--open]="open()"
+>
+  <button
+    #trigger
+    type="button"
+    class="ds-combobox__trigger"
+    [disabled]="disabled()"
+    [attr.aria-expanded]="open()"
+    aria-haspopup="listbox"
+    (click)="toggle()"
+    (keydown)="onTriggerKeydown($event)"
+  >
+    @if (icon()) {
+      <ds-icon class="ds-combobox__icon" [name]="icon()!" [size]="18" />
+    }
+    <span class="ds-combobox__value" [class.ds-combobox__value--placeholder]="!selectedOption()">
+      {{ selectedOption()?.label ?? placeholder() }}
+    </span>
+    <ds-icon class="ds-combobox__chevron" name="chevron-down" [size]="16" />
+  </button>
+</div>
+
+<div
+  #panel
+  class="ds-combobox__panel"
+  role="listbox"
+  [class.ds-combobox__panel--open]="open()"
+  [style.top.px]="panelTop()"
+  [style.left.px]="panelLeft()"
+  [style.width.px]="panelWidth()"
+  (click)="$event.stopPropagation()"
+>
+  <div class="ds-combobox__search">
+    <ds-icon name="search" [size]="16" />
+    <input
+      #searchInput
+      type="text"
+      [placeholder]="placeholder()"
+      [value]="query()"
+      (input)="onQueryInput($event)"
+      (keydown)="onSearchKeydown($event)"
+    />
+  </div>
+
+  @if (query().trim().length < 2) {
+    <p class="ds-combobox__hint">Escribí al menos 2 letras para buscar.</p>
+  } @else if (resultados().length === 0) {
+    <p class="ds-combobox__hint">Sin resultados para "{{ query() }}".</p>
+  } @else {
+    @for (opt of resultados(); track opt.value; let i = $index) {
+      <button
+        type="button"
+        class="ds-combobox__option"
+        [class.ds-combobox__option--selected]="opt.value === value()"
+        [class.ds-combobox__option--highlighted]="i === highlighted()"
+        role="option"
+        [attr.aria-selected]="opt.value === value()"
+        (click)="selectOption(opt)"
+        (mouseenter)="highlighted.set(i)"
+      >
+        <span class="ds-combobox__option-label">
+          {{ opt.label }}
+          @if (opt.sublabel) {
+            <span class="ds-combobox__option-sublabel">{{ opt.sublabel }}</span>
+          }
+        </span>
+        @if (opt.value === value()) {
+          <ds-icon class="ds-combobox__option-check" name="check" [size]="16" />
+        }
+      </button>
+    }
+  }
+</div>
