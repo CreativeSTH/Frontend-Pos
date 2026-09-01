@@ -46,6 +46,7 @@ const ETIQUETAS_MODULO: Record<ModuloPermiso, string> = {
   PAGOS: 'Pagos con Wompi',
   TIENDA_ONLINE: 'Tienda online',
   PAQUETES: 'Paquetes',
+  FACTURACION_ELECTRONICA_DIAN: 'Facturación electrónica DIAN',
 };
 
 const ETIQUETAS_ACCION: Record<AccionPermiso, string> = {

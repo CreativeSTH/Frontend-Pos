@@ -24,7 +24,8 @@ export type ModuloPermiso =
   | 'CUPONES'
   | 'PAGOS'
   | 'TIENDA_ONLINE'
-  | 'PAQUETES';
+  | 'PAQUETES'
+  | 'FACTURACION_ELECTRONICA_DIAN';
 
 export type AccionPermiso = 'VER' | 'CREAR' | 'EDITAR' | 'ELIMINAR';
 

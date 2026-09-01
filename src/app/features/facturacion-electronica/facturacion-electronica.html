@@ -1,0 +1,100 @@
+<app-topbar title="Facturación electrónica DIAN" subtitle="Habilitación con Alegra" backTo="/configuracion" />
+
+@if (cargando()) {
+  <div class="facturacion-dian-loading">
+    <ds-icon name="file-text" [size]="28" />
+    <span>Cargando...</span>
+  </div>
+} @else {
+  <ds-stepper [pasos]="pasosStepper" [pasoActual]="pasoActual()" />
+
+  <div class="facturacion-dian-card">
+    @if (pasoActual() === 1) {
+      <h3>Datos del negocio</h3>
+      <p class="facturacion-dian-hint">Estos datos se usan para registrar tu negocio ante Alegra, el proveedor tecnológico DIAN.</p>
+      <form [formGroup]="formDatosNegocio" class="facturacion-dian-form" (ngSubmit)="guardarDatosNegocio()">
+        <ds-form-field label="Razón social">
+          <ds-input formControlName="razonSocial" />
+        </ds-form-field>
+        <ds-form-field label="Dirección">
+          <ds-input formControlName="direccion" />
+        </ds-form-field>
+        <ds-form-field label="Ciudad">
+          <ds-input formControlName="ciudad" />
+        </ds-form-field>
+        <ds-switch label="Usar el certificado compartido de Alegra (recomendado)" formControlName="useAlegraCertificate" />
+        @if (!formDatosNegocio.controls.useAlegraCertificate.value) {
+          <ds-form-field label="Certificado .pfx (base64)">
+            <ds-input formControlName="certificadoPfxBase64" />
+          </ds-form-field>
+          <ds-form-field label="Contraseña del certificado">
+            <ds-input type="password" formControlName="certificadoPassword" />
+          </ds-form-field>
+        }
+        <div class="facturacion-dian-acciones">
+          <ds-button variant="primary" type="submit" [loading]="guardando()">Continuar</ds-button>
+        </div>
+      </form>
+    }
+
+    @if (pasoActual() === 2) {
+      <h3>Trámite ante la DIAN</h3>
+      <p class="facturacion-dian-hint">
+        Andá a la DIAN y designá a Alegra (NIT 900559088) como tu proveedor tecnológico, y sacá tu resolución de numeración electrónica.
+      </p>
+      <div class="facturacion-dian-acciones">
+        <ds-button variant="ghost" icon="arrow-up-right" (click)="abrirPortalDian()">Abrir portal DIAN</ds-button>
+        <ds-button variant="primary" [loading]="guardando()" (click)="confirmarTramite()">Ya lo hice, continuar</ds-button>
+      </div>
+    }
+
+    @if (pasoActual() === 3) {
+      <h3>Resolución de numeración</h3>
+      <p class="facturacion-dian-hint">Cargá los datos de la resolución que te dio la DIAN en el trámite anterior.</p>
+      <form [formGroup]="formResolucion" class="facturacion-dian-form" (ngSubmit)="guardarResolucion()">
+        <ds-form-field label="Número de resolución">
+          <ds-input formControlName="numero" />
+        </ds-form-field>
+        <ds-form-field label="Prefijo">
+          <ds-input formControlName="prefijo" />
+        </ds-form-field>
+        <ds-form-field label="Fecha inicio">
+          <ds-input type="text" formControlName="fechaInicio" placeholder="AAAA-MM-DD" />
+        </ds-form-field>
+        <ds-form-field label="Fecha fin">
+          <ds-input type="text" formControlName="fechaFin" placeholder="AAAA-MM-DD" />
+        </ds-form-field>
+        <ds-form-field label="Rango desde">
+          <ds-input type="number" formControlName="rangoDesde" />
+        </ds-form-field>
+        <ds-form-field label="Rango hasta">
+          <ds-input type="number" formControlName="rangoHasta" />
+        </ds-form-field>
+        <ds-form-field label="Clave técnica">
+          <ds-input formControlName="technicalKey" />
+        </ds-form-field>
+        <div class="facturacion-dian-acciones">
+          <ds-button variant="primary" type="submit" [loading]="guardando()">Guardar resolución</ds-button>
+        </div>
+      </form>
+    }
+
+    @if (pasoActual() === 4) {
+      <h3>Confirmación</h3>
+      @if (habilitacion()?.estado === 'HABILITADO') {
+        <p class="facturacion-dian-exito">
+          <ds-icon name="check" [size]="20" />
+          Facturación electrónica DIAN habilitada — ya podés facturar.
+        </p>
+      } @else {
+        <p class="facturacion-dian-hint">Última verificación: emitimos un set de prueba contra Alegra para confirmar que todo quedó bien configurado.</p>
+        @if (habilitacion()?.errorMensaje) {
+          <p class="facturacion-dian-error">{{ habilitacion()?.errorMensaje }}</p>
+        }
+        <div class="facturacion-dian-acciones">
+          <ds-button variant="primary" [loading]="guardando()" (click)="confirmarTestSet()">Confirmar y habilitar</ds-button>
+        </div>
+      }
+    }
+  </div>
+}

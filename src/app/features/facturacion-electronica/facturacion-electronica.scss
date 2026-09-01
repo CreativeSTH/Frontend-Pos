@@ -1,0 +1,55 @@
+@use 'mixins' as mix;
+
+.facturacion-dian-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-tertiary);
+  padding: var(--space-10) 0;
+}
+
+.facturacion-dian-card {
+  max-width: 560px;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  @include mix.glass-panel;
+
+  h3 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--fs-lg);
+    color: var(--text-primary);
+  }
+}
+
+.facturacion-dian-hint {
+  margin: 0 0 var(--space-5);
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+}
+
+.facturacion-dian-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.facturacion-dian-acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.facturacion-dian-exito {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--accent-success);
+  font-size: var(--fs-base);
+}
+
+.facturacion-dian-error {
+  margin: 0 0 var(--space-4);
+  color: var(--accent-danger);
+  font-size: var(--fs-sm);
+}

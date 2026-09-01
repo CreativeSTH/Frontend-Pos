@@ -246,6 +246,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/configuracion/tienda-online/tienda-online').then((m) => m.TiendaOnlineConfig),
       },
+      {
+        path: 'configuracion/facturacion-electronica',
+        canActivate: [permisoGuard('FACTURACION_ELECTRONICA_DIAN')],
+        loadComponent: () =>
+          import('./features/facturacion-electronica/facturacion-electronica').then(
+            (m) => m.FacturacionElectronicaWizard,
+          ),
+      },
     ],
   },
   {
