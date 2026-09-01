@@ -1,15 +1,15 @@
 .tarjeta-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
 
   &__row {
     display: flex;
-    gap: 0.75rem;
+    gap: var(--space-3);
   }
 
   &__error {
     color: var(--accent-danger);
-    font-size: 0.875rem;
+    font-size: var(--fs-sm);
   }
 }

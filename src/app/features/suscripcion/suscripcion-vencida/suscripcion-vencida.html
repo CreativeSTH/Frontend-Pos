@@ -27,10 +27,11 @@
         <ds-button variant="ghost" (click)="mostrandoFormTarjeta.set(true)">Pagar con tarjeta</ds-button>
       } @else {
         <app-tarjeta-form (tokenizada)="pagarConTarjeta($event)" />
-        <label class="suscripcion-vencida__checkbox">
-          <input type="checkbox" [checked]="guardarTarjeta()" (change)="guardarTarjeta.set($any($event.target).checked)" />
-          Guardar esta tarjeta y cobrarla automáticamente cada mes hasta que la quite desde Configuración
-        </label>
+        <ds-switch
+          label="Guardar esta tarjeta y cobrarla automáticamente cada mes hasta que la quite desde Configuración"
+          [ngModel]="guardarTarjeta()"
+          (ngModelChange)="guardarTarjeta.set($event)"
+        />
       }
     }
 

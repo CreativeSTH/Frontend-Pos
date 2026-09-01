@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SuscripcionService } from '../../../core/services/suscripcion.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Suscripcion } from '../../../core/models/suscripcion.model';
 import { Button } from '../../../shared/ui/atoms/button/button';
+import { Switch } from '../../../shared/ui/atoms/switch/switch';
 import { TarjetaForm } from '../tarjeta-form/tarjeta-form';
 
 const POLL_MS = 2000;
@@ -14,7 +16,7 @@ const POLL_MAX_INTENTOS = 45; // ~90s — mismo presupuesto de espera que un caj
 @Component({
   selector: 'app-suscripcion-vencida',
   standalone: true,
-  imports: [Button, TarjetaForm],
+  imports: [Button, FormsModule, Switch, TarjetaForm],
   templateUrl: './suscripcion-vencida.html',
   styleUrl: './suscripcion-vencida.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,7 +37,9 @@ export class SuscripcionVencida {
   protected readonly esperandoConfirmacion = signal(false);
 
   protected readonly mostrandoFormTarjeta = signal(false);
-  protected readonly guardarTarjeta = signal(true);
+  // Opt-in explícito: como esto habilita cobros recurrentes sin más confirmación cada 30 días,
+  // arranca destildado — el usuario tiene que activarlo a propósito, no desactivarlo.
+  protected readonly guardarTarjeta = signal(false);
 
   private pollHandle: ReturnType<typeof setInterval> | null = null;
 
