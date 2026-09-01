@@ -1,0 +1,12 @@
+<app-topbar title="Medio de pago" subtitle="Débito automático de tu suscripción" backTo="/configuracion" />
+
+@if (loading()) {
+  <p>Cargando...</p>
+} @else if (activo()) {
+  <p>Tarjeta guardada: •••• {{ ultimosCuatroDigitos() }}</p>
+  <p>Se cobra automáticamente cada 30 días.</p>
+  <ds-button variant="ghost" [loading]="quitando()" (click)="quitar()">Quitar tarjeta guardada</ds-button>
+} @else {
+  <p>No tenés ninguna tarjeta guardada para débito automático.</p>
+  <p>Podés agregar una la próxima vez que reactives o cambies de plan.</p>
+}

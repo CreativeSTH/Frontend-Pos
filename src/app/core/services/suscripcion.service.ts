@@ -16,4 +16,12 @@ export class SuscripcionService {
       payload,
     );
   }
+
+  medioPago() {
+    return this.api.get<{ activo: boolean; ultimosCuatroDigitos: string | null }>('/suscripcion/medio-pago');
+  }
+
+  quitarMedioPago() {
+    return this.api.delete<{ mensaje: string }>('/suscripcion/medio-pago');
+  }
 }

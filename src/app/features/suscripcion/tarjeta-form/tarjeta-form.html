@@ -1,0 +1,25 @@
+<form [formGroup]="form" class="tarjeta-form" (ngSubmit)="tokenizar()">
+  <ds-form-field label="Número de tarjeta">
+    <ds-input formControlName="numero" placeholder="4242 4242 4242 4242" maxlength="19" />
+  </ds-form-field>
+  <div class="tarjeta-form__row">
+    <ds-form-field label="MM">
+      <ds-input formControlName="mesVencimiento" placeholder="09" maxlength="2" />
+    </ds-form-field>
+    <ds-form-field label="AA">
+      <ds-input formControlName="anioVencimiento" placeholder="29" maxlength="2" />
+    </ds-form-field>
+    <ds-form-field label="CVC">
+      <ds-input formControlName="cvc" placeholder="123" maxlength="4" />
+    </ds-form-field>
+  </div>
+  <ds-form-field label="Nombre del titular">
+    <ds-input formControlName="nombreTitular" placeholder="Como aparece en la tarjeta" />
+  </ds-form-field>
+
+  @if (error()) {
+    <p class="tarjeta-form__error">{{ error() }}</p>
+  }
+
+  <ds-button variant="primary" type="submit" [loading]="tokenizando()">Validar tarjeta</ds-button>
+</form>

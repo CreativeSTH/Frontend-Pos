@@ -1,0 +1,15 @@
+.tarjeta-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  &__row {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  &__error {
+    color: var(--accent-danger);
+    font-size: var(--fs-sm);
+  }
+}
