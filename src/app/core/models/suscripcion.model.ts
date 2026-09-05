@@ -4,7 +4,7 @@ export interface Suscripcion {
   id: string;
   negocioId: string;
   paqueteId: string;
-  paquete: { id: string; nombre: string; precioMensual: number };
+  paquete: { id: string; nombre: string; precioMensual: number; facturacionDianHabilitada: boolean; tiendaOnlineHabilitada: boolean };
   estado: EstadoSuscripcion;
   fechaInicio: string;
   fechaFin: string | null;

@@ -215,6 +215,9 @@ export class PrintAgentService {
             <td>${this.escapar(item.nombre)}</td>
             <td class="num">${item.cantidad}</td>
             <td class="num">${money(item.subtotal)}</td>
+          </tr>
+          <tr class="iva-linea">
+            <td colspan="3">IVA (${money(item.impuesto)} sobre ${money(item.baseImponible)})</td>
           </tr>`,
       )
       .join('');
@@ -272,6 +275,7 @@ export class PrintAgentService {
   .footer { text-align: center; margin-top: 16px; font-size: 11px; }
   .terminos { text-align: center; margin-top: 8px; font-size: 10px; color: #333; }
   .dian { text-align: center; font-size: 9px; color: #333; }
+  .iva-linea td { font-size: 10px; color: #555; padding-top: 0; padding-bottom: 4px; }
 </style>
 </head>
 <body>

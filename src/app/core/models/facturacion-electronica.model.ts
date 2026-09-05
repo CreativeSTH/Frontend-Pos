@@ -23,6 +23,10 @@ export interface HabilitacionFacturacionElectronica {
 
 export interface DatosNegocioPayload {
   razonSocial: string;
+  /** Sin dígito de verificación ni puntos/guiones — obligatorio para facturar, aunque en /mi-negocio sea opcional. */
+  nit: string;
+  /** Alegra lo exige como dato de la compañía — obligatorio para facturar. */
+  email: string;
   direccion: string;
   /** Nombre del municipio, solo para mostrar — la validación real la hace ciudadCodigo. */
   ciudadNombre: string;

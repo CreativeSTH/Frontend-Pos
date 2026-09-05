@@ -8,6 +8,8 @@ export interface ConfiguracionCard {
   modulo: ModuloPermiso;
   /** Default 'VER' — algunas cards (el asistente) necesitan un permiso más fuerte para que valga la pena mostrarlas. */
   accion?: AccionPermiso;
+  /** Si se declara, la card además se oculta cuando el paquete contratado del negocio no incluye este feature (ej. Facturación DIAN). */
+  featureRequerida?: 'facturacionDianHabilitada' | 'tiendaOnlineHabilitada';
 }
 
 export interface ConfiguracionGroup {
@@ -50,7 +52,7 @@ export const CONFIG_GROUPS: ConfiguracionGroup[] = [
     titulo: 'Negocio',
     items: [
       { label: 'Datos del negocio', description: 'Nombre, NIT, dirección y contacto', icon: 'settings', route: '/mi-negocio', modulo: 'NEGOCIO' },
-      { label: 'Facturación electrónica DIAN', description: 'Habilitación con Alegra y estado de tus documentos', icon: 'file-text', route: '/configuracion/facturacion-electronica', modulo: 'FACTURACION_ELECTRONICA_DIAN' },
+      { label: 'Facturación electrónica DIAN', description: 'Habilitación con Alegra y estado de tus documentos', icon: 'file-text', route: '/configuracion/facturacion-electronica', modulo: 'FACTURACION_ELECTRONICA_DIAN', featureRequerida: 'facturacionDianHabilitada' },
       { label: 'Sucursales', description: 'Sucursales y metas de venta', icon: 'store', route: '/sucursales', modulo: 'SUCURSALES' },
       { label: 'Asistente de configuración', description: 'Guía paso a paso para dejar una sucursal lista: bodega y productos', icon: 'layers', route: '/asistente', modulo: 'SUCURSALES', accion: 'CREAR' },
       { label: 'Usuarios', description: 'Usuarios y asignación de roles', icon: 'users', route: '/usuarios', modulo: 'USUARIOS' },

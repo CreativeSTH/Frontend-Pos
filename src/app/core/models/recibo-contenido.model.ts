@@ -5,6 +5,8 @@ export interface ItemComprobante {
   nombre: string;
   cantidad: number;
   subtotal: number;
+  baseImponible: number;
+  impuesto: number;
 }
 
 export interface PagoComprobante {

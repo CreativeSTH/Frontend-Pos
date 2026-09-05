@@ -9,6 +9,7 @@ import { Icon } from '../../shared/ui/atoms/icon/icon';
 import { Combobox, ComboboxOption } from '../../shared/ui/molecules/combobox/combobox';
 import { Stepper, PasoStepper } from '../../shared/ui/molecules/stepper/stepper';
 import { FacturacionElectronicaService } from '../../core/services/facturacion-electronica.service';
+import { NegociosService } from '../../core/services/negocios.service';
 import { ToastService } from '../../core/services/toast.service';
 import { EstadoHabilitacion, HabilitacionFacturacionElectronica } from '../../core/models/facturacion-electronica.model';
 import { MUNICIPIOS_COLOMBIA } from '../../core/data/municipios-colombia.data';
@@ -42,6 +43,7 @@ const PASO_POR_ESTADO: Record<EstadoHabilitacion, number> = {
 })
 export class FacturacionElectronicaWizard {
   private readonly facturacionService = inject(FacturacionElectronicaService);
+  private readonly negociosService = inject(NegociosService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
@@ -67,6 +69,8 @@ export class FacturacionElectronicaWizard {
 
   protected readonly formDatosNegocio = this.fb.nonNullable.group({
     razonSocial: ['', Validators.required],
+    nit: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
     direccion: ['', Validators.required],
     municipioCodigo: ['', Validators.required],
     useAlegraCertificate: [true],
@@ -93,6 +97,15 @@ export class FacturacionElectronicaWizard {
 
   private load(): void {
     this.cargando.set(true);
+    // NIT/email viven en Negocio, no en la Habilitación — se precargan acá para
+    // no obligar a re-escribirlos si el negocio ya los tenía cargados (por
+    // ejemplo desde /mi-negocio, donde son opcionales para un negocio sin DIAN).
+    this.negociosService.miNegocio().subscribe({
+      next: (negocio) => {
+        if (negocio.nit) this.formDatosNegocio.controls.nit.setValue(negocio.nit);
+        if (negocio.email) this.formDatosNegocio.controls.email.setValue(negocio.email);
+      },
+    });
     this.facturacionService.miHabilitacion().subscribe({
       next: (data) => {
         this.habilitacion.set(data);
@@ -126,6 +139,8 @@ export class FacturacionElectronicaWizard {
     this.facturacionService
       .actualizarDatosNegocio({
         razonSocial: raw.razonSocial,
+        nit: raw.nit,
+        email: raw.email,
         direccion: raw.direccion,
         ciudadNombre: municipio.nombre,
         ciudadCodigo: municipio.codigo,

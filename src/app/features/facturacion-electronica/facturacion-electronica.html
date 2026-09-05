@@ -11,10 +11,16 @@
   <div class="facturacion-dian-card">
     @if (pasoActual() === 1) {
       <h3>Datos del negocio</h3>
-      <p class="facturacion-dian-hint">Estos datos se usan para registrar tu negocio ante Alegra, el proveedor tecnológico DIAN.</p>
+      <p class="facturacion-dian-hint">Estos datos se usan para registrar tu negocio ante Alegra, el proveedor tecnológico DIAN — a diferencia de "Datos del negocio" en Configuración, acá NIT y correo son obligatorios: sin ellos Alegra rechaza la creación de la empresa.</p>
       <form [formGroup]="formDatosNegocio" class="facturacion-dian-form" (ngSubmit)="guardarDatosNegocio()">
         <ds-form-field label="Razón social">
           <ds-input formControlName="razonSocial" />
+        </ds-form-field>
+        <ds-form-field label="NIT" hint="Sin puntos, guiones ni dígito de verificación">
+          <ds-input formControlName="nit" />
+        </ds-form-field>
+        <ds-form-field label="Correo electrónico">
+          <ds-input type="email" formControlName="email" />
         </ds-form-field>
         <ds-form-field label="Dirección">
           <ds-input formControlName="direccion" />
@@ -103,7 +109,9 @@
           <p class="facturacion-dian-error">{{ habilitacion()?.errorMensaje }}</p>
         }
         <div class="facturacion-dian-acciones">
-          <ds-button variant="primary" [loading]="guardando()" (click)="confirmarTestSet()">Confirmar y habilitar</ds-button>
+          <ds-button variant="primary" [loading]="guardando()" (click)="confirmarTestSet()">
+            {{ habilitacion()?.estado === 'ERROR' ? 'Reintentar' : 'Confirmar y habilitar' }}
+          </ds-button>
         </div>
       }
     }
