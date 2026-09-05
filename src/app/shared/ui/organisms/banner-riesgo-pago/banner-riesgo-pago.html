@@ -1,0 +1,7 @@
+@if (enRiesgo()) {
+  <div class="banner-riesgo-pago">
+    <ds-icon name="alert-triangle" [size]="18" />
+    <span>No pudimos cobrar tu plan {{ nombrePlan() }}. Vamos a reintentar automáticamente — actualizá tu método de pago para no perder el acceso.</span>
+    <a routerLink="/configuracion/mi-plan" class="banner-riesgo-pago__cta">Actualizar método de pago</a>
+  </div>
+}
