@@ -10,6 +10,11 @@ export class PaquetesService {
     return this.api.get<Paquete[]>('/paquetes');
   }
 
+  /** Igual que findAll(), pero sin requerir PAQUETES:VER — para el selector de plan al pagar/reactivar (ver SelectorPlanPago). */
+  disponibles() {
+    return this.api.get<Paquete[]>('/paquetes/disponibles');
+  }
+
   create(payload: CreatePaquetePayload) {
     return this.api.post<Paquete>('/paquetes', payload);
   }

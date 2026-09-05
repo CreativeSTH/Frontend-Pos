@@ -1,0 +1,43 @@
+<div class="selector-plan-pago">
+  @if (!qrImagen()) {
+    <div class="selector-plan-pago__planes">
+      @for (paquete of paquetes(); track paquete.id) {
+        <button
+          type="button"
+          class="selector-plan-pago__plan"
+          [class.selector-plan-pago__plan--activo]="paqueteSeleccionadoId() === paquete.id"
+          (click)="elegirPaquete(paquete.id)"
+        >
+          @if (paquete.id === paqueteActualId()) {
+            <span class="selector-plan-pago__plan-actual">Tu plan actual</span>
+          }
+          <span class="selector-plan-pago__plan-nombre">{{ paquete.nombre }}</span>
+          <span class="selector-plan-pago__plan-precio">{{ formatMoney(paquete.precioMensual) }}/mes</span>
+        </button>
+      }
+    </div>
+  }
+
+  @if (qrImagen()) {
+    <p>Escaneá el código con tu app bancaria para pagar:</p>
+    <img [src]="qrImagen()" alt="Código QR de pago Wompi" class="selector-plan-pago__qr" />
+    @if (esperandoConfirmacion()) {
+      <p class="selector-plan-pago__espera">Esperando la confirmación del pago...</p>
+    }
+  } @else {
+    <ds-button variant="primary" [loading]="pagando()" (click)="reactivarConQr()">Pagar y reactivar (QR)</ds-button>
+
+    <p class="selector-plan-pago__o">o</p>
+
+    @if (!mostrandoFormTarjeta()) {
+      <ds-button variant="ghost" (click)="mostrandoFormTarjeta.set(true)">Pagar con tarjeta</ds-button>
+    } @else {
+      <app-tarjeta-form (tokenizada)="pagarConTarjeta($event)" />
+      <ds-switch
+        label="Guardar esta tarjeta y cobrarla automáticamente cada mes hasta que la quite desde Configuración"
+        [ngModel]="guardarTarjeta()"
+        (ngModelChange)="guardarTarjeta.set($event)"
+      />
+    }
+  }
+</div>

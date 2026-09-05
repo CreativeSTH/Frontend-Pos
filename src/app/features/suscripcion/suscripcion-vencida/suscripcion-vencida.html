@@ -8,31 +8,8 @@
     <p>Cargando...</p>
   } @else {
     @if (suscripcion(); as s) {
-      <p>Tu plan actual es <strong>{{ s.paquete.nombre }}</strong> — {{ formatMoney(s.paquete.precioMensual) }}/mes.</p>
-    }
-
-    @if (qrImagen()) {
-      <p>Escaneá el código con tu app bancaria para pagar:</p>
-      <img [src]="qrImagen()" alt="Código QR de pago Wompi" class="suscripcion-vencida__qr" />
-      @if (esperandoConfirmacion()) {
-        <p class="suscripcion-vencida__espera">Esperando la confirmación del pago...</p>
-      }
-    } @else {
-      <p>Reactivá tu cuenta para seguir usando el sistema.</p>
-      <ds-button variant="primary" [loading]="pagando()" (click)="reactivarConQr()">Pagar y reactivar (QR)</ds-button>
-
-      <p class="suscripcion-vencida__o">o</p>
-
-      @if (!mostrandoFormTarjeta()) {
-        <ds-button variant="ghost" (click)="mostrandoFormTarjeta.set(true)">Pagar con tarjeta</ds-button>
-      } @else {
-        <app-tarjeta-form (tokenizada)="pagarConTarjeta($event)" />
-        <ds-switch
-          label="Guardar esta tarjeta y cobrarla automáticamente cada mes hasta que la quite desde Configuración"
-          [ngModel]="guardarTarjeta()"
-          (ngModelChange)="guardarTarjeta.set($event)"
-        />
-      }
+      <p>Elegí tu plan y reactivá tu cuenta para seguir usando el sistema.</p>
+      <app-selector-plan-pago [paqueteActualId]="s.paqueteId" (pagado)="onPagado()" />
     }
 
     <button type="button" class="suscripcion-vencida__salir" (click)="cerrarSesion()">Cerrar sesión</button>
