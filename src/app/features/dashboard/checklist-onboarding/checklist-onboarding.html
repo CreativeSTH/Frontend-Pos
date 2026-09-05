@@ -1,0 +1,43 @@
+@if (cargado() && !completo()) {
+  <div class="checklist-onboarding">
+    <h3>Dejá tu cuenta lista para vender</h3>
+
+    <div class="checklist-onboarding__item" [class.checklist-onboarding__item--done]="sucursalConfigurada()">
+      @if (sucursalConfigurada()) {
+        <ds-icon name="check" [size]="16" />
+      } @else {
+        <span class="checklist-onboarding__dot"></span>
+      }
+      <span class="checklist-onboarding__label">Sucursal, bodega y primer producto</span>
+      @if (!sucursalConfigurada()) {
+        <ds-button variant="ghost" size="sm" (click)="irASucursales()">Configurar</ds-button>
+      }
+    </div>
+
+    @if (facturacionDian() !== 'NO_APLICA') {
+      <div class="checklist-onboarding__item" [class.checklist-onboarding__item--done]="facturacionDian() === 'LISTO'">
+        @if (facturacionDian() === 'LISTO') {
+          <ds-icon name="check" [size]="16" />
+        } @else {
+          <span class="checklist-onboarding__dot"></span>
+        }
+        <span class="checklist-onboarding__label">Facturación electrónica DIAN</span>
+        @if (facturacionDian() === 'PENDIENTE') {
+          <ds-button variant="ghost" size="sm" (click)="irAFacturacionDian()">Activar</ds-button>
+        }
+      </div>
+    }
+
+    <div class="checklist-onboarding__item" [class.checklist-onboarding__item--done]="primeraVentaRealizada()">
+      @if (primeraVentaRealizada()) {
+        <ds-icon name="check" [size]="16" />
+      } @else {
+        <span class="checklist-onboarding__dot"></span>
+      }
+      <span class="checklist-onboarding__label">Tu primera venta</span>
+      @if (!primeraVentaRealizada()) {
+        <ds-button variant="ghost" size="sm" (click)="irAlPos()">Ir al POS</ds-button>
+      }
+    </div>
+  </div>
+}

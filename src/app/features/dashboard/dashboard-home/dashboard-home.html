@@ -35,6 +35,8 @@
     <span>Cargando dashboard...</span>
   </div>
 } @else {
+  <app-checklist-onboarding />
+
   <div class="stats-grid">
     <ds-stat-card icon="shopping-bag" label="Ventas de hoy" [value]="ventasHoyCount().toString()" accent="primary" />
     <ds-stat-card icon="banknote" label="Total vendido hoy" [value]="formatMoney(ventasHoyTotal())" accent="success" />

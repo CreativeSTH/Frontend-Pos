@@ -23,6 +23,7 @@ import { InventarioService } from '../../../core/services/inventario.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { GraficosService } from '../../../core/services/graficos.service';
+import { ChecklistOnboarding } from '../checklist-onboarding/checklist-onboarding';
 import { ResumenTurno } from '../../../core/models/caja.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { GraficoConfigurado, WidgetLayoutGrafico } from '../../../core/models/grafico.model';
@@ -44,6 +45,7 @@ import { GraficoConfigurado, WidgetLayoutGrafico } from '../../../core/models/gr
     DashboardGrid,
     FormsModule,
     DatePipe,
+    ChecklistOnboarding,
   ],
   templateUrl: './dashboard-home.html',
   styleUrl: './dashboard-home.scss',
