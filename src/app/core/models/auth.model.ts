@@ -45,6 +45,7 @@ export interface UsuarioSesion {
   rolTier: RolTier;
   negocioId: string | null;
   sucursalId: string | null;
+  emailVerificado: boolean;
 }
 
 export interface LoginResponse {

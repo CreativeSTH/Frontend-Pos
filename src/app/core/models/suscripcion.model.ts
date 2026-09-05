@@ -1,4 +1,4 @@
-export type EstadoSuscripcion = 'PRUEBA' | 'ACTIVA' | 'VENCIDA';
+export type EstadoSuscripcion = 'PRUEBA' | 'ACTIVA' | 'VENCIDA' | 'CANCELADA';
 
 export interface Suscripcion {
   id: string;
@@ -8,6 +8,7 @@ export interface Suscripcion {
   estado: EstadoSuscripcion;
   fechaInicio: string;
   fechaFin: string | null;
+  enRiesgo: boolean;
 }
 
 export interface ReactivarSuscripcionPayload {

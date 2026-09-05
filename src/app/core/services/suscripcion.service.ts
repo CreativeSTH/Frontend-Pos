@@ -24,4 +24,16 @@ export class SuscripcionService {
   quitarMedioPago() {
     return this.api.delete<{ mensaje: string }>('/suscripcion/medio-pago');
   }
+
+  cancelar(motivo?: string) {
+    return this.api.post<Suscripcion>('/suscripcion/cancelar', { motivo });
+  }
+
+  revertirCancelacion() {
+    return this.api.post<Suscripcion>('/suscripcion/revertir-cancelacion', {});
+  }
+
+  cambiarPaqueteEnPrueba(paqueteId: string) {
+    return this.api.patch<Suscripcion>('/suscripcion/paquete-prueba', { paqueteId });
+  }
 }
