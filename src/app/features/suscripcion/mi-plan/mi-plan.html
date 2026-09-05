@@ -1,0 +1,56 @@
+<app-topbar title="Mi plan" subtitle="Tu paquete y el estado de tu suscripción" />
+
+@if (!cargando() && suscripcion(); as s) {
+  <div class="mi-plan">
+    <div class="mi-plan__resumen">
+      <div>
+        <div class="mi-plan__nombre">{{ s.paquete.nombre }}</div>
+        @if (s.estado === 'CANCELADA') {
+          <div class="mi-plan__fecha">Acceso hasta {{ s.fechaFin | date: 'longDate' }}</div>
+        } @else if (s.fechaFin) {
+          <div class="mi-plan__fecha">Próximo cobro: {{ s.fechaFin | date: 'longDate' }}</div>
+        }
+      </div>
+      @if (s.estado === 'CANCELADA') {
+        <ds-button variant="primary" [loading]="procesando()" (click)="revertir()">Reactivar mi plan</ds-button>
+      } @else if (s.estado === 'ACTIVA' || s.estado === 'PRUEBA') {
+        <ds-button variant="ghost" (click)="abrirCancelar()">Cancelar suscripción</ds-button>
+      }
+    </div>
+
+    @if (s.estado === 'PRUEBA') {
+      @if (!mostrandoPago()) {
+        <ds-button variant="ghost" (click)="mostrandoPago.set(true)">Pagar ahora y elegir plan</ds-button>
+      } @else {
+        <app-selector-plan-pago [paqueteActualId]="s.paqueteId" (pagado)="onPagado()" />
+      }
+    }
+
+    <a routerLink="/configuracion/medio-pago" class="mi-plan__link-tarjeta">Gestionar tarjeta guardada</a>
+  </div>
+}
+
+@if (showCancelar()) {
+  <ds-modal title="¿Cancelar tu suscripción?" (close)="showCancelar.set(false)">
+    @if (suscripcion(); as s) {
+      @if (s.estado === 'PRUEBA') {
+        <p>Vas a seguir con tu prueba gratis hasta el <strong>{{ s.fechaFin | date: 'longDate' }}</strong>. Después no se te va a cobrar nada.</p>
+      } @else {
+        <p>Vas a seguir teniendo acceso completo hasta el <strong>{{ s.fechaFin | date: 'longDate' }}</strong> — ya pagaste ese período. Después no se te va a cobrar de nuevo.</p>
+      }
+    }
+    <label class="mi-plan__motivo-label">
+      Motivo (opcional)
+      <ds-select [ngModel]="motivoSeleccionado()" (ngModelChange)="motivoSeleccionado.set($event)">
+        <option value=""></option>
+        @for (motivo of motivos; track motivo) {
+          <option [value]="motivo">{{ motivo }}</option>
+        }
+      </ds-select>
+    </label>
+    <div modal-footer class="mi-plan__modal-acciones">
+      <ds-button variant="ghost" (click)="showCancelar.set(false)">Volver</ds-button>
+      <ds-button variant="danger" [loading]="procesando()" (click)="confirmarCancelacion()">Sí, cancelar</ds-button>
+    </div>
+  </ds-modal>
+}

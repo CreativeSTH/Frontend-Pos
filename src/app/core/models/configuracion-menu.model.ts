@@ -58,7 +58,7 @@ export const CONFIG_GROUPS: ConfiguracionGroup[] = [
       { label: 'Usuarios', description: 'Usuarios y asignación de roles', icon: 'users', route: '/usuarios', modulo: 'USUARIOS' },
       { label: 'Roles', description: 'Roles y permisos por módulo', icon: 'tag', route: '/roles', modulo: 'ROLES' },
       { label: 'Métodos de pago', description: 'Formas de cobro disponibles en el POS', icon: 'credit-card', route: '/metodos-pago', modulo: 'METODOS_PAGO' },
-      { label: 'Medio de pago', description: 'Tarjeta guardada para el débito automático de tu suscripción', icon: 'credit-card', route: '/configuracion/medio-pago', modulo: 'NEGOCIO' },
+      { label: 'Mi plan', description: 'Tu paquete, próximo cobro, y cancelar si hace falta', icon: 'credit-card', route: '/configuracion/mi-plan', modulo: 'NEGOCIO' },
       { label: 'Facturación', description: 'Formatos de recibo y factura', icon: 'file-text', route: '/configuracion/facturacion', modulo: 'FACTURACION' },
       { label: 'Cupones y descuentos', description: 'Cupones de código y promociones automáticas por sucursal, categoría o producto', icon: 'tag', route: '/configuracion/cupones', modulo: 'CUPONES' },
       { label: 'Dispositivos', description: 'Impresora, cajón monedero y lector de código de barras', icon: 'printer', route: '/configuracion/dispositivos', modulo: 'CAJA' },

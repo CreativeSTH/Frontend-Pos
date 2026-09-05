@@ -241,6 +241,12 @@ export const routes: Routes = [
           import('./features/suscripcion/medio-pago/medio-pago').then((m) => m.MedioPago),
       },
       {
+        path: 'configuracion/mi-plan',
+        canActivate: [permisoGuard('NEGOCIO')],
+        loadComponent: () =>
+          import('./features/suscripcion/mi-plan/mi-plan').then((m) => m.MiPlan),
+      },
+      {
         path: 'configuracion/tienda-online',
         canActivate: [permisoGuard('TIENDA_ONLINE', 'EDITAR')],
         loadComponent: () =>

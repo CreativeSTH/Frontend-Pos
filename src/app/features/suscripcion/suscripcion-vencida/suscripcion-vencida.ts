@@ -37,11 +37,15 @@ export class SuscripcionVencida {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
-          // Si ya no está VENCIDA (se activó por otra vía — el webhook llegó tarde, se pagó desde
+          // Si ya no está bloqueada (se activó por otra vía — el webhook llegó tarde, se pagó desde
           // otra pestaña, un admin la reactivó a mano), esta pantalla no aplica. Sin esto, recargar
           // la página estando ya ACTIVA muestra de nuevo "tu suscripción venció" con un botón que,
           // dentro de la ventana de idempotencia del backend, respondería con un error contradictorio.
-          if (data.estado !== 'VENCIDA') {
+          // Ojo: se chequea `bloqueado`, no `estado === 'VENCIDA'` — una CANCELADA con fechaFin ya
+          // vencida también sigue bloqueada (el cron todavía no la pasó a VENCIDA) y redirigir a
+          // /dashboard en ese caso generaba un loop infinito con el 402 de otros endpoints (bug
+          // real detectado en vivo).
+          if (!data.bloqueado) {
             this.router.navigateByUrl('/dashboard');
             return;
           }

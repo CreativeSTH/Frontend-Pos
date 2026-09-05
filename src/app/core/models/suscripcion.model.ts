@@ -9,6 +9,8 @@ export interface Suscripcion {
   fechaInicio: string;
   fechaFin: string | null;
   enRiesgo: boolean;
+  /** Misma regla que usa el backend para bloquear el resto de la API — no asumir que solo VENCIDA está bloqueada. */
+  bloqueado: boolean;
 }
 
 export interface ReactivarSuscripcionPayload {
