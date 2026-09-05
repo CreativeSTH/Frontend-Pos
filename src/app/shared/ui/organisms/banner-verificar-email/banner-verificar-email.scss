@@ -1,0 +1,29 @@
+.banner-verificar-email {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  background: rgba(var(--accent-warning-rgb), 0.12);
+  border-bottom: 1px solid rgba(var(--accent-warning-rgb), 0.3);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+
+  span {
+    flex: 1;
+    color: var(--text-secondary);
+  }
+
+  &__cerrar {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: var(--fs-lg);
+    line-height: 1;
+    cursor: pointer;
+    padding: var(--space-1);
+
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+}

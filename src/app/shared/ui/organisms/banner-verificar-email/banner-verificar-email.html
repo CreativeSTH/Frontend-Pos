@@ -1,0 +1,8 @@
+@if (visible()) {
+  <div class="banner-verificar-email">
+    <ds-icon name="mail" [size]="18" />
+    <span>Confirmá tu correo — algunas acciones (invitar usuarios, cambiar tu contraseña, guardar una tarjeta) van a quedar bloqueadas hasta que lo hagas.</span>
+    <ds-button variant="ghost" size="sm" [loading]="reenviando()" (click)="reenviar()">Reenviar correo</ds-button>
+    <button type="button" class="banner-verificar-email__cerrar" (click)="descartar()" aria-label="Cerrar">×</button>
+  </div>
+}

@@ -5,6 +5,7 @@ import { Sidebar } from '../sidebar/sidebar';
 import { LockScreen } from '../lock-screen/lock-screen';
 import { ToastContainer } from '../../shared/ui/organisms/toast-container/toast-container';
 import { ConfirmDialog } from '../../shared/ui/organisms/confirm-dialog/confirm-dialog';
+import { BannerVerificarEmail } from '../../shared/ui/organisms/banner-verificar-email/banner-verificar-email';
 import { Icon } from '../../shared/ui/atoms/icon/icon';
 import { CajaService } from '../../core/services/caja.service';
 import { AlertasService } from '../../core/services/alertas.service';
@@ -13,7 +14,7 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-dashboard-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, Sidebar, LockScreen, ToastContainer, ConfirmDialog, Icon],
+  imports: [RouterOutlet, RouterLink, Sidebar, LockScreen, ToastContainer, ConfirmDialog, BannerVerificarEmail, Icon],
   templateUrl: './dashboard-layout.html',
   styleUrl: './dashboard-layout.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
