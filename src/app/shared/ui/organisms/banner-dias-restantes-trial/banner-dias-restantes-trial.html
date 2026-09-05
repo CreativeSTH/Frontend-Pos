@@ -1,0 +1,7 @@
+@if (visible()) {
+  <div class="banner-dias-restantes-trial">
+    <ds-icon name="clock" [size]="18" />
+    <span>Te quedan {{ diasRestantes() }} {{ diasRestantes() === 1 ? 'día' : 'días' }} de tu prueba gratis.</span>
+    <a routerLink="/configuracion/mi-plan" [queryParams]="{ pagar: 1 }" class="banner-dias-restantes-trial__cta">Pagar ahora</a>
+  </div>
+}

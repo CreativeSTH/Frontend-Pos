@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Topbar } from '../../../layout/topbar/topbar';
@@ -24,6 +24,7 @@ const MOTIVOS = ['Muy caro', 'Me faltó una función', 'Cambio de proveedor', 'O
 export class MiPlan {
   private readonly suscripcionService = inject(SuscripcionService);
   private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly motivos = MOTIVOS;
   protected readonly suscripcion = signal<Suscripcion | null>(null);
@@ -35,6 +36,10 @@ export class MiPlan {
 
   constructor() {
     this.cargar();
+    // Link directo desde el banner de días restantes del trial — abre el pago sin un click extra.
+    if (this.route.snapshot.queryParamMap.get('pagar') === '1') {
+      this.mostrandoPago.set(true);
+    }
   }
 
   private cargar(): void {

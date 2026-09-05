@@ -7,6 +7,7 @@ import { ToastContainer } from '../../shared/ui/organisms/toast-container/toast-
 import { ConfirmDialog } from '../../shared/ui/organisms/confirm-dialog/confirm-dialog';
 import { BannerVerificarEmail } from '../../shared/ui/organisms/banner-verificar-email/banner-verificar-email';
 import { BannerRiesgoPago } from '../../shared/ui/organisms/banner-riesgo-pago/banner-riesgo-pago';
+import { BannerDiasRestantesTrial } from '../../shared/ui/organisms/banner-dias-restantes-trial/banner-dias-restantes-trial';
 import { Icon } from '../../shared/ui/atoms/icon/icon';
 import { CajaService } from '../../core/services/caja.service';
 import { AlertasService } from '../../core/services/alertas.service';
@@ -15,7 +16,7 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-dashboard-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, Sidebar, LockScreen, ToastContainer, ConfirmDialog, BannerVerificarEmail, BannerRiesgoPago, Icon],
+  imports: [RouterOutlet, RouterLink, Sidebar, LockScreen, ToastContainer, ConfirmDialog, BannerVerificarEmail, BannerRiesgoPago, BannerDiasRestantesTrial, Icon],
   templateUrl: './dashboard-layout.html',
   styleUrl: './dashboard-layout.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
