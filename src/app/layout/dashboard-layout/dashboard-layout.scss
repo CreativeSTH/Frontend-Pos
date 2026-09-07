@@ -32,11 +32,15 @@
   min-height: 100vh;
 }
 
+/**
+ * Antes centrado abajo — tapaba el paginador de las listas largas (también centrado). Ahora vive
+ * a la derecha, y el borde giratorio (`::before`) le da presencia propia para que se note que es
+ * un control flotante y no parte del contenido de la página que tiene detrás.
+ */
 .volver-pos-fab {
   position: fixed;
   bottom: var(--space-6);
-  left: 50%;
-  transform: translateX(-50%);
+  right: var(--space-6);
   z-index: 60;
   display: inline-flex;
   align-items: center;
@@ -52,15 +56,51 @@
   transition: transform var(--duration-base) var(--ease-emphasized);
 
   &:hover {
-    transform: translateX(-50%) translateY(-2px);
+    transform: translateY(-2px);
+  }
+
+  /**
+   * El botón es una píldora ancha, no un círculo — rotar la CAJA entera con `transform: rotate()`
+   * hacía que las esquinas del rectángulo salieran disparadas en diagonal al girar (una franja
+   * larga, no un anillo). En cambio, se anima el ÁNGULO del `conic-gradient` vía `@property`: la
+   * caja del `::before` nunca rota, así que `border-radius: inherit` la sigue recortando en forma
+   * de píldora en todo momento — lo único que gira es el color adentro de esa forma fija.
+   */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    z-index: -1;
+    border-radius: inherit;
+    background: conic-gradient(from var(--volver-pos-fab-angle), var(--accent-primary), var(--accent-secondary), var(--accent-primary));
+    animation: volver-pos-fab-spin 3s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      animation: none;
+    }
   }
 
   @include mix.mobile-down {
     bottom: var(--space-4);
+    right: var(--space-4);
 
     span {
       display: none;
     }
+  }
+}
+
+@property --volver-pos-fab-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes volver-pos-fab-spin {
+  to {
+    --volver-pos-fab-angle: 360deg;
   }
 }
 

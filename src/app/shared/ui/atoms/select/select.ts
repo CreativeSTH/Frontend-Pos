@@ -147,12 +147,23 @@ export class Select implements ControlValueAccessor {
     this.onTouched();
   }
 
+  /**
+   * Antes siempre abría hacia abajo — si el select vive cerca del borde inferior del viewport
+   * (el caso típico: el selector de tamaño de página, al final de una lista larga), el panel
+   * quedaba parcialmente cortado por la ventana. El panel sigue en el DOM con `visibility: hidden`
+   * mientras está cerrado (no `display: none`), así que ya tiene un alto real medible antes de
+   * decidir para qué lado abrir.
+   */
   private positionPanel(): void {
     const rect = this.trigger().nativeElement.getBoundingClientRect();
     const maxLeft = Math.max(8, window.innerWidth - rect.width - 8);
     this.panelLeft.set(Math.min(rect.left, maxLeft));
-    this.panelTop.set(rect.bottom + 6);
     this.panelWidth.set(rect.width);
+
+    const panelHeight = this.panel().nativeElement.getBoundingClientRect().height;
+    const espacioAbajo = window.innerHeight - rect.bottom;
+    const abreHaciaArriba = espacioAbajo < panelHeight + 6 && rect.top > panelHeight + 6;
+    this.panelTop.set(abreHaciaArriba ? rect.top - panelHeight - 6 : rect.bottom + 6);
   }
 
   protected selectOption(opt: DsSelectOption): void {
