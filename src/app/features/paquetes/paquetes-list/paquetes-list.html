@@ -32,6 +32,9 @@
             @if (paquete.esPaqueteFree) {
               <ds-badge tone="neutral">Free — no se puede desactivar</ds-badge>
             }
+            @if (paquete.esPaqueteTrialCompleto) {
+              <ds-badge tone="success">Paquete del trial gratis</ds-badge>
+            }
           </td>
           <td>{{ formatMoney(paquete.precioMensual) }}</td>
           <td>
@@ -96,6 +99,9 @@
       <ds-form-field label="Máximo de usuarios">
         <ds-input type="number" formControlName="maxUsuarios" />
       </ds-form-field>
+
+      <ds-switch label="Es el paquete del trial gratis (20 días)" formControlName="esPaqueteTrialCompleto" />
+      <p class="paquete-form__trial-hint">Solo uno a la vez — marcarlo acá desmarca el paquete que lo tenía antes.</p>
     </form>
 
     <div modal-footer>

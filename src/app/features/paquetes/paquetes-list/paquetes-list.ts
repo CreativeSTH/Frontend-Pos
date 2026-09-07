@@ -61,6 +61,7 @@ export class PaquetesList {
     tiendaOnlineHabilitada: [false],
     maxSucursales: [0, [Validators.min(0)]],
     maxUsuarios: [0, [Validators.min(0)]],
+    esPaqueteTrialCompleto: [false],
   });
 
   constructor() {
@@ -87,6 +88,7 @@ export class PaquetesList {
       nombre: '', descripcion: '', precioMensual: 0,
       facturacionDianHabilitada: false, documentosDianPorMes: 0,
       tiendaOnlineHabilitada: false, maxSucursales: 0, maxUsuarios: 0,
+      esPaqueteTrialCompleto: false,
     });
     this.showForm.set(true);
   }
@@ -102,6 +104,7 @@ export class PaquetesList {
       tiendaOnlineHabilitada: paquete.tiendaOnlineHabilitada,
       maxSucursales: paquete.maxSucursales,
       maxUsuarios: paquete.maxUsuarios,
+      esPaqueteTrialCompleto: paquete.esPaqueteTrialCompleto,
     });
     this.showForm.set(true);
   }
