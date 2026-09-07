@@ -44,6 +44,11 @@
         }
         <div class="facturacion-dian-acciones">
           <ds-button variant="primary" type="submit" [loading]="guardando()">Continuar</ds-button>
+          @if (enPrueba()) {
+            <ds-button variant="ghost" type="button" [loading]="activandoSandbox()" (click)="probarSandbox()">
+              Probar sin trámite (modo sandbox)
+            </ds-button>
+          }
         </div>
       </form>
     }
@@ -99,6 +104,13 @@
     @if (pasoActual() === 4) {
       <h3>Confirmación</h3>
       @if (habilitacion()?.estado === 'HABILITADO') {
+        @if (habilitacion()?.ambiente === 'SANDBOX') {
+          <div class="facturacion-dian-banner-sandbox">
+            <ds-icon name="alert-triangle" [size]="18" />
+            <span>Estás facturando en modo sandbox — estos documentos son de prueba, sin validez legal ante la DIAN.</span>
+            <ds-button variant="ghost" [loading]="volviendoAReal()" (click)="activarReal()">Activar facturación real</ds-button>
+          </div>
+        }
         <p class="facturacion-dian-exito">
           <ds-icon name="check" [size]="20" />
           Facturación electrónica DIAN habilitada — ya podés facturar.
