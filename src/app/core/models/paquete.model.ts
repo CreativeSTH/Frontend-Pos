@@ -9,6 +9,8 @@ export interface Paquete {
   maxSucursales: number;
   maxUsuarios: number;
   esPaqueteFree: boolean;
+  /** Único a la vez — el que recibe automáticamente todo registro público durante el trial de 20 días. */
+  esPaqueteTrialCompleto: boolean;
   activo: boolean;
   createdAt: string;
 }
@@ -22,6 +24,7 @@ export interface CreatePaquetePayload {
   tiendaOnlineHabilitada: boolean;
   maxSucursales: number;
   maxUsuarios: number;
+  esPaqueteTrialCompleto?: boolean;
 }
 
 export type UpdatePaquetePayload = Partial<CreatePaquetePayload>;

@@ -26,5 +26,4 @@ export interface RegistroPublicoPayload {
   adminNombre: string;
   adminEmail: string;
   adminPassword: string;
-  paqueteId: string;
 }
