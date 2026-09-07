@@ -74,4 +74,35 @@
     font-size: var(--fs-xs);
     margin: 0;
   }
+
+  &__ciclo-toggle {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  &__ciclo-tag {
+    font-size: var(--fs-xs);
+    opacity: 0.8;
+    margin-left: var(--space-1);
+  }
+
+  &__early-bird {
+    background: rgba(var(--accent-secondary-rgb), 0.12);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--fs-sm);
+    text-align: center;
+  }
+
+  &__plan-nota {
+    font-size: var(--fs-xs);
+    color: var(--text-tertiary);
+  }
+
+  &__plan-precio-lista {
+    font-size: var(--fs-xs);
+    color: var(--text-tertiary);
+    text-decoration: line-through;
+  }
 }

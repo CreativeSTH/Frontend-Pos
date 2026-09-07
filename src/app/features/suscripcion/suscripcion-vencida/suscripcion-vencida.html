@@ -9,7 +9,7 @@
   } @else {
     @if (suscripcion(); as s) {
       <p>Elegí tu plan y reactivá tu cuenta para seguir usando el sistema.</p>
-      <app-selector-plan-pago [paqueteActualId]="s.paqueteId" (pagado)="onPagado()" />
+      <app-selector-plan-pago [suscripcionActual]="s" (pagado)="onPagado()" />
     }
 
     <button type="button" class="suscripcion-vencida__salir" (click)="cerrarSesion()">Cerrar sesión</button>
