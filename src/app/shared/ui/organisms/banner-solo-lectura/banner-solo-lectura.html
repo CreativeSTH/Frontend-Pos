@@ -1,0 +1,7 @@
+@if (visible()) {
+  <div class="banner-solo-lectura">
+    <ds-icon name="lock" [size]="18" />
+    <span>Tu suscripción venció — estás en modo de solo lectura. Te quedan {{ diasRestantes() }} {{ diasRestantes() === 1 ? 'día' : 'días' }} para reactivar antes de perder el acceso.</span>
+    <a routerLink="/configuracion/mi-plan" [queryParams]="{ pagar: 1 }" class="banner-solo-lectura__cta">Reactivar ahora</a>
+  </div>
+}
