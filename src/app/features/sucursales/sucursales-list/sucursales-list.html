@@ -41,7 +41,14 @@
       }
     </tbody>
   </ds-table>
-  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
+  <ds-paginator
+    [page]="pag.paginaActual()"
+    [totalPages]="pag.totalPaginas()"
+    [pageSize]="pag.pageSize()"
+    [totalItems]="sucursales().length"
+    (pageChange)="pag.pagina.set($event)"
+    (pageSizeChange)="pag.cambiarPageSize($event)"
+  />
 }
 
 @if (showForm()) {
@@ -59,6 +66,16 @@
       <ds-form-field label="Meta de ventas diaria" hint="0 = sin meta, no genera alerta">
         <ds-input type="number" icon="banknote" formControlName="metaVentasDiaria" />
       </ds-form-field>
+      @if (editingId()) {
+        <ds-form-field label="Bodega operativa" hint="Con la que esta sucursal vende por defecto en el punto de venta">
+          <ds-select formControlName="bodegaOperativaId">
+            <option value="">Sin definir</option>
+            @for (bodega of bodegasDeSucursal(); track bodega.id) {
+              <option [value]="bodega.id">{{ bodega.nombre }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+      }
     </form>
 
     <div modal-footer>

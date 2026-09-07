@@ -6,134 +6,209 @@
     <span>Cargando...</span>
   </div>
 } @else {
-  <ds-stepper [pasos]="pasosStepper" [pasoActual]="paso()" />
+  <ds-stepper [pasos]="pasosStepper" [pasoActual]="pasoStepperVisual()" />
 
-  <div class="asistente-card">
-    @if (paso() === 1) {
-      @if (necesitaElegirSucursal()) {
-        <h3>¿Para cuál sucursal?</h3>
-        <p class="asistente-hint">Ya tenés más de una sucursal — elegí para cuál querés dejar lista una bodega.</p>
-        <div class="asistente-lista-sucursales">
-          @for (sucursal of sucursales(); track sucursal.id) {
-            <button type="button" class="asistente-item-sucursal" (click)="elegirSucursalExistente(sucursal)">
-              <ds-icon name="store" [size]="18" />
-              {{ sucursal.nombre }}
-            </button>
-          }
+  @if (vista() === 'resumen') {
+    <div class="asistente-card">
+      <h3>{{ sucursalActiva()?.nombre }} está lista</h3>
+      <p class="asistente-hint">Sucursal, bodega y catálogo inicial configurados — de acá en más, cada uno se edita desde su propia pantalla.</p>
+
+      <div class="asistente-resumen-item">
+        <div class="asistente-resumen-item__info">
+          <span class="asistente-resumen-item__titulo">Sucursal</span>
+          <span class="asistente-resumen-item__detalle">
+            {{ sucursalActiva()?.nombre }}{{ sucursalActiva()?.direccion ? ' · ' + sucursalActiva()?.direccion : '' }}
+          </span>
         </div>
-      } @else {
-        <h3>Creá tu primera sucursal</h3>
-        <p class="asistente-hint">Es el punto físico donde vas a vender — cada sucursal tiene su propia bodega e inventario.</p>
-        <form [formGroup]="formSucursal" class="asistente-form" (ngSubmit)="guardarSucursal()">
+        <ds-button variant="glass" size="sm" (click)="editarSucursal()">Editar</ds-button>
+      </div>
+
+      <div class="asistente-resumen-item">
+        <div class="asistente-resumen-item__info">
+          <span class="asistente-resumen-item__titulo">Bodega operativa</span>
+          <span class="asistente-resumen-item__detalle">{{ bodegaActiva()?.nombre }}</span>
+        </div>
+        <ds-button variant="glass" size="sm" (click)="editarBodega()">Editar</ds-button>
+      </div>
+
+      <div class="asistente-resumen-item">
+        <div class="asistente-resumen-item__info">
+          <span class="asistente-resumen-item__titulo">Productos</span>
+          <span class="asistente-resumen-item__detalle">
+            {{ inventarioBodegaActiva().length }} producto{{ inventarioBodegaActiva().length === 1 ? '' : 's' }} con stock en esta bodega
+          </span>
+        </div>
+        <ds-button variant="glass" size="sm" (click)="irAProductos()">Ir a Productos</ds-button>
+      </div>
+
+      <div class="asistente-acciones">
+        <button type="button" class="asistente-link" (click)="agregarOtraBodega()">
+          <ds-icon name="plus" [size]="14" />
+          Agregar otra bodega
+        </button>
+        <ds-button variant="glass" (click)="finalizar()">Volver al dashboard</ds-button>
+      </div>
+    </div>
+  } @else {
+    <div class="asistente-card">
+      @if (paso() === 1) {
+        @if (necesitaElegirSucursal()) {
+          <h3>¿Para cuál sucursal?</h3>
+          <p class="asistente-hint">Ya tenés más de una sucursal — elegí para cuál querés dejar lista una bodega.</p>
+          <div class="asistente-lista-sucursales">
+            @for (sucursal of sucursales(); track sucursal.id) {
+              <button type="button" class="asistente-item-sucursal" (click)="elegirSucursalExistente(sucursal)">
+                <ds-icon name="store" [size]="18" />
+                {{ sucursal.nombre }}
+              </button>
+            }
+          </div>
+        } @else {
+          <h3>{{ editando() ? 'Editar sucursal' : 'Creá tu primera sucursal' }}</h3>
+          <p class="asistente-hint">Es el punto físico donde vas a vender — cada sucursal tiene su propia bodega e inventario.</p>
+          <form [formGroup]="formSucursal" class="asistente-form" (ngSubmit)="guardarSucursal()">
+            <ds-form-field label="Nombre">
+              <ds-input formControlName="nombre" placeholder="Sede Principal" />
+            </ds-form-field>
+            <ds-form-field label="Dirección">
+              <ds-input formControlName="direccion" placeholder="Cra 1 # 2-3" />
+            </ds-form-field>
+            <ds-form-field label="Teléfono">
+              <ds-input formControlName="telefono" placeholder="3001234567" />
+            </ds-form-field>
+            <ds-form-field label="Meta de ventas diaria" hint="0 = sin meta, no genera alerta">
+              <ds-input type="number" icon="banknote" formControlName="metaVentasDiaria" />
+            </ds-form-field>
+            <div class="asistente-acciones">
+              <ds-button variant="primary" [loading]="guardandoSucursal()" (click)="guardarSucursal()">
+                {{ editando() ? 'Guardar cambios' : 'Crear sucursal y continuar' }}
+              </ds-button>
+              @if (editando()) {
+                <button type="button" class="asistente-salir" (click)="cancelarEdicion()">Cancelar</button>
+              } @else {
+                <button type="button" class="asistente-salir" (click)="finalizar()">Salir por ahora</button>
+              }
+            </div>
+          </form>
+        }
+      }
+
+      @if (paso() === 2) {
+        <h3>{{ editando() ? 'Editar bodega' : 'Creá una bodega para ' + sucursalActiva()?.nombre }}</h3>
+        <p class="asistente-hint">El inventario y los productos de esta sucursal van a vivir en su bodega.</p>
+
+        @if (bodegas().length > 0 && !editando()) {
+          <div class="asistente-lista-sucursales">
+            @for (bodega of bodegas(); track bodega.id) {
+              <button
+                type="button"
+                class="asistente-item-sucursal"
+                [class.asistente-item-sucursal--activa]="bodega.id === bodegaActiva()?.id"
+                (click)="elegirBodega(bodega)"
+              >
+                <ds-icon name="archive" [size]="18" />
+                {{ bodega.nombre }}
+                @if (bodega.id === bodegaActiva()?.id) {
+                  <span class="asistente-item-sucursal__badge">Actual</span>
+                }
+              </button>
+            }
+          </div>
+          <p class="asistente-hint">Ya tenés {{ bodegas().length === 1 ? 'esta bodega' : 'estas bodegas' }} — elegí una para continuar, o creá otra.</p>
+        }
+
+        <form [formGroup]="formBodega" class="asistente-form" (ngSubmit)="guardarBodega()">
           <ds-form-field label="Nombre">
-            <ds-input formControlName="nombre" placeholder="Sede Principal" />
+            <ds-input formControlName="nombre" placeholder="Bodega principal" />
           </ds-form-field>
-          <ds-form-field label="Dirección">
-            <ds-input formControlName="direccion" placeholder="Cra 1 # 2-3" />
-          </ds-form-field>
-          <ds-form-field label="Teléfono">
-            <ds-input formControlName="telefono" placeholder="3001234567" />
-          </ds-form-field>
-          <ds-form-field label="Meta de ventas diaria" hint="0 = sin meta, no genera alerta">
-            <ds-input type="number" icon="banknote" formControlName="metaVentasDiaria" />
-          </ds-form-field>
+          @if (bodegas().length > 0 && !editando()) {
+            <ds-switch
+              label="Marcar como bodega operativa"
+              [ngModel]="marcarNuevaComoOperativa()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="marcarNuevaComoOperativa.set($event)"
+            />
+          }
           <div class="asistente-acciones">
-            <ds-button variant="primary" [loading]="guardandoSucursal()" (click)="guardarSucursal()">Crear sucursal y continuar</ds-button>
-            <button type="button" class="asistente-salir" (click)="finalizar()">Salir por ahora</button>
+            <ds-button variant="primary" [loading]="guardandoBodega()" (click)="guardarBodega()">
+              {{ editando() ? 'Guardar cambios' : 'Crear bodega y continuar' }}
+            </ds-button>
+            @if (editando()) {
+              <button type="button" class="asistente-salir" (click)="cancelarEdicion()">Cancelar</button>
+            } @else {
+              <button type="button" class="asistente-salir" (click)="finalizar()">Salir por ahora</button>
+            }
           </div>
         </form>
       }
-    }
 
-    @if (paso() === 2) {
-      <h3>Creá una bodega para {{ sucursalActiva()?.nombre }}</h3>
-      <p class="asistente-hint">El inventario y los productos de esta sucursal van a vivir en su bodega.</p>
+      @if (paso() === 3) {
+        <h3>Productos y stock en {{ bodegaActiva()?.nombre }}</h3>
 
-      @if (bodegas().length > 0) {
-        <div class="asistente-lista-sucursales">
-          @for (bodega of bodegas(); track bodega.id) {
-            <button type="button" class="asistente-item-sucursal" (click)="elegirBodega(bodega)">
-              <ds-icon name="archive" [size]="18" />
-              {{ bodega.nombre }}
-            </button>
-          }
-        </div>
-        <p class="asistente-hint">Ya tenés {{ bodegas().length === 1 ? 'esta bodega' : 'estas bodegas' }} — elegí una para continuar, o creá otra.</p>
-      }
-
-      <form [formGroup]="formBodega" class="asistente-form" (ngSubmit)="guardarBodega()">
-        <ds-form-field label="Nombre">
-          <ds-input formControlName="nombre" placeholder="Bodega principal" />
-        </ds-form-field>
-        <div class="asistente-acciones">
-          <ds-button variant="primary" [loading]="guardandoBodega()" (click)="guardarBodega()">Crear bodega y continuar</ds-button>
-          <button type="button" class="asistente-salir" (click)="finalizar()">Salir por ahora</button>
-        </div>
-      </form>
-    }
-
-    @if (paso() === 3) {
-      <h3>Productos y stock en {{ bodegaActiva()?.nombre }}</h3>
-
-      @if (bodegas().length > 1) {
-        <button type="button" class="asistente-link" (click)="agregarOtraBodega()">
-          <ds-icon name="plus" [size]="14" />
-          Crear otra bodega para {{ sucursalActiva()?.nombre }}
-        </button>
-      }
-
-      @if (productos().length === 0 && !mostrarNuevoProducto()) {
-        <p class="asistente-hint">Este negocio todavía no tiene productos — creá el primero con su stock inicial en esta bodega.</p>
-      }
-
-      @if (productos().length === 0 || mostrarNuevoProducto()) {
-        <app-producto-form
-          #nuevoProductoForm
-          [bodegaSugerida]="bodegaActiva()?.id"
-          [permitirVarios]="true"
-          (guardado)="onProductoCreado($event)"
-        />
-        <div class="asistente-acciones">
-          <ds-button variant="primary" [loading]="nuevoProductoForm.saving()" (click)="nuevoProductoForm.guardar()">
-            Guardar producto
-          </ds-button>
-          @if (productos().length > 0) {
-            <button type="button" class="asistente-salir" (click)="mostrarNuevoProducto.set(false)">Cancelar</button>
-          }
-        </div>
-      } @else {
-        <p class="asistente-hint">Este negocio ya tiene productos — asignales stock en esta bodega, o agregá uno nuevo.</p>
-        <ds-search-bar placeholder="Buscar producto..." [(value)]="buscarProducto" />
-        <div class="asistente-lista-productos">
-          @for (producto of productosFiltrados(); track producto.id) {
-            <div class="asistente-fila-producto">
-              <span class="asistente-fila-producto__nombre">{{ producto.nombre }}</span>
-              <ds-input
-                type="number"
-                icon="box"
-                placeholder="Cantidad"
-                [ngModel]="cantidadDe(producto.id)"
-                [ngModelOptions]="{ standalone: true }"
-                (ngModelChange)="actualizarCantidad(producto.id, $event)"
-              />
-            </div>
-          }
-        </div>
-        <div class="asistente-acciones">
-          <ds-button variant="primary" [loading]="guardandoStock()" (click)="guardarCantidades()">Guardar cantidades</ds-button>
-          <button type="button" class="asistente-link" (click)="mostrarNuevoProducto.set(true)">
+        @if (bodegas().length > 1) {
+          <button type="button" class="asistente-link" (click)="agregarOtraBodega()">
             <ds-icon name="plus" [size]="14" />
-            Producto nuevo
+            Crear otra bodega para {{ sucursalActiva()?.nombre }}
           </button>
+        }
+
+        @if (productos().length === 0 && !mostrarNuevoProducto()) {
+          <p class="asistente-hint">Este negocio todavía no tiene productos — creá el primero con su stock inicial en esta bodega.</p>
+        }
+
+        @if (productos().length === 0 || mostrarNuevoProducto()) {
+          <app-producto-form
+            #nuevoProductoForm
+            [bodegaSugerida]="bodegaActiva()?.id"
+            [permitirVarios]="true"
+            [mostrarStepper]="false"
+            (guardado)="onProductoCreado($event)"
+          />
+          <div class="asistente-acciones">
+            @if (nuevoProductoForm.pasoActual() > 1) {
+              <ds-button variant="ghost" (click)="nuevoProductoForm.pasoAnterior()">Atrás</ds-button>
+            }
+            <ds-button variant="primary" [loading]="nuevoProductoForm.saving()" (click)="nuevoProductoForm.continuar()">
+              {{ nuevoProductoForm.pasoActual() < nuevoProductoForm.totalPasos ? 'Siguiente' : 'Guardar producto' }}
+            </ds-button>
+            @if (productos().length > 0) {
+              <button type="button" class="asistente-salir" (click)="mostrarNuevoProducto.set(false)">Cancelar</button>
+            }
+          </div>
+        } @else {
+          <p class="asistente-hint">Este negocio ya tiene productos — asignales stock en esta bodega, o agregá uno nuevo.</p>
+          <ds-search-bar placeholder="Buscar producto..." [(value)]="buscarProducto" />
+          <div class="asistente-lista-productos">
+            @for (producto of productosFiltrados(); track producto.id) {
+              <div class="asistente-fila-producto">
+                <span class="asistente-fila-producto__nombre">{{ producto.nombre }}</span>
+                <ds-input
+                  type="number"
+                  icon="box"
+                  placeholder="Cantidad"
+                  [ngModel]="cantidadDe(producto.id)"
+                  [ngModelOptions]="{ standalone: true }"
+                  (ngModelChange)="actualizarCantidad(producto.id, $event)"
+                />
+              </div>
+            }
+          </div>
+          <div class="asistente-acciones">
+            <ds-button variant="primary" [loading]="guardandoStock()" (click)="guardarCantidades()">Guardar cantidades</ds-button>
+            <button type="button" class="asistente-link" (click)="mostrarNuevoProducto.set(true)">
+              <ds-icon name="plus" [size]="14" />
+              Producto nuevo
+            </button>
+          </div>
+        }
+
+        <div class="asistente-acciones asistente-acciones--final">
+          <ds-button variant="glass" [disabled]="!puedeFinalizar()" (click)="finalizar()">Finalizar</ds-button>
+          @if (!puedeFinalizar()) {
+            <span class="asistente-hint-inline">Guardá al menos un producto para finalizar.</span>
+          }
         </div>
       }
-
-      <div class="asistente-acciones asistente-acciones--final">
-        <ds-button variant="glass" [disabled]="!puedeFinalizar()" (click)="finalizar()">Finalizar</ds-button>
-        @if (!puedeFinalizar()) {
-          <span class="asistente-hint-inline">Guardá al menos un producto para finalizar.</span>
-        }
-      </div>
-    }
-  </div>
+    </div>
+  }
 }

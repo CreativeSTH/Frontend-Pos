@@ -96,6 +96,22 @@
     background: var(--glass-bg-hover);
     border-color: var(--glass-border-strong);
   }
+
+  /** La bodega con la que ya se estaba trabajando antes de "Agregar otra bodega" — sin esto no había forma de saber cuál era. */
+  &--activa {
+    border-color: var(--accent-primary);
+    background: var(--glass-bg-hover);
+  }
+}
+
+.asistente-item-sucursal__badge {
+  margin-left: auto;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
 }
 
 .asistente-lista-productos {
@@ -125,6 +141,41 @@
 
 .asistente-fila-producto__nombre {
   font-size: var(--fs-sm);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/** Fila del resumen (sucursal/bodega/productos) — mismo patrón que producto-form__selector-resumen. */
+.asistente-resumen-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+
+  &:not(:last-of-type) {
+    margin-bottom: var(--space-3);
+  }
+}
+
+.asistente-resumen-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.asistente-resumen-item__titulo {
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+}
+
+.asistente-resumen-item__detalle {
+  font-size: var(--fs-base);
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;

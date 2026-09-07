@@ -10,4 +10,6 @@ export interface Sucursal {
   tipoComprobanteDefecto: 'RECIBO' | 'FACTURA';
   plantillaReciboDefectoId?: string;
   plantillaFacturaDefectoId?: string;
+  /** Bodega con la que esta sucursal vende por defecto — ver `BodegasService.create` en el backend. */
+  bodegaOperativaId?: string;
 }

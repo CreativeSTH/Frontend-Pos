@@ -10,6 +10,7 @@ export interface SucursalPayload {
   tipoComprobanteDefecto?: 'RECIBO' | 'FACTURA';
   plantillaReciboDefectoId?: string;
   plantillaFacturaDefectoId?: string;
+  bodegaOperativaId?: string;
 }
 
 @Injectable({ providedIn: 'root' })

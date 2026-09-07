@@ -10,21 +10,26 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
+import { Select } from '../../../shared/ui/atoms/select/select';
 import { SucursalesService } from '../../../core/services/sucursales.service';
+import { BodegasService } from '../../../core/services/bodegas.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
 import { Sucursal } from '../../../core/models/sucursal.model';
+import { Bodega } from '../../../core/models/bodega.model';
 
 @Component({
   selector: 'app-sucursales-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, EmptyState, Paginator, ReactiveFormsModule],
+  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Select, EmptyState, Paginator, ReactiveFormsModule],
   templateUrl: './sucursales-list.html',
   styleUrl: './sucursales-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SucursalesList {
   private readonly sucursalesService = inject(SucursalesService);
+  private readonly bodegasService = inject(BodegasService);
   private readonly toast = inject(ToastService);
   private readonly confirmService = inject(ConfirmService);
   private readonly fb = inject(FormBuilder);
@@ -35,22 +40,19 @@ export class SucursalesList {
   protected readonly showForm = signal(false);
   protected readonly editingId = signal<string | null>(null);
   protected readonly saving = signal(false);
+  /** Bodegas de la sucursal en edición — solo tiene sentido elegir "bodega operativa" entre estas (ver `openEdit`). */
+  protected readonly bodegasDeSucursal = signal<Bodega[]>([]);
 
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
     direccion: [''],
     telefono: [''],
     metaVentasDiaria: [0],
+    bodegaOperativaId: [''],
   });
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.sucursales().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly sucursalesPaginadas = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.sucursales().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.sucursales);
+  protected readonly sucursalesPaginadas = this.pag.itemsPaginados;
 
   constructor() {
     this.load();
@@ -72,7 +74,8 @@ export class SucursalesList {
 
   protected openCreate(): void {
     this.editingId.set(null);
-    this.form.reset({ nombre: '', direccion: '', telefono: '', metaVentasDiaria: 0 });
+    this.bodegasDeSucursal.set([]);
+    this.form.reset({ nombre: '', direccion: '', telefono: '', metaVentasDiaria: 0, bodegaOperativaId: '' });
     this.showForm.set(true);
   }
 
@@ -83,8 +86,12 @@ export class SucursalesList {
       direccion: sucursal.direccion ?? '',
       telefono: sucursal.telefono ?? '',
       metaVentasDiaria: sucursal.metaVentasDiaria ?? 0,
+      bodegaOperativaId: sucursal.bodegaOperativaId ?? '',
     });
     this.showForm.set(true);
+    this.bodegasService.findAll().subscribe((todas) => {
+      this.bodegasDeSucursal.set(todas.filter((b) => b.sucursalId === sucursal.id));
+    });
   }
 
   protected save(): void {
@@ -99,6 +106,7 @@ export class SucursalesList {
       direccion: raw.direccion || undefined,
       telefono: raw.telefono || undefined,
       metaVentasDiaria: raw.metaVentasDiaria || undefined,
+      bodegaOperativaId: raw.bodegaOperativaId || undefined,
     };
 
     const editingId = this.editingId();

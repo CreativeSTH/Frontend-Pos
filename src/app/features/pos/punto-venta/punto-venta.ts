@@ -165,10 +165,20 @@ export class PuntoVenta {
    * terminaban resolviendo silenciosamente contra la bodega equivocada. `confirmarCobro()` ya
    * bloquea la venta cuando `bodega` es `null` con un mensaje específico, así que no hace falta
    * ningún guard nuevo acá.
+   *
+   * Si la sucursal ya tiene `bodegaOperativaId` (ver asistente/`/sucursales`), se usa esa siempre
+   * que exista entre las bodegas activas — si no está seteada, o esa bodega puntual ya no existe,
+   * cae al mismo fallback de siempre ("la primera bodega de esta sucursal") para no romper
+   * sucursales que nunca definieron una operativa.
    */
-  protected readonly bodega = computed<Bodega | null>(
-    () => this.bodegas().find((b) => b.sucursalId === this.sucursal()?.id) ?? null,
-  );
+  protected readonly bodega = computed<Bodega | null>(() => {
+    const sucursal = this.sucursal();
+    if (!sucursal) return null;
+    const operativa = sucursal.bodegaOperativaId
+      ? this.bodegas().find((b) => b.id === sucursal.bodegaOperativaId)
+      : undefined;
+    return operativa ?? this.bodegas().find((b) => b.sucursalId === sucursal.id) ?? null;
+  });
 
   protected readonly showAbrirTurno = signal(false);
   protected readonly montoInicialTurno = signal<number>(100000);
