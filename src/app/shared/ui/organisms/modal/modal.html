@@ -2,9 +2,12 @@
   <div class="modal-panel" [class]="'modal-panel--' + size()" (click)="$event.stopPropagation()">
     <header class="modal-panel__header">
       <h3>{{ title() }}</h3>
-      <button type="button" class="modal-panel__close" (click)="close.emit()">
-        <ds-icon name="x" [size]="18" />
-      </button>
+      <div class="modal-panel__header-actions">
+        <ng-content select="[modal-header-action]" />
+        <button type="button" class="modal-panel__close" (click)="close.emit()">
+          <ds-icon name="x" [size]="18" />
+        </button>
+      </div>
     </header>
 
     <div class="modal-panel__body">

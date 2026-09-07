@@ -4,12 +4,14 @@ import { forkJoin } from 'rxjs';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Badge } from '../../../shared/ui/atoms/badge/badge';
 import { Icon } from '../../../shared/ui/atoms/icon/icon';
-import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { Switch } from '../../../shared/ui/atoms/switch/switch';
 import { ImageUpload } from '../../../shared/ui/molecules/image-upload/image-upload';
+import { Modal } from '../../../shared/ui/organisms/modal/modal';
+import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
+import { Stepper, PasoStepper } from '../../../shared/ui/molecules/stepper/stepper';
 import { ProductosService } from '../../../core/services/productos.service';
 import { CategoriasService } from '../../../core/services/categorias.service';
 import { MarcasService } from '../../../core/services/marcas.service';
@@ -30,10 +32,34 @@ import { environment } from '../../../../environments/environment';
 
 /** Umbral de alerta de stock bajo cuando no se personaliza al crear/editar un producto. */
 const STOCK_MINIMO_DEFAULT = 2;
-/** Sentinel para "crear un proveedor nuevo" dentro de una fila de proveedor — nunca colisiona con un UUID real. */
+/** Sentinel para "crear un proveedor nuevo" — nunca colisiona con un UUID real. */
 const NUEVO_PROVEEDOR = '__nuevo__';
+/** Pasos del wizard de creación — en edición se ignora y se muestra todo en una sola vista. */
+const TOTAL_PASOS = 3;
 
-interface FilaProveedorInicial {
+/**
+ * Una fila = una bodega con su cantidad inicial y, opcionalmente, el proveedor que la abasteció.
+ * El proveedor no queda asociado a la bodega en el modelo de datos (`ProveedorInicialPayload` es
+ * a nivel producto, igual que en "Lista de pedidos") — `mostrarProveedor` solo controla si esta
+ * fila expone esos campos; al guardar, `guardar()` aplana todas las filas con proveedor cargado
+ * en el mismo array plano que ya esperaba el backend.
+ */
+interface FilaStockInicial {
+  bodegaId: string;
+  cantidad: number;
+  mostrarProveedor: boolean;
+  proveedorId: string;
+  nombreNuevoProveedor: string;
+  costo: number;
+  referencia: string;
+}
+
+function filaStockVacia(bodegaId: string): FilaStockInicial {
+  return { bodegaId, cantidad: 0, mostrarProveedor: false, proveedorId: '', nombreNuevoProveedor: '', costo: 0, referencia: '' };
+}
+
+/** Fila para vincular un proveedor a un producto ya existente (edición) — vive aparte de `FilaStockInicial`, pega directo a la API. */
+interface FilaProveedorEdicion {
   proveedorId: string;
   nombreNuevo: string;
   costo: number;
@@ -50,7 +76,21 @@ interface FilaProveedorInicial {
 @Component({
   selector: 'app-producto-form',
   standalone: true,
-  imports: [Button, Badge, Icon, Modal, FormField, Input, Select, Switch, ImageUpload, ReactiveFormsModule, FormsModule],
+  imports: [
+    Button,
+    Badge,
+    Icon,
+    FormField,
+    Input,
+    Select,
+    Switch,
+    ImageUpload,
+    Modal,
+    SearchBar,
+    Stepper,
+    ReactiveFormsModule,
+    FormsModule,
+  ],
   templateUrl: './producto-form.html',
   styleUrl: './producto-form.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,6 +119,13 @@ export class ProductoForm implements OnInit {
    * `guardado`.
    */
   readonly permitirVarios = input(false);
+  /**
+   * En `false` oculta el `ds-stepper` interno del wizard de creación — lo usa el asistente de
+   * configuración, que ya envuelve este form en su propio stepper (Sucursal → Bodega → Productos);
+   * mostrar los dos apilados se ve redundante. Los pasos y la navegación (`continuar()`/`pasoAnterior()`)
+   * siguen funcionando igual, solo cambia si se dibuja o no el indicador visual.
+   */
+  readonly mostrarStepper = input(true);
 
   readonly guardado = output<Producto>();
 
@@ -88,24 +135,55 @@ export class ProductoForm implements OnInit {
   protected readonly bodegas = signal<Bodega[]>([]);
   protected readonly proveedoresCatalogo = signal<Proveedor[]>([]);
   protected readonly inventario = signal<InventarioItem[]>([]);
-  protected readonly stockInicial = signal<StockInicialPayload[]>([]);
   protected readonly NUEVO_PROVEEDOR = NUEVO_PROVEEDOR;
-  /** Filas de proveedor a vincular al crear el producto (patrón calcado de stockInicial). */
-  protected readonly proveedoresInicial = signal<FilaProveedorInicial[]>([]);
+  /** Una fila por bodega — cantidad inicial y, opcionalmente, el proveedor que la abasteció (ver `FilaStockInicial`). */
+  protected readonly filasStockInicial = signal<FilaStockInicial[]>([]);
   /** Proveedores ya vinculados al producto en edición — cada alta/baja pega directo a la API, no se batchea con el guardado. */
   protected readonly proveedoresProducto = signal<ProductoProveedor[]>([]);
   protected readonly cargandoProveedoresProducto = signal(false);
   protected readonly guardandoProveedorProducto = signal(false);
-  protected readonly nuevaFilaProveedor = signal<FilaProveedorInicial>({
+  protected readonly nuevaFilaProveedor = signal<FilaProveedorEdicion>({
     proveedorId: '',
     nombreNuevo: '',
     costo: 0,
     referencia: '',
   });
   protected readonly categoriaIdsSeleccionadas = signal<string[]>([]);
+  protected readonly nuevaCategoriaNombre = signal('');
+  protected readonly nuevaCategoriaPadreId = signal('');
+  protected readonly creandoCategoria = signal(false);
+  protected readonly nombreNuevaMarca = signal('');
+  protected readonly creandoMarca = signal(false);
+  protected readonly nombreNuevaLinea = signal('');
+  protected readonly creandoLinea = signal(false);
+  /** ¿Mostrar código de barras / SKU? Colapsados por defecto al crear — casi nadie los tiene a mano tecleando a mano. */
+  protected readonly mostrarIdentificadores = signal(false);
+
+  // ---------- Modal "Seleccionar categorías" ----------
   protected readonly showCategoriasModal = signal(false);
-  /** Copia de trabajo mientras el modal de selección está abierto — ver `abrirSeleccionCategorias`. */
+  protected readonly busquedaCategorias = signal('');
+  /** Copia de trabajo mientras el modal está abierto — "Cancelar" no debe tocar la selección real. */
   protected readonly categoriaIdsBorrador = signal<string[]>([]);
+  /** El mini-form "+ Crear" arranca oculto — lo abre el botón junto al título del modal. */
+  protected readonly mostrarCrearCategoria = signal(false);
+
+  // ---------- Modal "Seleccionar marca y línea" ----------
+  protected readonly showMarcaLineaModal = signal(false);
+  protected readonly busquedaMarcaLinea = signal('');
+  protected readonly mostrarCrearMarca = signal(false);
+  protected readonly marcaIdBorrador = signal('');
+  protected readonly lineaIdBorrador = signal('');
+  /** Marca cuyo mini-form "+ Nueva línea" está abierto dentro del modal (una a la vez). */
+  protected readonly marcaCreandoLineaId = signal<string | null>(null);
+
+  /** Wizard de creación — público, lo maneja el botón del host (footer del modal o el del asistente) vía `continuar()`/`pasoAnterior()`. */
+  readonly totalPasos = TOTAL_PASOS;
+  readonly pasoActual = signal(1);
+  readonly pasosStepper: PasoStepper[] = [
+    { numero: 1, etiqueta: 'Datos y precio' },
+    { numero: 2, etiqueta: 'Clasificación' },
+    { numero: 3, etiqueta: 'Stock inicial' },
+  ];
 
   /** Bodega + cantidad actual/nueva al editar un producto ya existente — ver `guardarAjustesStock()`. */
   protected readonly stockEdicion = signal<{ bodegaId: string; cantidadActual: number; cantidadNueva: number }[]>([]);
@@ -118,6 +196,8 @@ export class ProductoForm implements OnInit {
   protected readonly selectedImage = signal<File | null>(null);
   /** Público — el host (modal de `/productos` o el asistente) dispara el guardado desde su propio botón. */
   readonly saving = signal(false);
+  /** Público — en edición el host muestra todo en una sola vista, sin wizard (ver `pasoActual`). */
+  readonly modoEdicion = computed(() => this.editingId() !== null);
 
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
@@ -158,24 +238,98 @@ export class ProductoForm implements OnInit {
     return resultado;
   };
 
-  /** Categorías ya elegidas, en el mismo orden jerárquico que `categoriasOrdenadas` — lo que se muestra como chips en el form principal. */
+  /** Categorías ya elegidas, en el mismo orden jerárquico — lo que se muestra como chips en el resumen del paso 2. */
   protected readonly categoriasSeleccionadasOrdenadas = computed(() =>
     this.categoriasOrdenadas().filter((c) => this.categoriaIdsSeleccionadas().includes(c.id)),
   );
 
-  protected readonly lineasDeMarca = () => {
+  /** "Marca › Línea" (o solo la marca, o "Sin marca") — lo que se muestra en el resumen del paso 2. */
+  protected readonly marcaLineaResumen = () => {
     const marcaId = this.form.controls.marcaId.value;
-    if (!marcaId) return [];
-    return this.lineas().filter((l) => l.marcaId === marcaId);
+    const marca = marcaId ? this.marcas().find((m) => m.id === marcaId) : undefined;
+    if (!marca) return 'Sin marca';
+    const lineaId = this.form.controls.lineaId.value;
+    const linea = lineaId ? this.lineas().find((l) => l.id === lineaId) : undefined;
+    return linea ? `${marca.nombre} › ${linea.nombre}` : marca.nombre;
   };
 
-  constructor() {
-    this.form.controls.marcaId.valueChanges.subscribe((marcaId) => {
-      const lineaActual = this.lineas().find((l) => l.id === this.form.controls.lineaId.value);
-      if (lineaActual && lineaActual.marcaId !== marcaId) {
-        this.form.controls.lineaId.setValue('');
+  /**
+   * Cada marca (en el mismo orden que `marcasOrdenadas`) con sus líneas ya filtradas por
+   * `busquedaMarcaLinea` — el modal las pinta como grupo: encabezado de marca + líneas indentadas.
+   * Si hay búsqueda, una marca se mantiene visible si su nombre matchea o si tiene alguna línea que
+   * matchea (mostrando solo esas líneas); sin búsqueda, se listan todas.
+   */
+  protected readonly gruposMarcaLinea = () => {
+    const termino = this.busquedaMarcaLinea().trim().toLowerCase();
+    return this.marcasOrdenadas()
+      .map((marca) => {
+        const lineasDeEstaMarca = this.lineas().filter((l) => l.marcaId === marca.id);
+        if (!termino) return { marca, lineas: lineasDeEstaMarca };
+        const marcaMatchea = marca.nombre.toLowerCase().includes(termino);
+        return {
+          marca,
+          lineas: marcaMatchea
+            ? lineasDeEstaMarca
+            : lineasDeEstaMarca.filter((l) => l.nombre.toLowerCase().includes(termino)),
+        };
+      })
+      .filter(({ marca, lineas }) => !termino || marca.nombre.toLowerCase().includes(termino) || lineas.length > 0);
+  };
+
+  /**
+   * Categorías filtradas por `busquedaCategorias`, conservando el padre visible si algún hijo
+   * matchea (o el hijo si matchea su padre) — mismo criterio de contexto que `gruposMarcaLinea`.
+   */
+  protected readonly categoriasFiltradas = () => {
+    const termino = this.busquedaCategorias().trim().toLowerCase();
+    const todas = this.categoriasOrdenadas();
+    if (!termino) return todas;
+    const idsQueMatchean = new Set(
+      this.categorias()
+        .filter((c) => c.nombre.toLowerCase().includes(termino))
+        .map((c) => c.id),
+    );
+    return todas.filter((c) => {
+      if (idsQueMatchean.has(c.id)) return true;
+      if (!c.categoriaPadreId) {
+        return this.categorias().some((h) => h.categoriaPadreId === c.id && idsQueMatchean.has(h.id));
       }
+      return idsQueMatchean.has(c.categoriaPadreId);
     });
+  };
+
+  // ---------- Wizard de creación ----------
+
+  /** Solo el paso 1 bloquea avanzar — el resto del form es opcional (la única regla dura, "al menos una bodega", se valida recién en `guardar()`). */
+  protected puedeAvanzar(): boolean {
+    if (this.pasoActual() !== 1) return true;
+    const { nombre, precioVenta, costo } = this.form.controls;
+    return nombre.valid && precioVenta.valid && costo.valid;
+  }
+
+  protected siguientePaso(): void {
+    if (!this.puedeAvanzar()) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.pasoActual.update((paso) => Math.min(paso + 1, this.totalPasos));
+  }
+
+  /** Público — botón "Atrás" del host. */
+  pasoAnterior(): void {
+    this.pasoActual.update((paso) => Math.max(paso - 1, 1));
+  }
+
+  /**
+   * Público — una sola acción para el botón primario del host (y para Enter en cualquier campo):
+   * en creación avanza de paso hasta el último, donde guarda; en edición guarda directo.
+   */
+  continuar(): void {
+    if (!this.modoEdicion() && this.pasoActual() < this.totalPasos) {
+      this.siguientePaso();
+      return;
+    }
+    this.guardar();
   }
 
   ngOnInit(): void {
@@ -218,11 +372,15 @@ export class ProductoForm implements OnInit {
     });
   }
 
-  // ---------- Categorías ----------
+  // ---------- Modal "Seleccionar categorías" ----------
 
-  /** Abre el modal grande de selección con una copia de trabajo — "Cancelar" no debe tocar la selección real. */
-  protected abrirSeleccionCategorias(): void {
+  /** Abre el modal con una copia de trabajo — "Cancelar" no debe tocar la selección real. */
+  protected abrirModalCategorias(): void {
     this.categoriaIdsBorrador.set([...this.categoriaIdsSeleccionadas()]);
+    this.busquedaCategorias.set('');
+    this.nuevaCategoriaNombre.set('');
+    this.nuevaCategoriaPadreId.set('');
+    this.mostrarCrearCategoria.set(false);
     this.showCategoriasModal.set(true);
   }
 
@@ -237,21 +395,105 @@ export class ProductoForm implements OnInit {
     this.showCategoriasModal.set(false);
   }
 
-  // ---------- Proveedores: filas al crear ----------
-
-  protected agregarFilaProveedor(): void {
-    this.proveedoresInicial.update((filas) => [
-      ...filas,
-      { proveedorId: '', nombreNuevo: '', costo: 0, referencia: '' },
-    ]);
+  /** Crea la categoría y la deja marcada en el borrador — nunca más un dead-end si el negocio arranca en cero. */
+  protected crearCategoria(): void {
+    const nombre = this.nuevaCategoriaNombre().trim();
+    if (!nombre) return;
+    this.creandoCategoria.set(true);
+    this.categoriasService.create({ nombre, categoriaPadreId: this.nuevaCategoriaPadreId() || undefined }).subscribe({
+      next: (categoria) => {
+        this.categorias.update((actuales) => [...actuales, categoria]);
+        this.categoriaIdsBorrador.update((ids) => [...ids, categoria.id]);
+        this.nuevaCategoriaNombre.set('');
+        this.nuevaCategoriaPadreId.set('');
+        this.mostrarCrearCategoria.set(false);
+        this.creandoCategoria.set(false);
+      },
+      error: (err) => {
+        this.creandoCategoria.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo crear la categoría');
+      },
+    });
   }
 
-  protected actualizarFilaProveedor(index: number, cambios: Partial<FilaProveedorInicial>): void {
-    this.proveedoresInicial.update((filas) => filas.map((f, i) => (i === index ? { ...f, ...cambios } : f)));
+  // ---------- Modal "Seleccionar marca y línea" ----------
+
+  protected abrirModalMarcaLinea(): void {
+    this.marcaIdBorrador.set(this.form.controls.marcaId.value);
+    this.lineaIdBorrador.set(this.form.controls.lineaId.value);
+    this.busquedaMarcaLinea.set('');
+    this.nombreNuevaMarca.set('');
+    this.mostrarCrearMarca.set(false);
+    this.marcaCreandoLineaId.set(null);
+    this.nombreNuevaLinea.set('');
+    this.showMarcaLineaModal.set(true);
   }
 
-  protected quitarFilaProveedor(index: number): void {
-    this.proveedoresInicial.update((filas) => filas.filter((_, i) => i !== index));
+  /** Elegir la marca "pelada" (sin línea específica) — limpia cualquier línea que hubiera quedado del borrador. */
+  protected elegirMarcaBorrador(marcaId: string): void {
+    this.marcaIdBorrador.set(marcaId);
+    this.lineaIdBorrador.set('');
+  }
+
+  protected elegirLineaBorrador(marcaId: string, lineaId: string): void {
+    this.marcaIdBorrador.set(marcaId);
+    this.lineaIdBorrador.set(lineaId);
+  }
+
+  protected quitarMarcaBorrador(): void {
+    this.marcaIdBorrador.set('');
+    this.lineaIdBorrador.set('');
+  }
+
+  protected guardarSeleccionMarcaLinea(): void {
+    this.form.controls.marcaId.setValue(this.marcaIdBorrador());
+    this.form.controls.lineaId.setValue(this.lineaIdBorrador());
+    this.showMarcaLineaModal.set(false);
+  }
+
+  /** Crea la marca y la deja elegida en el borrador (sin línea todavía, no tiene ninguna). */
+  protected crearMarca(): void {
+    const nombre = this.nombreNuevaMarca().trim();
+    if (!nombre) return;
+    this.creandoMarca.set(true);
+    this.marcasService.create({ nombre }).subscribe({
+      next: (marca) => {
+        this.marcas.update((actuales) => [...actuales, marca]);
+        this.elegirMarcaBorrador(marca.id);
+        this.nombreNuevaMarca.set('');
+        this.mostrarCrearMarca.set(false);
+        this.creandoMarca.set(false);
+      },
+      error: (err) => {
+        this.creandoMarca.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo crear la marca');
+      },
+    });
+  }
+
+  /** Abre el mini-form "+ Nueva línea" para una marca puntual del listado (uno a la vez). */
+  protected abrirCrearLineaPara(marcaId: string): void {
+    this.marcaCreandoLineaId.set(marcaId);
+    this.nombreNuevaLinea.set('');
+  }
+
+  protected crearLinea(marcaId: string): void {
+    const nombre = this.nombreNuevaLinea().trim();
+    if (!nombre) return;
+    this.creandoLinea.set(true);
+    this.lineasService.create(marcaId, nombre).subscribe({
+      next: (linea) => {
+        this.lineas.update((actuales) => [...actuales, linea]);
+        this.elegirLineaBorrador(marcaId, linea.id);
+        this.nombreNuevaLinea.set('');
+        this.marcaCreandoLineaId.set(null);
+        this.creandoLinea.set(false);
+      },
+      error: (err) => {
+        this.creandoLinea.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo crear la línea');
+      },
+    });
   }
 
   // ---------- Proveedores: vínculo en vivo al editar ----------
@@ -270,7 +512,7 @@ export class ProductoForm implements OnInit {
     });
   }
 
-  protected actualizarNuevaFilaProveedor(cambios: Partial<FilaProveedorInicial>): void {
+  protected actualizarNuevaFilaProveedor(cambios: Partial<FilaProveedorEdicion>): void {
     this.nuevaFilaProveedor.update((fila) => ({ ...fila, ...cambios }));
   }
 
@@ -302,7 +544,7 @@ export class ProductoForm implements OnInit {
       .subscribe({
         next: () => {
           this.guardandoProveedorProducto.set(false);
-          this.nuevaFilaProveedor.set({ proveedorId: '', nombreNuevo: '', costo: 0, referencia: '' });
+          this.nuevaFilaProveedor.set({ proveedorId: '', nombreNuevo: '', costo: this.costoActual(), referencia: '' });
           this.cargarProveedoresProducto(productoId);
           this.proveedoresService.findAll().subscribe((data) => this.proveedoresCatalogo.set(data));
           this.toast.success('Proveedor vinculado');
@@ -341,20 +583,39 @@ export class ProductoForm implements OnInit {
       this.toast.error('Creá una bodega antes de asignar stock a un producto');
       return;
     }
-    const bodegaLibre = this.bodegas().find((b) => !this.stockInicial().some((s) => s.bodegaId === b.id));
+    const bodegaLibre = this.bodegas().find((b) => !this.filasStockInicial().some((f) => f.bodegaId === b.id));
     if (!bodegaLibre) {
       this.toast.info('Ya agregaste todas las bodegas disponibles');
       return;
     }
-    this.stockInicial.update((filas) => [...filas, { bodegaId: bodegaLibre.id, cantidad: 0 }]);
+    this.filasStockInicial.update((filas) => [...filas, filaStockVacia(bodegaLibre.id)]);
   }
 
-  protected actualizarFilaStock(index: number, cambios: Partial<StockInicialPayload>): void {
-    this.stockInicial.update((filas) => filas.map((f, i) => (i === index ? { ...f, ...cambios } : f)));
+  protected actualizarFilaStock(index: number, cambios: Partial<FilaStockInicial>): void {
+    this.filasStockInicial.update((filas) => filas.map((f, i) => (i === index ? { ...f, ...cambios } : f)));
   }
 
   protected quitarFilaStock(index: number): void {
-    this.stockInicial.update((filas) => filas.filter((_, i) => i !== index));
+    this.filasStockInicial.update((filas) => filas.filter((_, i) => i !== index));
+  }
+
+  /**
+   * Precarga el costo del proveedor con el "Costo" ya cargado en el paso 1 — lo normal es que el
+   * primer proveedor que se vincula sea justamente de dónde salió ese costo. Sigue siendo editable
+   * por fila: si un proveedor puntual cobra distinto, se sobreescribe ahí mismo sin afectar a los demás.
+   */
+  protected mostrarProveedorEnFila(index: number): void {
+    this.actualizarFilaStock(index, { mostrarProveedor: true, costo: this.costoActual() });
+  }
+
+  /** Colapsa la sub-fila de proveedor y limpia lo que se hubiera cargado, para no mandar basura al guardar. */
+  protected ocultarProveedorDeFila(index: number): void {
+    this.actualizarFilaStock(index, { mostrarProveedor: false, proveedorId: '', nombreNuevoProveedor: '', costo: 0, referencia: '' });
+  }
+
+  /** Costo cargado en el paso 1 — default para precargar el costo de un proveedor recién vinculado. */
+  protected costoActual(): number {
+    return Number(this.form.controls.costo.value) || 0;
   }
 
   protected actualizarStockEdicion(index: number, cantidadNueva: number): void {
@@ -371,11 +632,15 @@ export class ProductoForm implements OnInit {
     this.editingId.set(null);
     this.editingImagenUrl.set(null);
     this.selectedImage.set(null);
+    this.pasoActual.set(1);
+    this.mostrarIdentificadores.set(false);
     const bodegaId = this.bodegaSugerida();
-    this.stockInicial.set(bodegaId ? [{ bodegaId, cantidad: 0 }] : []);
+    this.filasStockInicial.set(bodegaId ? [filaStockVacia(bodegaId)] : []);
     this.stockEdicion.set([]);
     this.categoriaIdsSeleccionadas.set([]);
-    this.proveedoresInicial.set([]);
+    this.nuevaCategoriaNombre.set('');
+    this.nombreNuevaMarca.set('');
+    this.nombreNuevaLinea.set('');
     this.proveedoresProducto.set([]);
     this.stockMinimoPersonalizado.set(false);
     this.stockMinimoValor.set(STOCK_MINIMO_DEFAULT);
@@ -397,10 +662,10 @@ export class ProductoForm implements OnInit {
     this.editingId.set(producto.id);
     this.editingImagenUrl.set(this.imageUrl(producto.imagenUrl));
     this.selectedImage.set(null);
-    this.stockInicial.set([]);
-    this.proveedoresInicial.set([]);
+    this.mostrarIdentificadores.set(!!(producto.codigoBarras || producto.sku));
+    this.filasStockInicial.set([]);
     this.proveedoresProducto.set([]);
-    this.nuevaFilaProveedor.set({ proveedorId: '', nombreNuevo: '', costo: 0, referencia: '' });
+    this.nuevaFilaProveedor.set({ proveedorId: '', nombreNuevo: '', costo: producto.costo, referencia: '' });
     this.cargarProveedoresProducto(producto.id);
     this.stockMinimoPersonalizado.set(false);
     this.stockMinimoValor.set(STOCK_MINIMO_DEFAULT);
@@ -422,25 +687,33 @@ export class ProductoForm implements OnInit {
 
   // ---------- Guardado ----------
 
-  /** Público — el host dispara el guardado desde su propio botón (footer del modal, o el del asistente). */
+  /** Público — el host dispara el guardado desde su propio botón (footer del modal, o el del asistente), normalmente vía `continuar()`. */
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     const editingId = this.editingId();
-    const stockInicial = this.stockInicial().filter((s) => s.bodegaId && s.cantidad >= 0);
+    const stockInicial: StockInicialPayload[] = this.filasStockInicial()
+      .filter((f) => f.bodegaId && f.cantidad >= 0)
+      .map((f) => ({ bodegaId: f.bodegaId, cantidad: f.cantidad }));
     if (!editingId && stockInicial.length === 0) {
       this.toast.error('Asigná al menos una bodega con stock inicial — puede ser 0');
       return;
     }
     this.saving.set(true);
     const raw = this.form.getRawValue();
-    const proveedores: ProveedorInicialPayload[] = this.proveedoresInicial()
-      .filter((f) => f.proveedorId && f.costo > 0 && (f.proveedorId !== NUEVO_PROVEEDOR || f.nombreNuevo.trim()))
+    const proveedores: ProveedorInicialPayload[] = this.filasStockInicial()
+      .filter(
+        (f) =>
+          f.mostrarProveedor &&
+          f.proveedorId &&
+          f.costo > 0 &&
+          (f.proveedorId !== NUEVO_PROVEEDOR || f.nombreNuevoProveedor.trim()),
+      )
       .map((f) => ({
         proveedorId: f.proveedorId === NUEVO_PROVEEDOR ? undefined : f.proveedorId,
-        proveedorNuevo: f.proveedorId === NUEVO_PROVEEDOR ? { nombre: f.nombreNuevo.trim() } : undefined,
+        proveedorNuevo: f.proveedorId === NUEVO_PROVEEDOR ? { nombre: f.nombreNuevoProveedor.trim() } : undefined,
         costo: f.costo,
         referencia: f.referencia || undefined,
       }));
@@ -515,7 +788,7 @@ export class ProductoForm implements OnInit {
 
   /** En creación, cada bodega con stock inicial recibe el mínimo personalizado o el default (2). */
   private guardarStockMinimoInicial(producto: Producto): void {
-    const stockInicial = this.stockInicial().filter((s) => s.bodegaId && s.cantidad > 0);
+    const stockInicial = this.filasStockInicial().filter((f) => f.bodegaId && f.cantidad > 0);
     if (stockInicial.length === 0) {
       this.finalizarGuardado(producto, false);
       return;

@@ -70,6 +70,123 @@
   }
 }
 
+.producto-form__fila-stock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  &:not(:last-child) {
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--glass-border);
+  }
+}
+
+/** Link discreto para revelar campos opcionales sin ocupar espacio hasta que se pide (código de barras/SKU, proveedor por fila). */
+.producto-form__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--accent-primary);
+  }
+
+  &--sub {
+    color: var(--text-tertiary);
+    padding-left: var(--space-1);
+  }
+
+  &--linea {
+    color: var(--text-tertiary);
+    padding-left: var(--space-6);
+  }
+}
+
+/** Fila de texto + botón "Crear" para dar de alta categoría/marca/línea sin salir del form. */
+.producto-form__crear-inline {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+
+  > ds-input {
+    flex: 1;
+  }
+}
+
+.producto-form__campo-con-inline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.producto-form__crear-inline--modal {
+  margin-top: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--glass-border);
+
+  > ds-select {
+    flex: 1 1 160px;
+  }
+}
+
+.producto-form__crear-inline--sub {
+  padding-left: var(--space-6);
+}
+
+/** Resumen compacto (chips o texto + botón "Elegir...") que reemplaza selects/checklists largos en el paso 2. */
+.producto-form__selector-resumen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+
+  @include mix.mobile-down {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.producto-form__selector-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.producto-form__selector-label {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.producto-form__marcas-grupos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.producto-form__marca-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  &:not(:last-child) {
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--glass-border);
+  }
+}
+
 .producto-form__stock-remove {
   display: inline-flex;
   align-items: center;
@@ -126,28 +243,21 @@
   margin-left: auto;
 }
 
-.producto-form__categorias {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--glass-bg);
-  max-height: 220px;
-  overflow-y: auto;
-
-  &--modal {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: var(--space-1) var(--space-4);
-    max-height: 60vh;
-  }
-}
-
 .producto-form__categorias-chips {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.producto-form__categorias {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-1) var(--space-4);
+
+  &--modal {
+    max-height: 50vh;
+    overflow-y: auto;
+  }
 }
 
 .producto-form__categoria-item {
@@ -157,13 +267,43 @@
   font-size: var(--fs-sm);
   color: var(--text-secondary);
   cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
 
-  &--sub {
-    padding-left: var(--space-5);
+  &:hover {
+    background: var(--glass-bg-hover);
   }
 
-  input[type='checkbox'] {
+  &--sub {
+    padding-left: var(--space-6);
+  }
+
+  input[type='checkbox'],
+  input[type='radio'] {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
     accent-color: var(--accent-primary);
+  }
+}
+
+/** Botón "+ Crear" proyectado en el header del modal (junto al título) — el mini-form de alta arranca oculto hasta que se lo pide. */
+.producto-form__crear-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: none;
+  background: var(--glass-bg);
+  color: var(--accent-primary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--glass-bg-hover);
   }
 }
 

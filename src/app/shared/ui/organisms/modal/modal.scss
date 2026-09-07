@@ -47,6 +47,13 @@
   }
 }
 
+.modal-panel__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
 .modal-panel__close {
   display: inline-flex;
   border: none;
