@@ -10,6 +10,7 @@ import { Combobox, ComboboxOption } from '../../shared/ui/molecules/combobox/com
 import { Stepper, PasoStepper } from '../../shared/ui/molecules/stepper/stepper';
 import { FacturacionElectronicaService } from '../../core/services/facturacion-electronica.service';
 import { NegociosService } from '../../core/services/negocios.service';
+import { SuscripcionService } from '../../core/services/suscripcion.service';
 import { ToastService } from '../../core/services/toast.service';
 import { EstadoHabilitacion, HabilitacionFacturacionElectronica } from '../../core/models/facturacion-electronica.model';
 import { MUNICIPIOS_COLOMBIA } from '../../core/data/municipios-colombia.data';
@@ -44,12 +45,16 @@ const PASO_POR_ESTADO: Record<EstadoHabilitacion, number> = {
 export class FacturacionElectronicaWizard {
   private readonly facturacionService = inject(FacturacionElectronicaService);
   private readonly negociosService = inject(NegociosService);
+  private readonly suscripcionService = inject(SuscripcionService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly cargando = signal(true);
   protected readonly habilitacion = signal<HabilitacionFacturacionElectronica | null>(null);
   protected readonly guardando = signal(false);
+  protected readonly enPrueba = signal(false);
+  protected readonly activandoSandbox = signal(false);
+  protected readonly volviendoAReal = signal(false);
   /** Override del paso derivado del estado — solo hace falta para la transición Paso 2 → 3 (ver nota de `PASO_POR_ESTADO`). */
   protected readonly pasoManual = signal<number | null>(null);
 
@@ -116,6 +121,10 @@ export class FacturacionElectronicaWizard {
         this.toast.error(err.error?.message ?? 'No se pudo cargar el estado de facturación electrónica');
       },
     });
+    this.suscripcionService.miEstado().subscribe({
+      next: (data) => this.enPrueba.set(data.estado === 'PRUEBA'),
+      error: () => {},
+    });
   }
 
   protected pasoActual(): number {
@@ -160,6 +169,58 @@ export class FacturacionElectronicaWizard {
           this.toast.error(err.error?.message ?? 'No se pudo guardar');
         },
       });
+  }
+
+  protected probarSandbox(): void {
+    if (this.formDatosNegocio.invalid) {
+      this.formDatosNegocio.markAllAsTouched();
+      return;
+    }
+    const raw = this.formDatosNegocio.getRawValue();
+    const municipio = MUNICIPIOS_COLOMBIA.find((m) => m.codigo === raw.municipioCodigo);
+    if (!municipio) {
+      this.toast.error('Elegí un municipio de la lista');
+      return;
+    }
+    this.activandoSandbox.set(true);
+    this.facturacionService
+      .activarModoSandboxDePrueba({
+        razonSocial: raw.razonSocial,
+        nit: raw.nit,
+        email: raw.email,
+        direccion: raw.direccion,
+        ciudadNombre: municipio.nombre,
+        ciudadCodigo: municipio.codigo,
+        departamentoCodigo: municipio.departamentoCodigo,
+        useAlegraCertificate: true,
+      })
+      .subscribe({
+        next: (data) => {
+          this.activandoSandbox.set(false);
+          this.habilitacion.set(data);
+          this.pasoManual.set(null);
+          if (data.estado === 'HABILITADO') this.toast.success('Modo sandbox activado — ya podés facturar de prueba');
+        },
+        error: (err) => {
+          this.activandoSandbox.set(false);
+          this.toast.error(err.error?.message ?? 'No se pudo activar el modo sandbox');
+        },
+      });
+  }
+
+  protected activarReal(): void {
+    this.volviendoAReal.set(true);
+    this.facturacionService.volverAModoReal().subscribe({
+      next: (data) => {
+        this.volviendoAReal.set(false);
+        this.habilitacion.set(data);
+        this.pasoManual.set(3);
+      },
+      error: (err) => {
+        this.volviendoAReal.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo salir del modo sandbox');
+      },
+    });
   }
 
   protected abrirPortalDian(): void {

@@ -31,6 +31,14 @@ export class FacturacionElectronicaService {
     return this.api.post<HabilitacionFacturacionElectronica>('/facturacion-electronica/habilitacion/testset', {});
   }
 
+  activarModoSandboxDePrueba(payload: DatosNegocioPayload) {
+    return this.api.post<HabilitacionFacturacionElectronica>('/facturacion-electronica/habilitacion/sandbox-de-prueba', payload);
+  }
+
+  volverAModoReal() {
+    return this.api.post<HabilitacionFacturacionElectronica>('/facturacion-electronica/habilitacion/volver-a-real', {});
+  }
+
   miDocumento(ventaId: string) {
     return this.api.get<DocumentoElectronico | null>(`/facturacion-electronica/documentos/${ventaId}`);
   }
