@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Badge } from '../../../shared/ui/atoms/badge/badge';
@@ -9,15 +10,22 @@ import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Thumbnail } from '../../../shared/ui/atoms/thumbnail/thumbnail';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { Select } from '../../../shared/ui/atoms/select/select';
 import { ProductoForm } from '../producto-form/producto-form';
 import { forkJoin } from 'rxjs';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { ProductosService } from '../../../core/services/productos.service';
 import { MarcasService } from '../../../core/services/marcas.service';
+import { SucursalesService } from '../../../core/services/sucursales.service';
+import { BodegasService } from '../../../core/services/bodegas.service';
+import { SucursalContextService } from '../../../core/services/sucursal-context.service';
 import { InventarioItem, InventarioService } from '../../../core/services/inventario.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
 import { Producto } from '../../../core/models/producto.model';
 import { Marca } from '../../../core/models/marca.model';
+import { Sucursal } from '../../../core/models/sucursal.model';
+import { Bodega } from '../../../core/models/bodega.model';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -31,10 +39,12 @@ import { environment } from '../../../../environments/environment';
     Table,
     Modal,
     SearchBar,
+    Select,
     EmptyState,
     Thumbnail,
     Paginator,
     ProductoForm,
+    FormsModule,
   ],
   templateUrl: './productos-list.html',
   styleUrl: './productos-list.scss',
@@ -43,6 +53,9 @@ import { environment } from '../../../../environments/environment';
 export class ProductosList {
   private readonly productosService = inject(ProductosService);
   private readonly marcasService = inject(MarcasService);
+  private readonly sucursalesService = inject(SucursalesService);
+  private readonly bodegasService = inject(BodegasService);
+  private readonly sucursalContext = inject(SucursalContextService);
   private readonly inventarioService = inject(InventarioService);
   private readonly toast = inject(ToastService);
   private readonly confirmService = inject(ConfirmService);
@@ -50,28 +63,68 @@ export class ProductosList {
   protected readonly loading = signal(true);
   protected readonly productos = signal<Producto[]>([]);
   protected readonly marcas = signal<Marca[]>([]);
+  protected readonly sucursales = signal<Sucursal[]>([]);
+  protected readonly bodegas = signal<Bodega[]>([]);
   protected readonly inventario = signal<InventarioItem[]>([]);
-  protected readonly stockPorProducto = signal<Map<string, number>>(new Map());
   protected readonly search = signal('');
   protected readonly showForm = signal(false);
   protected readonly editingProducto = signal<Producto | null>(null);
 
-  protected readonly filtrados = () => {
-    const term = this.search().toLowerCase().trim();
-    if (!term) return this.productos();
-    return this.productos().filter(
-      (p) => p.nombre.toLowerCase().includes(term) || p.codigoBarras?.includes(term),
-    );
-  };
+  /** '' = todas las sucursales (sin agrupar por bodega tampoco tiene sentido ahí, ver `bodegaFiltroId`). */
+  protected readonly sucursalFiltroId = signal('');
+  /** '' = todas las bodegas de la sucursal elegida (o de todo el negocio si tampoco hay sucursal elegida). */
+  protected readonly bodegaFiltroId = signal('');
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.filtrados().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly productosPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.filtrados().slice(inicio, inicio + this.pageSize);
+  /** Bodegas de la sucursal elegida en el filtro — vacío si "todas las sucursales". */
+  protected readonly bodegasDelFiltro = computed(() =>
+    this.bodegas().filter((b) => b.sucursalId === this.sucursalFiltroId()),
+  );
+
+/** Ids de bodega que el filtro actual habilita — una sola si hay bodega elegida, todas las de la sucursal si no. */
+  private readonly bodegaIdsDelAlcance = computed(() => {
+    const bodegaId = this.bodegaFiltroId();
+    if (bodegaId) return new Set([bodegaId]);
+    const sucursalId = this.sucursalFiltroId();
+    const bodegasDeLaSucursal = sucursalId ? this.bodegas().filter((b) => b.sucursalId === sucursalId) : this.bodegas();
+    return new Set(bodegasDeLaSucursal.map((b) => b.id));
   });
+
+  /** Stock de cada producto, recalculado según el filtro de sucursal/bodega — nunca suma bodegas fuera del alcance elegido. */
+  protected readonly stockPorProducto = computed(() => {
+    const alcance = this.bodegaIdsDelAlcance();
+    const stockMap = new Map<string, number>();
+    for (const item of this.inventario()) {
+      if (!alcance.has(item.bodegaId)) continue;
+      stockMap.set(item.productoId, (stockMap.get(item.productoId) ?? 0) + Number(item.cantidad));
+    }
+    return stockMap;
+  });
+
+  /**
+   * Solo los productos que tienen algún registro de inventario (aunque sea en 0) en el alcance
+   * elegido — "los productos de esta bodega/sucursal" son los que ya se le asignaron, no todo el
+   * catálogo del negocio. Un producto sin ningún registro en ninguna bodega (raro — el form de
+   * creación exige asignar al menos una) no aparece hasta que se le cargue stock en alguna.
+   */
+  protected readonly productosEnAlcance = computed(() => {
+    const alcance = this.bodegaIdsDelAlcance();
+    const idsConRegistro = new Set(
+      this.inventario()
+        .filter((i) => alcance.has(i.bodegaId))
+        .map((i) => i.productoId),
+    );
+    return this.productos().filter((p) => idsConRegistro.has(p.id));
+  });
+
+  protected readonly filtrados = computed(() => {
+    const term = this.search().toLowerCase().trim();
+    const base = this.productosEnAlcance();
+    if (!term) return base;
+    return base.filter((p) => p.nombre.toLowerCase().includes(term) || p.codigoBarras?.includes(term));
+  });
+
+  protected readonly pag = usePaginacion(this.filtrados);
+  protected readonly productosPaginados = this.pag.itemsPaginados;
 
   constructor() {
     this.load();
@@ -82,15 +135,18 @@ export class ProductosList {
     forkJoin({
       productos: this.productosService.findAll(),
       inventario: this.inventarioService.findAll(),
+      sucursales: this.sucursalesService.findAll(),
+      bodegas: this.bodegasService.findAll(),
     }).subscribe({
-      next: ({ productos, inventario }) => {
+      next: ({ productos, inventario, sucursales, bodegas }) => {
         this.productos.set(productos);
         this.inventario.set(inventario);
-        const stockMap = new Map<string, number>();
-        for (const item of inventario) {
-          stockMap.set(item.productoId, (stockMap.get(item.productoId) ?? 0) + Number(item.cantidad));
+        this.sucursales.set(sucursales);
+        this.bodegas.set(bodegas);
+        // Solo en la primera carga — recargar tras guardar/eliminar un producto no debe pisar el filtro que ya eligió el usuario.
+        if (!this.sucursalFiltroId()) {
+          this.inicializarFiltroSucursal(sucursales, bodegas);
         }
-        this.stockPorProducto.set(stockMap);
         this.loading.set(false);
       },
       error: () => {
@@ -99,6 +155,36 @@ export class ProductosList {
       },
     });
     this.marcasService.findAll().subscribe((data) => this.marcas.set(data));
+  }
+
+  /** Arranca en la sucursal activa (misma que usa el resto de la app) y, dentro de ella, en su bodega operativa si tiene una. */
+  private inicializarFiltroSucursal(sucursales: Sucursal[], bodegas: Bodega[]): void {
+    const activa = sucursales.find((s) => s.id === this.sucursalContext.sucursalId()) ?? sucursales[0];
+    if (!activa) return;
+    this.sucursalFiltroId.set(activa.id);
+    const operativa = bodegas.find((b) => b.id === activa.bodegaOperativaId && b.sucursalId === activa.id);
+    this.bodegaFiltroId.set(operativa?.id ?? '');
+  }
+
+  /** Cambiar de sucursal reinicia la bodega a la operativa de la nueva sucursal (o "todas" si no tiene) — los ids de la anterior no aplican. */
+  protected cambiarSucursalFiltro(sucursalId: string): void {
+    this.sucursalFiltroId.set(sucursalId);
+    const sucursal = this.sucursales().find((s) => s.id === sucursalId);
+    const operativa = this.bodegas().find((b) => b.id === sucursal?.bodegaOperativaId && b.sucursalId === sucursalId);
+    this.bodegaFiltroId.set(operativa?.id ?? '');
+  }
+
+  /**
+   * Máximo 2 categorías visibles por fila (+ badge "+N" si hay más) — con la lista completa, un
+   * producto con muchas categorías estiraba su fila a 2-3 líneas mientras las demás quedaban en
+   * una sola, descuadrando los bordes de toda la tabla.
+   */
+  protected categoriasVisibles(producto: Producto) {
+    return producto.categorias.slice(0, 2);
+  }
+
+  protected categoriasRestantes(producto: Producto): number {
+    return Math.max(0, producto.categorias.length - 2);
   }
 
   protected nombreMarca(id?: string): string {

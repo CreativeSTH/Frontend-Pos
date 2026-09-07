@@ -1,6 +1,24 @@
 .productos-toolbar {
-  max-width: 420px;
-  margin-bottom: var(--space-5);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+
+  ds-search-bar {
+    flex: 2 1 320px;
+  }
+}
+
+.productos-toolbar__filtro {
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.productos-resumen {
+  margin: 0 0 var(--space-4);
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
 }
 
 .productos-loading {
@@ -39,8 +57,26 @@
   }
 }
 
-.productos-categorias {
+/** Nombres largos envolvían a 2 líneas y estiraban esa fila sola — trunca con "…" (el título completo queda en el atributo `title`, visible al pasar el mouse). */
+.productos-nombre {
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/**
+ * `nowrap` a propósito — con `wrap`, un producto con 2+ badges pasaba a 2 líneas y esa fila
+ * quedaba más alta que sus vecinas, descuadrando los bordes de toda la tabla (ver `categoriasVisibles`
+ * en el componente, que además limita a 2 categorías + "+N" para no depender de que el texto entre).
+ * Van en un `<div>` interno, no en el propio `<td>` — ponerle `display: flex` al `<td>` directamente
+ * lo saca del modelo de tabla nativo y rompe la garantía del navegador de que todas las celdas de
+ * una fila comparten alto (esa fue la causa real de que algunas filas quedaran más altas que otras).
+ */
+.productos-categorias,
+.productos-codigos {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: var(--space-1);
 }
