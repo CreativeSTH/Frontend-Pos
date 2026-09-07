@@ -19,6 +19,8 @@ export interface HabilitacionFacturacionElectronica {
   resolucionNumero?: string;
   governmentTestSetId?: string;
   errorMensaje?: string;
+  ambiente: 'SANDBOX' | 'PRODUCCION';
+  esHabilitacionDePrueba: boolean;
 }
 
 export interface DatosNegocioPayload {
