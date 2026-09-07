@@ -15,6 +15,7 @@ import { Select } from '../../../shared/ui/atoms/select/select';
 import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import {
   InventarioItem,
   InventarioService,
@@ -99,16 +100,8 @@ export class InventarioList {
     });
   });
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() =>
-    Math.max(1, Math.ceil(this.inventarioFiltrado().length / this.pageSize)),
-  );
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly inventarioPaginado = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.inventarioFiltrado().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.inventarioFiltrado);
+  protected readonly inventarioPaginado = this.pag.itemsPaginados;
 
   protected readonly showAjuste = signal(false);
   protected readonly productoId = signal('');

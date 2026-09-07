@@ -48,7 +48,14 @@
       }
     </tbody>
   </ds-table>
-  <ds-paginator [page]="paginaActual()" [totalPages]="totalPaginas()" (pageChange)="pagina.set($event)" />
+  <ds-paginator
+    [page]="pag.paginaActual()"
+    [totalPages]="pag.totalPaginas()"
+    [pageSize]="pag.pageSize()"
+    [totalItems]="usuarios().length"
+    (pageChange)="pag.pagina.set($event)"
+    (pageSizeChange)="pag.cambiarPageSize($event)"
+  />
 }
 
 @if (showForm()) {

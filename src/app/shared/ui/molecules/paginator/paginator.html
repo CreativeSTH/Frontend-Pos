@@ -1,11 +1,34 @@
-@if (totalPages() > 1) {
+@if (totalPages() > 1 || pageSize() !== undefined) {
   <nav class="paginator">
-    <button type="button" class="paginator__btn" [disabled]="!puedeAnterior()" (click)="anterior()" aria-label="Página anterior">
-      <ds-icon name="chevron-right" [size]="16" class="paginator__icon--prev" />
-    </button>
-    <span class="paginator__label">Página {{ page() }} de {{ totalPages() }}</span>
-    <button type="button" class="paginator__btn" [disabled]="!puedeSiguiente()" (click)="siguiente()" aria-label="Página siguiente">
-      <ds-icon name="chevron-right" [size]="16" />
-    </button>
+    <div class="paginator__nav">
+      <button type="button" class="paginator__btn" [disabled]="!puedeAnterior()" (click)="anterior()" aria-label="Página anterior">
+        <ds-icon name="chevron-right" [size]="16" class="paginator__icon--prev" />
+      </button>
+      <span class="paginator__label">
+        @if (mostrarRango()) {
+          Mostrando {{ rangoInicio() }}–{{ rangoFin() }} de {{ totalItems() }}
+        } @else {
+          Página {{ page() }} de {{ totalPages() }}
+        }
+      </span>
+      <button type="button" class="paginator__btn" [disabled]="!puedeSiguiente()" (click)="siguiente()" aria-label="Página siguiente">
+        <ds-icon name="chevron-right" [size]="16" />
+      </button>
+    </div>
+
+    @if (pageSize() !== undefined) {
+      <div class="paginator__size">
+        <span>Mostrar</span>
+        <ds-select
+          [ngModel]="pageSize()!.toString()"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="onPageSizeChange($event)"
+        >
+          @for (opcion of pageSizeOptions(); track opcion) {
+            <option [value]="opcion.toString()">{{ opcion }}</option>
+          }
+        </ds-select>
+      </div>
+    }
   </nav>
 }

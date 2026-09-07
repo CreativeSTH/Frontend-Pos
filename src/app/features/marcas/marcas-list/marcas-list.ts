@@ -11,6 +11,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { MarcasService } from '../../../core/services/marcas.service';
 import { LineasService } from '../../../core/services/lineas.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -59,16 +60,8 @@ export class MarcasList {
     return resultado;
   };
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() =>
-    Math.max(1, Math.ceil(this.marcasOrdenadas().length / this.pageSize)),
-  );
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly marcasPaginadas = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.marcasOrdenadas().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.marcasOrdenadas);
+  protected readonly marcasPaginadas = this.pag.itemsPaginados;
 
   protected readonly showLineas = signal(false);
   protected readonly marcaLineas = signal<Marca | null>(null);

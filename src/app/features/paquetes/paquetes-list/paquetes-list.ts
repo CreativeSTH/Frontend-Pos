@@ -11,6 +11,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { Switch } from '../../../shared/ui/atoms/switch/switch';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { PaquetesService } from '../../../core/services/paquetes.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
@@ -43,14 +44,8 @@ export class PaquetesList {
   protected readonly editingId = signal<string | null>(null);
   protected readonly saving = signal(false);
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.paquetes().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly paquetesPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.paquetes().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.paquetes);
+  protected readonly paquetesPaginados = this.pag.itemsPaginados;
 
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],

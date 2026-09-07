@@ -11,6 +11,7 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { RolesService } from '../../../core/services/roles.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
@@ -97,14 +98,8 @@ export class RolesList {
   protected readonly seleccionados = signal<Set<string>>(new Set());
   protected readonly savingPermisos = signal(false);
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.roles().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly rolesPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.roles().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.roles);
+  protected readonly rolesPaginados = this.pag.itemsPaginados;
 
   protected readonly filasMatriz = computed<FilaMatriz[]>(() => {
     const porModulo = new Map<ModuloPermiso, Permiso[]>();

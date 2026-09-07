@@ -12,6 +12,7 @@ import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { DomiciliosService } from '../../../core/services/domicilios.service';
 import { RealtimeService } from '../../../core/services/realtime.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -61,14 +62,8 @@ export class DomiciliosList {
     );
   });
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.itemsFiltrados().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly itemsPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.itemsFiltrados().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.itemsFiltrados);
+  protected readonly itemsPaginados = this.pag.itemsPaginados;
 
   // --- Marcar en camino ---
   protected readonly showEnCaminoModal = signal(false);

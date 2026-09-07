@@ -13,6 +13,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { RolesService } from '../../../core/services/roles.service';
@@ -71,14 +72,8 @@ export class UsuariosList {
     sucursalId: [''],
   });
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.usuarios().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly usuariosPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.usuarios().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.usuarios);
+  protected readonly usuariosPaginados = this.pag.itemsPaginados;
 
   constructor() {
     this.load();

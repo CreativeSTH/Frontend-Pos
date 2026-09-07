@@ -14,6 +14,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { StatCard } from '../../../shared/ui/molecules/stat-card/stat-card';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { AlertasService } from '../../../core/services/alertas.service';
 import { ListaPedidosService } from '../../../core/services/lista-pedidos.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -150,14 +151,8 @@ export class AlertasList {
     });
   });
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.alertasFiltradas().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly alertasPaginadas = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.alertasFiltradas().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.alertasFiltradas);
+  protected readonly alertasPaginadas = this.pag.itemsPaginados;
 
   constructor() {
     this.load();

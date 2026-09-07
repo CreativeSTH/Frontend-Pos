@@ -10,6 +10,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { DocumentUpload } from '../../../shared/ui/molecules/document-upload/document-upload';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { ProveedoresService } from '../../../core/services/proveedores.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
@@ -39,14 +40,8 @@ export class ProveedoresList {
 
   protected readonly documentos: ProveedorDocumentos = {};
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.proveedores().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly proveedoresPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.proveedores().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.proveedores);
+  protected readonly proveedoresPaginados = this.pag.itemsPaginados;
 
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],

@@ -67,9 +67,12 @@
             </tbody>
           </ds-table>
           <ds-paginator
-            [page]="paginaActualMovimientos()"
-            [totalPages]="totalPaginasMovimientos()"
-            (pageChange)="paginaMovimientos.set($event)"
+            [page]="pagMovimientos.paginaActual()"
+            [totalPages]="pagMovimientos.totalPaginas()"
+            [pageSize]="pagMovimientos.pageSize()"
+            [totalItems]="filasCaja().length"
+            (pageChange)="pagMovimientos.pagina.set($event)"
+            (pageSizeChange)="pagMovimientos.cambiarPageSize($event)"
           />
         }
       }
@@ -148,9 +151,12 @@
         </tbody>
       </ds-table>
       <ds-paginator
-        [page]="paginaActualHistorial()"
-        [totalPages]="totalPaginasHistorial()"
-        (pageChange)="paginaHistorial.set($event)"
+        [page]="pagHistorial.paginaActual()"
+        [totalPages]="pagHistorial.totalPaginas()"
+        [pageSize]="pagHistorial.pageSize()"
+        [totalItems]="historialFiltrado().length"
+        (pageChange)="pagHistorial.pagina.set($event)"
+        (pageSizeChange)="pagHistorial.cambiarPageSize($event)"
       />
       }
     }

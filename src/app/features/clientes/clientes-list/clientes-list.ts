@@ -12,6 +12,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { SearchBar } from '../../../shared/ui/molecules/search-bar/search-bar';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { ClientesService } from '../../../core/services/clientes.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Cliente } from '../../../core/models/cliente.model';
@@ -67,14 +68,8 @@ export class ClientesList {
     );
   };
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.filtrados().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly clientesPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.filtrados().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.filtrados);
+  protected readonly clientesPaginados = this.pag.itemsPaginados;
 
   constructor() {
     this.load();

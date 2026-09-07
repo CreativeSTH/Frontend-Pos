@@ -14,6 +14,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { CobrosService } from '../../../core/services/cobros.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { MetodosPagoService } from '../../../core/services/metodos-pago.service';
@@ -49,14 +50,8 @@ export class CobrosList {
   protected readonly guardando = signal(false);
   protected readonly metodosPago = signal<MetodoPago[]>([]);
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.items().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly itemsPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.items().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.items);
+  protected readonly itemsPaginados = this.pag.itemsPaginados;
 
   constructor() {
     this.load();
@@ -65,7 +60,7 @@ export class CobrosList {
 
   protected cambiarFiltro(filtro: Filtro): void {
     this.filtro.set(filtro);
-    this.pagina.set(1);
+    this.pag.pagina.set(1);
     this.load();
   }
 

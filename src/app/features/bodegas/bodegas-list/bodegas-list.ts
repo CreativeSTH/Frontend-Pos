@@ -10,6 +10,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { BodegasService } from '../../../core/services/bodegas.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { InventarioService, InventarioItem } from '../../../core/services/inventario.service';
@@ -51,14 +52,8 @@ export class BodegasList {
     sucursalId: ['', Validators.required],
   });
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.bodegas().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly bodegasPaginadas = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.bodegas().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.bodegas);
+  protected readonly bodegasPaginadas = this.pag.itemsPaginados;
 
   constructor() {
     this.load();
@@ -150,7 +145,7 @@ export class BodegasList {
         this.toast.success('Bodega eliminada');
         this.load();
       },
-      error: () => this.toast.error('No se pudo eliminar la bodega'),
+      error: (err) => this.toast.error(err.error?.message ?? 'No se pudo eliminar la bodega'),
     });
   }
 }

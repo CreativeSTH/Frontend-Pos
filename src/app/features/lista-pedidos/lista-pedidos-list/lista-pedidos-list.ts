@@ -11,6 +11,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { ListaPedidosService } from '../../../core/services/lista-pedidos.service';
 import { ProveedoresService } from '../../../core/services/proveedores.service';
 import { BodegasService } from '../../../core/services/bodegas.service';
@@ -60,14 +61,8 @@ export class ListaPedidosList {
     this.items().filter((i) => i.estado === this.tabActual()),
   );
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.itemsFiltrados().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly itemsPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.itemsFiltrados().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.itemsFiltrados);
+  protected readonly itemsPaginados = this.pag.itemsPaginados;
 
   // --- Realizar pedido ---
   protected readonly showPedidoModal = signal(false);

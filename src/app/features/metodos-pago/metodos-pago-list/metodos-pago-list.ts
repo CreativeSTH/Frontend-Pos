@@ -10,6 +10,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { Switch } from '../../../shared/ui/atoms/switch/switch';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { MetodosPagoService } from '../../../core/services/metodos-pago.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
@@ -40,14 +41,8 @@ export class MetodosPagoList {
     esEfectivo: [false],
   });
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.metodos().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly metodosPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.metodos().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.metodos);
+  protected readonly metodosPaginados = this.pag.itemsPaginados;
 
   constructor() {
     this.load();

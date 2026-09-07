@@ -10,6 +10,7 @@ import { Input } from '../../../shared/ui/atoms/input/input';
 import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { CategoriasService } from '../../../core/services/categorias.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
@@ -54,16 +55,8 @@ export class CategoriasList {
     return resultado;
   };
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() =>
-    Math.max(1, Math.ceil(this.categoriasOrdenadas().length / this.pageSize)),
-  );
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly categoriasPaginadas = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.categoriasOrdenadas().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.categoriasOrdenadas);
+  protected readonly categoriasPaginadas = this.pag.itemsPaginados;
 
   constructor() {
     this.load();

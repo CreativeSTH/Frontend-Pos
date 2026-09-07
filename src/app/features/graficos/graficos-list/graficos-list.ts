@@ -6,6 +6,7 @@ import { Icon } from '../../../shared/ui/atoms/icon/icon';
 import { Table } from '../../../shared/ui/organisms/data-table/table';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
+import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { GraficosService } from '../../../core/services/graficos.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
@@ -46,14 +47,8 @@ export class GraficosList {
   protected readonly loading = signal(true);
   protected readonly graficos = signal<GraficoConfigurado[]>([]);
 
-  private readonly pageSize = 20;
-  protected readonly pagina = signal(1);
-  protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.graficos().length / this.pageSize)));
-  protected readonly paginaActual = computed(() => Math.min(this.pagina(), this.totalPaginas()));
-  protected readonly graficosPaginados = computed(() => {
-    const inicio = (this.paginaActual() - 1) * this.pageSize;
-    return this.graficos().slice(inicio, inicio + this.pageSize);
-  });
+  protected readonly pag = usePaginacion(this.graficos);
+  protected readonly graficosPaginados = this.pag.itemsPaginados;
 
   constructor() {
     this.load();
