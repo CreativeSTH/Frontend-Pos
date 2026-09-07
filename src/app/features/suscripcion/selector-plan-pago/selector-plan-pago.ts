@@ -5,6 +5,7 @@ import { SuscripcionService } from '../../../core/services/suscripcion.service';
 import { PaquetesService } from '../../../core/services/paquetes.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Paquete } from '../../../core/models/paquete.model';
+import { Suscripcion } from '../../../core/models/suscripcion.model';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Switch } from '../../../shared/ui/atoms/switch/switch';
 import { TarjetaForm } from '../tarjeta-form/tarjeta-form';
@@ -31,7 +32,7 @@ export class SelectorPlanPago {
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly paqueteActualId = input.required<string>();
+  readonly suscripcionActual = input.required<Suscripcion>();
   readonly pagado = output<void>();
 
   protected readonly paquetes = signal<Paquete[]>([]);
@@ -39,6 +40,37 @@ export class SelectorPlanPago {
   protected readonly paqueteSeleccionado = computed(() =>
     this.paquetes().find((p) => p.id === this.paqueteSeleccionadoId()),
   );
+
+  protected readonly ciclo = signal<'MENSUAL' | 'ANUAL'>('MENSUAL');
+
+  /** Debe coincidir con DESCUENTO_ANUAL_PCT/DIAS_EARLY_BIRD del backend (suscripciones.service.ts) — esto es solo aritmética de exhibición, el backend recalcula y cobra el monto real. */
+  private readonly DESCUENTO_ANUAL_PCT = 0.17;
+  private readonly DIAS_EARLY_BIRD = 15;
+
+  protected readonly aplicaEarlyBird = computed(() => {
+    const s = this.suscripcionActual();
+    if (s.estado !== 'PRUEBA') return false;
+    const limite = new Date(s.fechaInicio).getTime() + this.DIAS_EARLY_BIRD * 24 * 60 * 60 * 1000;
+    return limite > Date.now();
+  });
+
+  protected precioMostrado(paquete: Paquete): number {
+    const base = this.ciclo() === 'ANUAL' ? Number(paquete.precioMensual) * (1 - this.DESCUENTO_ANUAL_PCT) : Number(paquete.precioMensual);
+    return this.aplicaEarlyBird() ? base * 0.75 : base;
+  }
+
+  protected precioDeListaTachado(paquete: Paquete): number {
+    return this.ciclo() === 'ANUAL' ? Number(paquete.precioMensual) * (1 - this.DESCUENTO_ANUAL_PCT) : Number(paquete.precioMensual);
+  }
+
+  protected precioTotalAPagar(paquete: Paquete): number {
+    const meses = this.ciclo() === 'ANUAL' ? 12 : 1;
+    return this.precioMostrado(paquete) * meses;
+  }
+
+  protected elegirCiclo(ciclo: 'MENSUAL' | 'ANUAL'): void {
+    this.ciclo.set(ciclo);
+  }
 
   protected readonly pagando = signal(false);
   protected readonly qrImagen = signal<string | null>(null);
@@ -57,7 +89,7 @@ export class SelectorPlanPago {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data) => {
         this.paquetes.set(data.filter((p) => !p.esPaqueteFree));
-        this.paqueteSeleccionadoId.set(this.paqueteActualId());
+        this.paqueteSeleccionadoId.set(this.suscripcionActual().paqueteId);
       });
 
     this.destroyRef.onDestroy(() => this.detenerPolling());
@@ -83,7 +115,7 @@ export class SelectorPlanPago {
     this.detenerPolling(); // por si quedó un polling anterior corriendo (no debería, el botón queda oculto mientras hay QR, pero blinda contra ese caso)
     this.pagando.set(true);
     this.qrImagen.set(null);
-    this.suscripcionService.reactivar({ metodo: 'QR', datosMetodo: {}, paqueteId: this.paqueteSeleccionadoId() || undefined }).subscribe({
+    this.suscripcionService.reactivar({ metodo: 'QR', datosMetodo: {}, paqueteId: this.paqueteSeleccionadoId() || undefined, cicloFacturacion: this.ciclo() }).subscribe({
       next: (resultado) => {
         const qr = resultado.extra?.['qr_image'];
         if (typeof qr === 'string' && qr.length > 0) {
@@ -123,6 +155,7 @@ export class SelectorPlanPago {
         guardarTarjeta: this.guardarTarjeta(),
         ultimosCuatroDigitos: datos.ultimosCuatroDigitos,
         paqueteId: this.paqueteSeleccionadoId() || undefined,
+        cicloFacturacion: this.ciclo(),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

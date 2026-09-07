@@ -10,6 +10,9 @@
         } @else if (s.fechaFin) {
           <div class="mi-plan__fecha">Próximo cobro: {{ s.fechaFin | date: 'longDate' }}</div>
         }
+        @if (s.estado === 'ACTIVA' || s.estado === 'CANCELADA') {
+          <div class="mi-plan__ciclo">Ciclo: {{ s.cicloFacturacion === 'ANUAL' ? 'Anual' : 'Mensual' }}</div>
+        }
       </div>
       @if (s.estado === 'CANCELADA') {
         <ds-button variant="primary" [loading]="procesando()" (click)="revertir()">Reactivar mi plan</ds-button>
@@ -22,7 +25,7 @@
       @if (!mostrandoPago()) {
         <ds-button variant="ghost" (click)="mostrandoPago.set(true)">Pagar ahora y elegir plan</ds-button>
       } @else {
-        <app-selector-plan-pago [paqueteActualId]="s.paqueteId" (pagado)="onPagado()" />
+        <app-selector-plan-pago [suscripcionActual]="s" (pagado)="onPagado()" />
       }
     }
 

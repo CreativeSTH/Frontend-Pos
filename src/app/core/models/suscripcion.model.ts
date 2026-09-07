@@ -1,4 +1,5 @@
 export type EstadoSuscripcion = 'PRUEBA' | 'ACTIVA' | 'VENCIDA' | 'CANCELADA';
+export type CicloFacturacion = 'MENSUAL' | 'ANUAL';
 
 export interface Suscripcion {
   id: string;
@@ -11,6 +12,8 @@ export interface Suscripcion {
   enRiesgo: boolean;
   /** Misma regla que usa el backend para bloquear el resto de la API — no asumir que solo VENCIDA está bloqueada. */
   bloqueado: boolean;
+  /** Se fija al pagar/reactivar — nunca cambia a mitad de un ciclo ACTIVA vigente. */
+  cicloFacturacion: CicloFacturacion;
 }
 
 export interface ReactivarSuscripcionPayload {
@@ -19,6 +22,7 @@ export interface ReactivarSuscripcionPayload {
   datosMetodo: Record<string, unknown>;
   guardarTarjeta?: boolean;
   ultimosCuatroDigitos?: string;
+  cicloFacturacion?: CicloFacturacion;
 }
 
 export interface RegistroPublicoPayload {

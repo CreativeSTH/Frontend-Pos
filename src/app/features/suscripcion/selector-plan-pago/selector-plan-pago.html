@@ -1,5 +1,14 @@
 <div class="selector-plan-pago">
   @if (!qrImagen()) {
+    <div class="selector-plan-pago__ciclo-toggle">
+      <ds-button [variant]="ciclo() === 'MENSUAL' ? 'primary' : 'glass'" (click)="elegirCiclo('MENSUAL')">Mensual</ds-button>
+      <ds-button [variant]="ciclo() === 'ANUAL' ? 'primary' : 'glass'" (click)="elegirCiclo('ANUAL')">Anual <span class="selector-plan-pago__ciclo-tag">2 meses gratis</span></ds-button>
+    </div>
+
+    @if (aplicaEarlyBird()) {
+      <div class="selector-plan-pago__early-bird">🎉 Pagás antes de que venza tu prueba: <strong>25% OFF</strong> el primer ciclo</div>
+    }
+
     <div class="selector-plan-pago__planes">
       @for (paquete of paquetes(); track paquete.id) {
         <button
@@ -8,11 +17,17 @@
           [class.selector-plan-pago__plan--activo]="paqueteSeleccionadoId() === paquete.id"
           (click)="elegirPaquete(paquete.id)"
         >
-          @if (paquete.id === paqueteActualId()) {
+          @if (paquete.id === suscripcionActual().paqueteId) {
             <span class="selector-plan-pago__plan-actual">Tu plan actual</span>
           }
           <span class="selector-plan-pago__plan-nombre">{{ paquete.nombre }}</span>
-          <span class="selector-plan-pago__plan-precio">{{ formatMoney(paquete.precioMensual) }}/mes</span>
+          @if (aplicaEarlyBird()) {
+            <span class="selector-plan-pago__plan-precio-lista">{{ formatMoney(precioDeListaTachado(paquete)) }}/mes</span>
+          }
+          <span class="selector-plan-pago__plan-precio">{{ formatMoney(precioMostrado(paquete)) }}/mes</span>
+          @if (ciclo() === 'ANUAL') {
+            <span class="selector-plan-pago__plan-nota">facturado {{ formatMoney(precioTotalAPagar(paquete)) }} una vez al año</span>
+          }
         </button>
       }
     </div>
@@ -25,7 +40,9 @@
       <p class="selector-plan-pago__espera">Esperando la confirmación del pago...</p>
     }
   } @else {
-    <ds-button variant="primary" [loading]="pagando()" (click)="reactivarConQr()">Pagar y reactivar (QR)</ds-button>
+    <ds-button variant="primary" [loading]="pagando()" (click)="reactivarConQr()">
+      Pagar {{ paqueteSeleccionado() ? formatMoney(precioTotalAPagar(paqueteSeleccionado()!)) : '' }} · {{ ciclo() === 'ANUAL' ? '12 meses' : '1 mes' }} (QR)
+    </ds-button>
 
     <p class="selector-plan-pago__o">o</p>
 
@@ -34,7 +51,7 @@
     } @else {
       <app-tarjeta-form (tokenizada)="pagarConTarjeta($event)" />
       <ds-switch
-        label="Guardar esta tarjeta y cobrarla automáticamente cada mes hasta que la quite desde Configuración"
+        [label]="'Guardar esta tarjeta y cobrarla automáticamente cada ' + (ciclo() === 'ANUAL' ? 'año' : 'mes') + ' hasta que la quite desde Configuración'"
         [ngModel]="guardarTarjeta()"
         (ngModelChange)="guardarTarjeta.set($event)"
       />
