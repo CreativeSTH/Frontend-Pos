@@ -12,6 +12,8 @@ export interface Suscripcion {
   enRiesgo: boolean;
   /** Misma regla que usa el backend para bloquear el resto de la API — no asumir que solo VENCIDA está bloqueada. */
   bloqueado: boolean;
+  /** true solo durante los 3 días de gracia tras vencer — el resto del tiempo (incluido bloqueado) es false. */
+  enGracia: boolean;
   /** Se fija al pagar/reactivar — nunca cambia a mitad de un ciclo ACTIVA vigente. */
   cicloFacturacion: CicloFacturacion;
 }
