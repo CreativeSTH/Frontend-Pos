@@ -1,0 +1,126 @@
+.factura-detalle__cargando {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  color: var(--text-secondary);
+}
+
+.factura-detalle__cabecera {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.factura-detalle__fecha {
+  margin-left: auto;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.factura-detalle__dian {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: rgba(var(--accent-warning-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-warning-rgb), 0.35);
+  font-size: var(--fs-sm);
+
+  p {
+    margin: var(--space-1) 0 0;
+  }
+
+  ul {
+    margin: var(--space-2) 0 0;
+    padding-left: var(--space-4);
+    color: var(--text-secondary);
+  }
+
+  &--rechazo {
+    background: rgba(var(--accent-danger-rgb), 0.08);
+    border-color: rgba(var(--accent-danger-rgb), 0.35);
+  }
+}
+
+.factura-detalle__cufe {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+// Fondo blanco a propósito: un QR sobre el tema oscuro no lo leen muchos lectores de celular.
+.factura-detalle__qr {
+  flex-shrink: 0;
+  width: 128px;
+  height: 128px;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.factura-detalle__cufe-texto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+
+  code {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    word-break: break-all;
+    color: var(--text-primary);
+  }
+}
+
+.factura-detalle__etiqueta {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.factura-detalle__vacio {
+  color: var(--text-secondary);
+}
+
+.factura-detalle__cliente {
+  margin: 0 0 var(--space-2);
+  font-weight: var(--fw-semibold);
+}
+
+.factura-detalle__totales,
+.factura-detalle__pagos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+.factura-detalle__total {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+}
+
+// Mismo criterio que el QR: el PDF es papel blanco, no se tiñe con el tema.
+.factura-detalle__visor {
+  width: 100%;
+  height: 70vh;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+
+@media (max-width: 600px) {
+  .factura-detalle__cufe {
+    flex-direction: column;
+  }
+}

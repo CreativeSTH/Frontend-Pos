@@ -2,8 +2,11 @@ import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
 import {
   DatosNegocioPayload,
+  DetalleFactura,
   DocumentoElectronico,
+  FiltrosFacturas,
   HabilitacionFacturacionElectronica,
+  ListadoFacturas,
   ResolucionPayload,
 } from '../models/facturacion-electronica.model';
 
@@ -47,7 +50,24 @@ export class FacturacionElectronicaService {
     return this.api.post<DocumentoElectronico>(`/facturacion-electronica/documentos/${ventaId}/reintentar`, {});
   }
 
-  obtenerLinksDescarga(ventaId: string) {
-    return this.api.get<{ urlXml?: string; urlPdf?: string }>(`/facturacion-electronica/documentos/${ventaId}/descargar`);
+  listarFacturas(filtros: FiltrosFacturas) {
+    return this.api.get<ListadoFacturas>('/facturacion-electronica/facturas', { ...filtros });
+  }
+
+  obtenerFactura(id: string) {
+    return this.api.get<DetalleFactura>(`/facturacion-electronica/facturas/${id}`);
+  }
+
+  reintentarFactura(id: string) {
+    return this.api.post<DocumentoElectronico>(`/facturacion-electronica/facturas/${id}/reintentar`, {});
+  }
+
+  /** PDF generado por AURA (Alegra no genera PDF) — como Blob, para mostrarlo en un visor con el JWT. */
+  descargarPdf(id: string) {
+    return this.api.getBlob(`/facturacion-electronica/facturas/${id}/pdf`);
+  }
+
+  descargarXml(id: string) {
+    return this.api.getBlob(`/facturacion-electronica/facturas/${id}/xml`);
   }
 }

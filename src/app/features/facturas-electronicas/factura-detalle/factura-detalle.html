@@ -1,0 +1,129 @@
+<ds-modal [title]="documento()?.numeroCompleto ? 'Factura ' + documento()!.numeroCompleto : 'Factura electrónica'" size="lg" (close)="close.emit()">
+  @if (cargando()) {
+    <div class="factura-detalle__cargando"><ds-icon name="file-text" [size]="24" /><span>Cargando factura...</span></div>
+  } @else if (detalle(); as det) {
+    @let d = det.documento;
+    <div class="factura-detalle__cabecera">
+      <ds-badge [tone]="tono(d.estado)">{{ etiqueta(d.estado) }}</ds-badge>
+      @if (d.ambiente === 'SANDBOX') {
+        <ds-badge tone="neutral">Prueba</ds-badge>
+      }
+      <span class="factura-detalle__fecha">{{ (d.fechaEmision ?? d.createdAt) | date: 'medium' }}</span>
+    </div>
+
+    @if (d.estado === 'RECHAZADO' || d.estado === 'ACEPTADO_CON_OBSERVACIONES') {
+      <div class="factura-detalle__dian" [class.factura-detalle__dian--rechazo]="d.estado === 'RECHAZADO'">
+        <strong>{{ d.estado === 'RECHAZADO' ? 'La DIAN rechazó esta factura' : 'La DIAN la aceptó con observaciones' }}</strong>
+        @if (d.errorMensaje) {
+          <p>{{ d.errorMensaje }}</p>
+        }
+        @if (d.erroresDetalle?.length) {
+          <ul>
+            @for (error of d.erroresDetalle; track $index) {
+              <li>{{ error }}</li>
+            }
+          </ul>
+        }
+      </div>
+    }
+
+    <div class="factura-detalle__cufe">
+      @if (det.qrDataUrl) {
+        <img class="factura-detalle__qr" [src]="det.qrDataUrl" alt="Código QR de la factura" />
+      }
+      <div class="factura-detalle__cufe-texto">
+        <span class="factura-detalle__etiqueta">CUFE</span>
+        @if (d.cufe) {
+          <code>{{ d.cufe }}</code>
+          <div>
+            <ds-button variant="glass" size="sm" icon="clipboard" (click)="copiarCufe()">Copiar CUFE</ds-button>
+          </div>
+        } @else {
+          <span class="factura-detalle__vacio">Esperando respuesta de la DIAN</span>
+        }
+      </div>
+    </div>
+
+    @if (det.venta; as v) {
+      <p class="factura-detalle__cliente">
+        {{ v.cliente?.nombre ?? v.nombreCliente }}
+        @if (v.cliente?.documentoIdentidad) {
+          <span class="factura-detalle__vacio"> — {{ v.cliente?.documentoIdentidad }}</span>
+        }
+      </p>
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cant.</th>
+            <th>Precio</th>
+            <th>Base</th>
+            <th>IVA</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of v.items; track item.id) {
+            <tr>
+              <td>{{ item.nombreProducto }}</td>
+              <td>{{ numero(item.cantidad) }}</td>
+              <td>{{ formatMoney(item.precioUnitario) }}</td>
+              <td>{{ formatMoney(item.baseImponible) }}</td>
+              <td>{{ formatMoney(item.impuesto) }}</td>
+              <td>{{ formatMoney(numero(item.baseImponible) + numero(item.impuesto)) }}</td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+      <div class="factura-detalle__totales">
+        <div><span>Subtotal</span><span>{{ formatMoney(v.subtotal) }}</span></div>
+        @if (numero(v.descuentoTotal) > 0) {
+          <div><span>Descuentos</span><span>-{{ formatMoney(v.descuentoTotal) }}</span></div>
+        }
+        <div><span>IVA</span><span>{{ formatMoney(v.impuestoTotal) }}</span></div>
+        <div class="factura-detalle__total"><span>Total</span><span>{{ formatMoney(v.total) }}</span></div>
+      </div>
+      <div class="factura-detalle__pagos">
+        <span class="factura-detalle__etiqueta">Pagos ({{ v.tipoVenta === 'CREDITO' ? 'Crédito' : 'Contado' }})</span>
+        @for (pago of v.pagos; track pago.id) {
+          <div><span>{{ pago.metodoPago }}</span><span>{{ formatMoney(pago.monto) }}</span></div>
+        }
+      </div>
+    }
+  }
+
+  <div modal-footer>
+    <ds-button variant="ghost" (click)="close.emit()">Cerrar</ds-button>
+    @if (documento()) {
+      <ds-button variant="ghost" icon="receipt" (click)="verVenta()">Ver venta</ds-button>
+      @if (puedeReintentar()) {
+        <ds-button variant="glass" icon="history" [loading]="reintentando()" (click)="reintentar()">Reintentar</ds-button>
+      }
+      <ds-button
+        variant="glass"
+        icon="file-text"
+        [loading]="descargandoXml()"
+        [disabled]="!documento()?.alegraDocumentId"
+        (click)="descargarXml()"
+      >XML</ds-button>
+      <ds-button
+        variant="primary"
+        icon="eye"
+        [loading]="cargandoPdf()"
+        [disabled]="!puedeVerPdf()"
+        [attr.title]="puedeVerPdf() ? null : 'Esperando respuesta de la DIAN'"
+        (click)="verPdf()"
+      >Ver PDF</ds-button>
+    }
+  </div>
+</ds-modal>
+
+@if (pdfUrl(); as url) {
+  <ds-modal [title]="'PDF ' + (documento()?.numeroCompleto ?? '')" size="lg" (close)="cerrarPdf()">
+    <iframe class="factura-detalle__visor" [src]="url" title="PDF de la factura"></iframe>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="cerrarPdf()">Cerrar</ds-button>
+      <ds-button variant="primary" (click)="descargarPdfActual()">Descargar</ds-button>
+    </div>
+  </ds-modal>
+}

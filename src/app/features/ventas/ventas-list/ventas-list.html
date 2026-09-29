@@ -31,6 +31,9 @@
           <th>Cliente</th>
           <th>Tipo</th>
           <th>Estado</th>
+          @if (puedeVerFacturas()) {
+            <th>DIAN</th>
+          }
           <th>Total</th>
           <th></th>
         </tr>
@@ -44,6 +47,15 @@
             <td>
               <ds-badge [tone]="tonoEstado(venta.estado)">{{ etiquetasEstado[venta.estado] ?? venta.estado }}</ds-badge>
             </td>
+            @if (puedeVerFacturas()) {
+              <td>
+                @if (venta.documentoElectronico; as doc) {
+                  <ds-badge [tone]="tonoDian(doc.estado)">{{ etiquetaDian(doc.estado) }}</ds-badge>
+                } @else {
+                  <span class="ventas-dian-vacio">—</span>
+                }
+              </td>
+            }
             <td>{{ formatMoney(venta.total) }}</td>
             <td class="ventas-actions">
               <ds-button variant="glass" size="sm" (click)="verDetalle(venta)">Ver</ds-button>
@@ -130,6 +142,9 @@
         @if (venta.estado !== 'CANCELADA') {
           <ds-button variant="ghost" (click)="abrirCancelar(venta)">Cancelar venta</ds-button>
         }
+        @if (puedeVerFacturas() && venta.documentoElectronico) {
+          <ds-button variant="glass" icon="file-text" (click)="verFactura(venta)">Ver factura electrónica</ds-button>
+        }
         <ds-button variant="primary" icon="printer" (click)="reimprimir(venta)">
           Imprimir
         </ds-button>
@@ -166,4 +181,8 @@
       <ds-button variant="primary" [loading]="cancelando()" (click)="confirmarCancelar()">Confirmar cancelación</ds-button>
     </div>
   </ds-modal>
+}
+
+@if (facturaId(); as id) {
+  <app-factura-detalle [documentoId]="id" (close)="facturaId.set(null)" />
 }

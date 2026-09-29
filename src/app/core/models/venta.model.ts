@@ -1,4 +1,5 @@
 import { DomicilioVentaPayload } from './domicilio.model';
+import type { EstadoDocumentoElectronico } from './facturacion-electronica.model';
 
 export interface Venta {
   id: string;
@@ -26,6 +27,8 @@ export interface Venta {
   items: VentaItem[];
   pagos: VentaPago[];
   createdAt: string;
+  /** Factura electrónica de la venta (o null si no generó una) — la adjunta `GET /ventas`. */
+  documentoElectronico?: { id: string; estado: EstadoDocumentoElectronico } | null;
 }
 
 export interface VentaItem {

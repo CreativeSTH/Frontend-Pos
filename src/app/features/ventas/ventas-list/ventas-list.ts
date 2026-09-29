@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Badge, BadgeTone } from '../../../shared/ui/atoms/badge/badge';
@@ -20,6 +22,8 @@ import { PrintAgentService } from '../../../core/services/print-agent.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Venta } from '../../../core/models/venta.model';
+import { FacturaDetalle } from '../../facturas-electronicas/factura-detalle/factura-detalle';
+import { etiquetaEstadoDocumento, tonoEstadoDocumento } from '../../facturas-electronicas/estado-documento.util';
 
 // `Partial<Record<...>>` a propósito: `Venta.estado` es `string` (no un union acotado), así que
 // un valor que no esté en este mapa es una posibilidad real, no solo una formalidad de tipos —
@@ -59,6 +63,7 @@ const TONOS_ESTADO: Partial<Record<string, BadgeTone>> = {
     SearchBar,
     EmptyState,
     Paginator,
+    FacturaDetalle,
     FormsModule,
     DatePipe,
   ],
@@ -71,6 +76,7 @@ export class VentasList {
   private readonly printAgent = inject(PrintAgentService);
   protected readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly loading = signal(true);
   protected readonly ventas = signal<Venta[]>([]);
@@ -78,6 +84,10 @@ export class VentasList {
   protected readonly filtroTipo = signal<'' | 'CONTADO' | 'CREDITO'>('');
   protected readonly filtroEstado = signal('');
   protected readonly etiquetasEstado = ETIQUETAS_ESTADO;
+  protected readonly etiquetaDian = etiquetaEstadoDocumento;
+  protected readonly tonoDian = tonoEstadoDocumento;
+  protected readonly facturaId = signal<string | null>(null);
+  protected readonly puedeVerFacturas = computed(() => this.auth.tienePermiso('FACTURACION_ELECTRONICA_DIAN', 'VER'));
 
   protected readonly showDetalle = signal(false);
   protected readonly ventaDetalle = signal<Venta | null>(null);
@@ -110,8 +120,24 @@ export class VentasList {
   protected readonly pag = usePaginacion(this.ventasFiltradas);
   protected readonly ventasPaginadas = this.pag.itemsPaginados;
 
+  /** `?venta=` de "Ver venta" (detalle de factura electrónica) — espera a que las ventas estén cargadas. */
+  private ventaSolicitada: string | null = null;
+
   constructor() {
     this.load();
+    // Se escucha el query param (no un snapshot): "Ver venta" desde el modal de factura abierto EN /ventas
+    // navega a la misma ruta, y Angular reutiliza este componente sin volver a correr el constructor.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      this.ventaSolicitada = params.get('venta');
+      this.abrirVentaSolicitada();
+    });
+  }
+
+  private abrirVentaSolicitada(): void {
+    const venta = this.ventaSolicitada ? this.ventas().find((v) => v.id === this.ventaSolicitada) : undefined;
+    if (!venta) return;
+    this.ventaSolicitada = null;
+    this.verDetalle(venta);
   }
 
   private load(): void {
@@ -120,6 +146,7 @@ export class VentasList {
       next: (data) => {
         this.ventas.set(data);
         this.loading.set(false);
+        this.abrirVentaSolicitada();
       },
       error: () => {
         this.loading.set(false);
@@ -135,6 +162,13 @@ export class VentasList {
   protected verDetalle(venta: Venta): void {
     this.ventaDetalle.set(venta);
     this.showDetalle.set(true);
+  }
+
+  protected verFactura(venta: Venta): void {
+    const id = venta.documentoElectronico?.id;
+    if (!id) return;
+    this.showDetalle.set(false);
+    this.facturaId.set(id);
   }
 
   protected abrirCancelar(venta: Venta): void {

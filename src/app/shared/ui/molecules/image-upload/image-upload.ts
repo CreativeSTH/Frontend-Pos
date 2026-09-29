@@ -26,6 +26,8 @@ export class ImageUpload {
   /** URL ya existente (modo edición), antes de elegir un archivo nuevo. */
   readonly existingUrl = input<string | null | undefined>(undefined);
   readonly label = input<string>('Imagen del producto');
+  /** Formatos y tamaño máximo — cada consumidor pasa el límite real de su endpoint. */
+  readonly hint = input<string>('JPG, PNG o WEBP · máx. 3MB');
 
   readonly fileSelected = output<File | null>();
 

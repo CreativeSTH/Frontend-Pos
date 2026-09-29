@@ -14,6 +14,11 @@ export class ApiService {
     return this.wrap(this.http.get<T>(`${this.baseUrl}${path}`, { params: this.buildParams(params) }));
   }
 
+  /** Descarga binaria (PDF/XML) — pasa por el interceptor JWT, a diferencia de un `<iframe src>`/`<a href>` directo. */
+  getBlob(path: string): Observable<Blob> {
+    return this.wrap(this.http.get(`${this.baseUrl}${path}`, { responseType: 'blob' }));
+  }
+
   post<T>(path: string, body: unknown): Observable<T> {
     return this.wrap(this.http.post<T>(`${this.baseUrl}${path}`, body));
   }

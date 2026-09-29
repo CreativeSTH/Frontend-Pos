@@ -35,4 +35,15 @@ export class NegociosService {
   actualizarMiNegocio(payload: UpdateNegocioPayload) {
     return this.api.patch<Negocio>('/negocios/mi-negocio', payload);
   }
+
+  /** Logo oficial del negocio — va en el PDF de factura electrónica. */
+  subirLogo(file: File) {
+    const formData = new FormData();
+    formData.append('logo', file);
+    return this.api.post<{ logoUrl: string }>('/negocios/mi-negocio/logo', formData);
+  }
+
+  quitarLogo() {
+    return this.api.delete<{ logoUrl: null }>('/negocios/mi-negocio/logo');
+  }
 }

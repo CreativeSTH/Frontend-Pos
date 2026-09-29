@@ -14,6 +14,18 @@
       </div>
     </header>
 
+    <div class="negocio-datos-logo" [class.is-subiendo]="subiendoLogo()">
+      @for (v of [versionLogo()]; track v) {
+        <ds-image-upload
+          label="Logo del negocio (opcional)"
+          hint="JPG, PNG o WEBP · máx. 2MB"
+          [existingUrl]="logoUrlCompleta()"
+          (fileSelected)="alElegirLogo($event)"
+        />
+      }
+      <span class="negocio-datos-logo__hint">Aparece en el PDF de tus facturas electrónicas.</span>
+    </div>
+
     <ds-form-field label="Nombre del negocio">
       <ds-input [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" />
     </ds-form-field>

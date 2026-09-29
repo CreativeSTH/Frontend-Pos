@@ -8,6 +8,8 @@ export interface Negocio {
   email?: string;
   telefono?: string;
   direccion?: string;
+  /** Ruta relativa `/uploads/negocios/logos/...` — prefijar con `environment.assetsUrl` para mostrarla. */
+  logoUrl?: string | null;
   plan: PlanNegocio;
   activo: boolean;
   createdAt: string;

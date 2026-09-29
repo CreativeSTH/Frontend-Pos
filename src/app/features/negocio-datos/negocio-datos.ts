@@ -5,14 +5,20 @@ import { Button } from '../../shared/ui/atoms/button/button';
 import { Icon } from '../../shared/ui/atoms/icon/icon';
 import { Input } from '../../shared/ui/atoms/input/input';
 import { FormField } from '../../shared/ui/molecules/form-field/form-field';
+import { ImageUpload } from '../../shared/ui/molecules/image-upload/image-upload';
 import { NegociosService } from '../../core/services/negocios.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../core/services/confirm.service';
 import { Negocio } from '../../core/models/negocio.model';
+import { environment } from '../../../environments/environment';
+
+/** Mismo límite que `negocioLogoUploadOptions` del backend — se valida acá para no depender del mensaje en inglés de multer. */
+const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 
 @Component({
   selector: 'app-negocio-datos',
   standalone: true,
-  imports: [Topbar, Button, Icon, Input, FormField, FormsModule],
+  imports: [Topbar, Button, Icon, Input, FormField, ImageUpload, FormsModule],
   templateUrl: './negocio-datos.html',
   styleUrl: './negocio-datos.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,10 +26,17 @@ import { Negocio } from '../../core/models/negocio.model';
 export class NegocioDatos {
   private readonly negociosService = inject(NegociosService);
   private readonly toast = inject(ToastService);
+  private readonly confirmService = inject(ConfirmService);
 
   protected readonly cargando = signal(true);
   protected readonly guardando = signal(false);
   protected readonly negocio = signal<Negocio | null>(null);
+  protected readonly subiendoLogo = signal(false);
+  /**
+   * `ds-image-upload` guarda su propia vista previa local del archivo elegido; si la subida falla,
+   * incrementar esto recrea el componente para que no siga mostrando un logo que no se guardó.
+   */
+  protected readonly versionLogo = signal(0);
 
   protected readonly nombre = signal('');
   protected readonly nit = signal('');
@@ -82,5 +95,54 @@ export class NegocioDatos {
           this.toast.error(err.error?.message ?? 'No se pudieron guardar los cambios');
         },
       });
+  }
+
+  /** El backend guarda rutas relativas (`/uploads/...`) — mismo prefijo que usa el ticket impreso. */
+  protected logoUrlCompleta(): string | null {
+    const logoUrl = this.negocio()?.logoUrl;
+    return logoUrl ? `${environment.assetsUrl}${logoUrl}` : null;
+  }
+
+  /** `ds-image-upload` emite el archivo elegido, o `null` al tocar la "x" de quitar. */
+  protected alElegirLogo(archivo: File | null): void {
+    if (archivo) this.subirLogo(archivo);
+    else void this.quitarLogo();
+  }
+
+  private subirLogo(archivo: File): void {
+    if (archivo.size > MAX_LOGO_BYTES) {
+      this.toast.error('El logo pesa más de 2 MB — elegí una imagen más liviana');
+      this.versionLogo.update((v) => v + 1);
+      return;
+    }
+    this.subiendoLogo.set(true);
+    this.negociosService.subirLogo(archivo).subscribe({
+      next: ({ logoUrl }) => {
+        this.subiendoLogo.set(false);
+        this.negocio.update((n) => (n ? { ...n, logoUrl } : n));
+        this.toast.success('Logo actualizado — ya aparece en tus facturas electrónicas');
+      },
+      error: (err) => {
+        this.subiendoLogo.set(false);
+        this.versionLogo.update((v) => v + 1);
+        this.toast.error(err.error?.message ?? 'No se pudo subir el logo');
+      },
+    });
+  }
+
+  private async quitarLogo(): Promise<void> {
+    if (!this.negocio()?.logoUrl) return;
+    const ok = await this.confirmService.ask({
+      message: '¿Quitar el logo del negocio? Tus facturas usarán el de la plantilla de factura o el de la tienda online, si hay.',
+      danger: true,
+    });
+    if (!ok) return;
+    this.negociosService.quitarLogo().subscribe({
+      next: () => {
+        this.negocio.update((n) => (n ? { ...n, logoUrl: null } : n));
+        this.toast.success('Logo quitado');
+      },
+      error: () => this.toast.error('No se pudo quitar el logo'),
+    });
   }
 }

@@ -43,6 +43,7 @@ export const CONFIG_GROUPS: ConfiguracionGroup[] = [
     titulo: 'Ventas y reportes',
     items: [
       { label: 'Ventas', description: 'Historial completo de ventas', icon: 'receipt', route: '/ventas', modulo: 'VENTAS' },
+      { label: 'Facturas electrónicas', description: 'Documentos emitidos ante la DIAN, PDF y XML', icon: 'file-text', route: '/facturas-electronicas', modulo: 'FACTURACION_ELECTRONICA_DIAN', featureRequerida: 'facturacionDianHabilitada' },
       { label: 'Reportes', description: 'Ventas, márgenes y cierres de caja', icon: 'bar-chart', route: '/reportes', modulo: 'REPORTES' },
       { label: 'Gráficos', description: 'Crear y administrar gráficos personalizados', icon: 'activity', route: '/graficos', modulo: 'GRAFICOS' },
       { label: 'Alertas', description: 'Notificaciones y reglas de alerta', icon: 'bell', route: '/alertas', modulo: 'ALERTAS' },

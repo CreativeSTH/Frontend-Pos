@@ -53,4 +53,14 @@ export class RealtimeService {
     this.listeners.push([evento, callback as (payload: unknown) => void]);
     this.socket?.on(evento, callback);
   }
+
+  /**
+   * Para componentes (no singletons): sin esto, cada vez que se abre la pantalla se suma un
+   * listener más que sigue vivo — y llamando a un componente ya destruido — tras salir de ella.
+   */
+  off<T>(evento: string, callback: (payload: T) => void): void {
+    const indice = this.listeners.findIndex(([e, cb]) => e === evento && cb === callback);
+    if (indice >= 0) this.listeners.splice(indice, 1);
+    this.socket?.off(evento, callback as (payload: unknown) => void);
+  }
 }

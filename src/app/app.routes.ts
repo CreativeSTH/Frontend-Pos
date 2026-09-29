@@ -260,6 +260,12 @@ export const routes: Routes = [
             (m) => m.FacturacionElectronicaWizard,
           ),
       },
+      {
+        path: 'facturas-electronicas',
+        canActivate: [permisoGuard('FACTURACION_ELECTRONICA_DIAN')],
+        loadComponent: () =>
+          import('./features/facturas-electronicas/facturas-list/facturas-list').then((m) => m.FacturasList),
+      },
     ],
   },
   {

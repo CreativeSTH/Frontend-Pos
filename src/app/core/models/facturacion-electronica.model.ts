@@ -63,4 +63,69 @@ export interface DocumentoElectronico {
   cufe?: string;
   cude?: string;
   errorMensaje?: string;
+  erroresDetalle?: string[] | null;
+  trackingReference?: unknown;
+  alegraDocumentId?: string;
+  intentos: number;
+  numero?: number;
+  prefijo?: string;
+  numeroCompleto?: string;
+  fechaEmision?: string;
+  qrContenido?: string;
+  ambiente?: 'SANDBOX' | 'PRODUCCION';
+  nombreCliente?: string;
+  /** `numeric` de Postgres — llega como string por JSON, pasar siempre por `Number(...)`. */
+  total?: number | string;
+  createdAt: string;
+}
+
+export interface ResumenFacturas {
+  aceptados: number;
+  pendientes: number;
+  rechazados: number;
+}
+
+export interface ListadoFacturas {
+  items: DocumentoElectronico[];
+  total: number;
+  pagina: number;
+  porPagina: number;
+  resumen: ResumenFacturas;
+  tieneLogo: boolean;
+}
+
+export interface FiltrosFacturas {
+  estado?: EstadoDocumentoElectronico;
+  desde?: string;
+  hasta?: string;
+  q?: string;
+  pagina?: number;
+  porPagina?: number;
+}
+
+/** Venta tal como la devuelve `GET /facturas/:id` — los `numeric` llegan como string. */
+export interface VentaFactura {
+  id: string;
+  tipoVenta: 'CONTADO' | 'CREDITO';
+  nombreCliente: string;
+  subtotal: number | string;
+  descuentoTotal: number | string;
+  impuestoTotal: number | string;
+  total: number | string;
+  cliente?: { nombre: string; documentoIdentidad?: string; tipoDocumentoIdentidad?: string } | null;
+  items: {
+    id: string;
+    nombreProducto: string;
+    cantidad: number | string;
+    precioUnitario: number | string;
+    baseImponible: number | string;
+    impuesto: number | string;
+  }[];
+  pagos: { id: string; metodoPago: string; monto: number | string }[];
+}
+
+export interface DetalleFactura {
+  documento: DocumentoElectronico;
+  venta: VentaFactura | null;
+  qrDataUrl: string | null;
 }

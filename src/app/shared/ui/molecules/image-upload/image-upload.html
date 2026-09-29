@@ -10,7 +10,7 @@
     } @else {
       <ds-icon name="box" [size]="26" />
       <span>Subir imagen</span>
-      <span class="image-upload__hint">JPG, PNG o WEBP · máx. 3MB</span>
+      <span class="image-upload__hint">{{ hint() }}</span>
     }
   </button>
 
