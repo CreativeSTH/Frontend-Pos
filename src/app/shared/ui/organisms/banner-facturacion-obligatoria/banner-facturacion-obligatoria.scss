@@ -1,0 +1,35 @@
+.banner-facturacion-obligatoria {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  background: rgba(var(--accent-warning-rgb), 0.14);
+  border-bottom: 1px solid rgba(var(--accent-warning-rgb), 0.35);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+
+  span {
+    flex: 1;
+    color: var(--text-secondary);
+  }
+
+  &--bloqueado {
+    background: rgba(var(--accent-danger-rgb), 0.16);
+    border-bottom-color: rgba(var(--accent-danger-rgb), 0.4);
+
+    span {
+      color: var(--text-primary);
+    }
+  }
+
+  &__cta {
+    color: var(--accent-primary);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

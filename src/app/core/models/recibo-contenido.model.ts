@@ -1,6 +1,9 @@
 import { DatosDianPlantilla } from './plantilla-comprobante.model';
 import { TipoComprobante } from './plantilla-comprobante.model';
 
+/** Comprobante de una venta: `FACTURA_ELECTRONICA` no existe en plantillas/numeraciones, solo en ventas. */
+export type TipoComprobanteVenta = TipoComprobante | 'FACTURA_ELECTRONICA';
+
 export interface ItemComprobante {
   nombre: string;
   cantidad: number;
@@ -21,7 +24,7 @@ export interface PagoComprobante {
  * así los dos dejan de reconstruir el recibo cada uno por su lado.
  */
 export interface ReciboContenido {
-  tipo: TipoComprobante;
+  tipo: TipoComprobanteVenta;
   negocio: { nombre: string; nit?: string; logoUrl?: string };
   emisor: { nombrePersonaNatural?: string; direccion?: string; telefono?: string };
   numero: string;

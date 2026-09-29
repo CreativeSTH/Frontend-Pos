@@ -251,7 +251,7 @@ export class PrintAgentService {
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<title>${contenido.tipo === 'FACTURA' ? 'Factura' : 'Recibo'} ${this.escapar(contenido.numero)}</title>
+<title>${contenido.tipo === 'RECIBO' ? 'Recibo' : 'Factura'} ${this.escapar(contenido.numero)}</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -280,8 +280,14 @@ export class PrintAgentService {
 </head>
 <body>
   ${contenido.negocio.logoUrl ? `<img class="logo" src="${environment.assetsUrl}${contenido.negocio.logoUrl}" alt="Logo" />` : ''}
-  <h1>${this.escapar(contenido.tipo === 'FACTURA' ? 'FACTURA DE VENTA' : contenido.negocio.nombre || 'Recibo de venta')}</h1>
-  ${contenido.tipo === 'FACTURA' ? `<div class="meta">${this.escapar(contenido.negocio.nombre)}</div>` : ''}
+  <h1>${this.escapar(
+    contenido.tipo === 'FACTURA_ELECTRONICA'
+      ? 'FACTURA ELECTRÓNICA DE VENTA'
+      : contenido.tipo === 'FACTURA'
+        ? 'FACTURA DE VENTA'
+        : contenido.negocio.nombre || 'Recibo de venta',
+  )}</h1>
+  ${contenido.tipo !== 'RECIBO' ? `<div class="meta">${this.escapar(contenido.negocio.nombre)}</div>` : ''}
   ${contenido.negocio.nit ? `<div class="meta">NIT: ${this.escapar(contenido.negocio.nit)}</div>` : ''}
   ${contenido.emisor.nombrePersonaNatural ? `<div class="meta">${this.escapar(contenido.emisor.nombrePersonaNatural)}</div>` : ''}
   ${contenido.emisor.direccion ? `<div class="meta">${this.escapar(contenido.emisor.direccion)}</div>` : ''}

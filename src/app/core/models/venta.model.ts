@@ -21,7 +21,7 @@ export interface Venta {
   motivoCancelacion?: string;
   fechaCancelacion?: string;
   numeroComprobante?: string;
-  tipoComprobanteEmitido?: 'RECIBO' | 'FACTURA';
+  tipoComprobanteEmitido?: 'RECIBO' | 'FACTURA' | 'FACTURA_ELECTRONICA';
   cuponId?: string;
   descuentoCupon: number;
   items: VentaItem[];
@@ -56,6 +56,7 @@ export interface CreateVentaPayload {
   clienteId?: string;
   nombreCliente?: string;
   tipoVenta?: 'CONTADO' | 'CREDITO';
+  /** Ignorado por el backend desde la unificación de comprobantes: lo decide la política de facturación. */
   tipoComprobante?: 'RECIBO' | 'FACTURA';
   numeroCuotas?: number;
   fechaPrimerPago?: string;

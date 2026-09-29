@@ -206,7 +206,6 @@ export class PuntoVenta {
   protected readonly nombreEfectivo = computed(() => this.metodosPago().find((m) => m.esEfectivo)?.nombre);
 
   protected readonly tipoVenta = signal<'CONTADO' | 'CREDITO'>('CONTADO');
-  protected readonly tipoComprobante = signal<'RECIBO' | 'FACTURA'>('RECIBO');
   protected readonly clientes = signal<Cliente[]>([]);
   protected readonly clienteId = signal<string>('');
   protected readonly numeroCuotas = signal<number>(1);
@@ -699,7 +698,6 @@ export class PuntoVenta {
   protected abrirCobro(): void {
     if (this.carrito().length === 0) return;
     this.tipoVenta.set('CONTADO');
-    this.tipoComprobante.set(this.sucursal()?.tipoComprobanteDefecto ?? 'RECIBO');
     this.descuentoActivo.set(false);
     this.descuentoVenta.set(0);
     this.pinAutorizacionDescuento.set('');
@@ -907,10 +905,6 @@ export class PuntoVenta {
     if (tipo === 'CREDITO' && this.clienteId()) {
       this.verificarCupoCliente();
     }
-  }
-
-  protected seleccionarTipoComprobante(tipo: 'RECIBO' | 'FACTURA'): void {
-    this.tipoComprobante.set(tipo);
   }
 
   protected onClienteChange(clienteId: string): void {
@@ -1295,7 +1289,6 @@ export class PuntoVenta {
       .create({
         sucursalId,
         bodegaId,
-        tipoComprobante: this.tipoComprobante(),
         items: this.carrito().map((l) => ({ productoId: l.productoId, cantidad: l.cantidad })),
         descuentoVenta: this.descuentoVenta() || undefined,
         pinAutorizacionDescuento:
