@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
+import { ImpresionComprobanteService } from '../../../core/services/impresion-comprobante.service';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { Button } from '../../../shared/ui/atoms/button/button';
@@ -31,6 +32,7 @@ export class FacturaDetalle {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly impresion = inject(ImpresionComprobanteService);
 
   readonly documentoId = input.required<string>();
   readonly close = output<void>();
@@ -156,6 +158,15 @@ export class FacturaDetalle {
         this.toast.error('No se pudo obtener el documento de Alegra, intentá en unos minutos');
       },
     });
+  }
+
+  protected readonly imprimiendoTirilla = signal(false);
+
+  protected imprimirTirilla(): void {
+    const ventaId = this.documento()?.ventaId;
+    if (!ventaId) return;
+    this.imprimiendoTirilla.set(true);
+    this.impresion.imprimir(ventaId).subscribe(() => this.imprimiendoTirilla.set(false));
   }
 
   protected verVenta(): void {

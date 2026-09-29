@@ -15,7 +15,8 @@ import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { ClientesService } from '../../../core/services/clientes.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { Cliente } from '../../../core/models/cliente.model';
+import { Cliente, TIPOS_DOCUMENTO_IDENTIDAD } from '../../../core/models/cliente.model';
+import { Select } from '../../../shared/ui/atoms/select/select';
 
 @Component({
   selector: 'app-clientes-list',
@@ -33,6 +34,7 @@ import { Cliente } from '../../../core/models/cliente.model';
     SearchBar,
     EmptyState,
     Paginator,
+    Select,
     ReactiveFormsModule,
   ],
   templateUrl: './clientes-list.html',
@@ -44,6 +46,7 @@ export class ClientesList {
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
+  protected readonly tiposDocumento = TIPOS_DOCUMENTO_IDENTIDAD;
   protected readonly loading = signal(true);
   protected readonly clientes = signal<Cliente[]>([]);
   protected readonly search = signal('');
@@ -57,6 +60,7 @@ export class ClientesList {
     email: [''],
     direccion: [''],
     documentoIdentidad: [''],
+    tipoDocumentoIdentidad: [''],
     limiteCredito: [0, [Validators.min(0)]],
   });
 
@@ -95,7 +99,7 @@ export class ClientesList {
 
   protected openCreate(): void {
     this.editingId.set(null);
-    this.form.reset({ nombre: '', telefono: '', email: '', direccion: '', documentoIdentidad: '', limiteCredito: 0 });
+    this.form.reset({ nombre: '', telefono: '', email: '', direccion: '', documentoIdentidad: '', tipoDocumentoIdentidad: '', limiteCredito: 0 });
     this.showForm.set(true);
   }
 
@@ -107,6 +111,7 @@ export class ClientesList {
       email: cliente.email ?? '',
       direccion: cliente.direccion ?? '',
       documentoIdentidad: cliente.documentoIdentidad ?? '',
+      tipoDocumentoIdentidad: cliente.tipoDocumentoIdentidad ?? '',
       limiteCredito: cliente.limiteCredito,
     });
     this.showForm.set(true);
@@ -125,6 +130,7 @@ export class ClientesList {
       email: raw.email || undefined,
       direccion: raw.direccion || undefined,
       documentoIdentidad: raw.documentoIdentidad || undefined,
+      tipoDocumentoIdentidad: raw.tipoDocumentoIdentidad || undefined,
       limiteCredito: Number(raw.limiteCredito),
     };
 

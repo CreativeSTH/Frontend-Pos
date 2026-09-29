@@ -6,6 +6,7 @@ export interface Cliente {
   email?: string;
   direccion?: string;
   documentoIdentidad?: string;
+  tipoDocumentoIdentidad?: string;
   limiteCredito: number;
   deudaActual: number;
   score: number;
@@ -22,7 +23,23 @@ export interface CreateClientePayload {
   email?: string;
   direccion?: string;
   documentoIdentidad?: string;
+  tipoDocumentoIdentidad?: string;
   limiteCredito?: number;
+}
+
+/** Catálogo DIAN permitido (mismo que `TIPOS_DOCUMENTO_IDENTIDAD` del backend). */
+export const TIPOS_DOCUMENTO_IDENTIDAD = [
+  { valor: '13', sigla: 'CC', etiqueta: 'Cédula de ciudadanía' },
+  { valor: '31', sigla: 'NIT', etiqueta: 'NIT' },
+  { valor: '22', sigla: 'CE', etiqueta: 'Cédula de extranjería' },
+  { valor: '41', sigla: 'PA', etiqueta: 'Pasaporte' },
+  { valor: '12', sigla: 'TI', etiqueta: 'Tarjeta de identidad' },
+  { valor: '47', sigla: 'PEP', etiqueta: 'Permiso especial de permanencia' },
+  { valor: '48', sigla: 'PPT', etiqueta: 'Permiso por protección temporal' },
+] as const;
+
+export function siglaDocumento(tipo?: string): string {
+  return TIPOS_DOCUMENTO_IDENTIDAD.find((t) => t.valor === tipo)?.sigla ?? 'Doc.';
 }
 
 export interface VerificarCreditoResponse {

@@ -1,0 +1,62 @@
+@let c = contenido();
+<div class="tirilla">
+  @if (e()?.encabezado; as encabezado) {
+    <div class="tirilla__estado">{{ encabezado }}</div>
+  }
+  <div class="tirilla__centro tirilla__titulo">
+    @if (c.tipo === 'FACTURA_ELECTRONICA') {
+      FACTURA ELECTRÓNICA DE VENTA
+    } @else if (c.tipo === 'FACTURA') {
+      FACTURA DE VENTA
+    } @else {
+      RECIBO DE VENTA
+    }
+  </div>
+  <div class="tirilla__centro">{{ e()?.emisor?.razonSocial || c.negocio.nombre }}</div>
+  @if (e()?.emisor?.nitConDv || c.negocio.nit; as nit) {
+    <div class="tirilla__centro">NIT: {{ nit }}</div>
+  }
+  <hr />
+  <div>{{ c.tipo === 'FACTURA_ELECTRONICA' ? 'Factura' : 'No.' }} {{ c.numero }}</div>
+  <div>{{ e()?.fechaEmision || c.fecha | date: 'medium' }}</div>
+  @if (e(); as fe) {
+    <div>Cliente: {{ fe.adquirente.nombre }} — {{ fe.adquirente.identificacion }}</div>
+    <div>Forma de pago: {{ fe.formaPago }}</div>
+  } @else {
+    <div>{{ c.cliente }}</div>
+  }
+  <hr />
+  @for (item of c.items; track $index) {
+    <div class="tirilla__fila">
+      <span>{{ item.cantidad }} x {{ item.nombre }}</span><span>{{ money(item.subtotal) }}</span>
+    </div>
+  }
+  <hr />
+  <div class="tirilla__fila"><span>Subtotal</span><span>{{ money(c.subtotal) }}</span></div>
+  @if (c.descuento > 0) {
+    <div class="tirilla__fila"><span>Descuento</span><span>-{{ money(c.descuento) }}</span></div>
+  }
+  <div class="tirilla__fila"><span>IVA</span><span>{{ money(c.impuesto) }}</span></div>
+  <div class="tirilla__fila tirilla__total"><span>Total</span><span>{{ money(c.total) }}</span></div>
+  @for (pago of c.pagos; track $index) {
+    <div class="tirilla__fila"><span>{{ pago.metodo }}</span><span>{{ money(pago.monto) }}</span></div>
+  }
+  @if (e(); as fe) {
+    <hr />
+    <div class="tirilla__fiscal">
+      @if (fe.resolucion) {
+        <div>{{ fe.resolucion }}</div>
+      }
+      @if (fe.cufe) {
+        <div class="tirilla__cufe">CUFE: {{ fe.cufe }}</div>
+      }
+      @if (fe.qrDataUrl) {
+        <img class="tirilla__qr" [src]="fe.qrDataUrl" alt="Código QR de la factura" />
+      }
+      <div>{{ fe.proveedorTecnologico }}</div>
+    </div>
+  }
+  @if (c.leyenda) {
+    <div class="tirilla__leyenda">{{ c.leyenda }}</div>
+  }
+</div>

@@ -96,6 +96,7 @@
     <ds-button variant="ghost" (click)="close.emit()">Cerrar</ds-button>
     @if (documento()) {
       <ds-button variant="ghost" icon="receipt" (click)="verVenta()">Ver venta</ds-button>
+      <ds-button variant="glass" icon="printer" [loading]="imprimiendoTirilla()" (click)="imprimirTirilla()">Imprimir tirilla</ds-button>
       @if (puedeReintentar()) {
         <ds-button variant="glass" icon="history" [loading]="reintentando()" (click)="reintentar()">Reintentar</ds-button>
       }

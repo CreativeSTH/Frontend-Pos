@@ -1,0 +1,11 @@
+.ver-comprobante__etiqueta {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-3);
+}
+
+.ver-comprobante__cargando {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-8) 0;
+}

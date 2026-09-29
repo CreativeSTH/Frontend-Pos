@@ -1,0 +1,20 @@
+@if (usarDetalleFactura()) {
+  <app-factura-detalle [documentoId]="documentoElectronicoId()!" (close)="close.emit()" />
+} @else {
+  <ds-modal title="Comprobante de venta" size="md" (close)="close.emit()">
+    @if (contenido(); as c) {
+      @if (c.tipo === 'FACTURA') {
+        <div class="ver-comprobante__etiqueta"><ds-badge tone="neutral">Histórico</ds-badge></div>
+      }
+      <ds-tirilla-comprobante [contenido]="c" />
+    } @else {
+      <div class="ver-comprobante__cargando"><ds-spinner [size]="28" /></div>
+    }
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="close.emit()">Cerrar</ds-button>
+      <ds-button variant="primary" icon="printer" [disabled]="!contenido()" [loading]="imprimiendo()" (click)="imprimir()">
+        Imprimir
+      </ds-button>
+    </div>
+  </ds-modal>
+}

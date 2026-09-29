@@ -1,0 +1,69 @@
+// Colores de papel fijos a propósito (mismo criterio que `recibo-preview`): es lo que sale impreso.
+.tirilla {
+  max-width: 320px;
+  margin: 0 auto;
+  padding: var(--space-4);
+  background: #fff;
+  color: #000;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: var(--radius-sm);
+
+  hr {
+    border: none;
+    border-top: 1px dashed #000;
+    margin: 8px 0;
+  }
+}
+
+.tirilla__centro {
+  text-align: center;
+}
+
+.tirilla__titulo {
+  font-weight: bold;
+}
+
+.tirilla__estado {
+  border: 1px solid #000;
+  text-align: center;
+  font-weight: bold;
+  font-size: 11px;
+  padding: 4px;
+  margin-bottom: 8px;
+}
+
+.tirilla__fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tirilla__total {
+  font-weight: bold;
+}
+
+.tirilla__fiscal {
+  text-align: center;
+  font-size: 10px;
+}
+
+.tirilla__cufe {
+  word-break: break-all;
+  margin: 4px 0;
+}
+
+.tirilla__qr {
+  display: block;
+  width: 140px;
+  height: 140px;
+  margin: 6px auto;
+}
+
+.tirilla__leyenda {
+  text-align: center;
+  font-weight: bold;
+  font-size: 11px;
+  margin-top: 8px;
+}

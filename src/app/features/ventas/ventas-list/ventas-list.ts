@@ -18,11 +18,11 @@ import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { VentasService } from '../../../core/services/ventas.service';
-import { PrintAgentService } from '../../../core/services/print-agent.service';
+import { ImpresionComprobanteService } from '../../../core/services/impresion-comprobante.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Venta } from '../../../core/models/venta.model';
-import { FacturaDetalle } from '../../facturas-electronicas/factura-detalle/factura-detalle';
+import { VerComprobante } from '../../comprobantes/ver-comprobante/ver-comprobante';
 import { etiquetaEstadoDocumento, tonoEstadoDocumento } from '../../facturas-electronicas/estado-documento.util';
 
 // `Partial<Record<...>>` a propósito: `Venta.estado` es `string` (no un union acotado), así que
@@ -63,7 +63,7 @@ const TONOS_ESTADO: Partial<Record<string, BadgeTone>> = {
     SearchBar,
     EmptyState,
     Paginator,
-    FacturaDetalle,
+    VerComprobante,
     FormsModule,
     DatePipe,
   ],
@@ -73,7 +73,7 @@ const TONOS_ESTADO: Partial<Record<string, BadgeTone>> = {
 })
 export class VentasList {
   private readonly ventasService = inject(VentasService);
-  private readonly printAgent = inject(PrintAgentService);
+  private readonly impresion = inject(ImpresionComprobanteService);
   protected readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
@@ -86,7 +86,7 @@ export class VentasList {
   protected readonly etiquetasEstado = ETIQUETAS_ESTADO;
   protected readonly etiquetaDian = etiquetaEstadoDocumento;
   protected readonly tonoDian = tonoEstadoDocumento;
-  protected readonly facturaId = signal<string | null>(null);
+  protected readonly comprobanteAbierto = signal<{ ventaId: string; documentoId: string | null } | null>(null);
   protected readonly puedeVerFacturas = computed(() => this.auth.tienePermiso('FACTURACION_ELECTRONICA_DIAN', 'VER'));
 
   protected readonly showDetalle = signal(false);
@@ -164,11 +164,9 @@ export class VentasList {
     this.showDetalle.set(true);
   }
 
-  protected verFactura(venta: Venta): void {
-    const id = venta.documentoElectronico?.id;
-    if (!id) return;
+  protected verComprobante(venta: Venta): void {
     this.showDetalle.set(false);
-    this.facturaId.set(id);
+    this.comprobanteAbierto.set({ ventaId: venta.id, documentoId: venta.documentoElectronico?.id ?? null });
   }
 
   protected abrirCancelar(venta: Venta): void {
@@ -216,15 +214,6 @@ export class VentasList {
 
   /** Reimpresión: no hay "cambio" que mostrar (nunca se persiste, solo existe en el momento de la venta original). */
   protected reimprimir(venta: Venta): void {
-    this.ventasService.obtenerComprobante(venta.id).subscribe({
-      next: (contenido) => {
-        this.printAgent.imprimirTicket(contenido).subscribe((result) => {
-          if (!result.impreso) {
-            this.printAgent.imprimirReciboNavegador(contenido);
-          }
-        });
-      },
-      error: () => this.toast.error('No se pudo obtener el comprobante de esta venta'),
-    });
+    this.impresion.imprimir(venta.id).subscribe();
   }
 }

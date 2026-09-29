@@ -81,11 +81,20 @@
         <ds-input formControlName="telefono" placeholder="3001234567" />
       </ds-form-field>
 
+      <ds-form-field label="Email (opcional)">
+        <ds-input type="email" icon="mail" formControlName="email" />
+      </ds-form-field>
+
       <div class="cliente-form__row">
-        <ds-form-field label="Email (opcional)">
-          <ds-input type="email" icon="mail" formControlName="email" />
+        <ds-form-field label="Tipo de documento (opcional)">
+          <ds-select formControlName="tipoDocumentoIdentidad">
+            <option value="">Sin documento</option>
+            @for (t of tiposDocumento; track t.valor) {
+              <option [value]="t.valor">{{ t.etiqueta }}</option>
+            }
+          </ds-select>
         </ds-form-field>
-        <ds-form-field label="Documento (opcional)">
+        <ds-form-field label="Número de documento (opcional)" hint="Para facturarle a su nombre">
           <ds-input formControlName="documentoIdentidad" />
         </ds-form-field>
       </div>

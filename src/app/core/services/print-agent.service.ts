@@ -29,6 +29,19 @@ export interface OpcionesImpresion {
   cambio?: number;
 }
 
+/** Primera versión de pos-agent que imprime el bloque fiscal de la factura electrónica (CUFE, QR...). */
+const VERSION_AGENTE_FACTURA_ELECTRONICA = '1.1.0';
+
+function versionAlMenos(version: string | undefined, minima: string): boolean {
+  if (!version) return false;
+  const a = version.split('.').map(Number);
+  const b = minima.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
+  }
+  return true;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PrintAgentService {
   private readonly http = inject(HttpClient);
@@ -71,6 +84,19 @@ export class PrintAgentService {
    * no reconstruyen nada por su cuenta.
    */
   imprimirTicket(contenido: ReciboContenido, opciones: OpcionesImpresion = {}): Observable<PrintResult> {
+    if (contenido.tipo !== 'FACTURA_ELECTRONICA') return this.enviarAlAgente(contenido, opciones);
+    // Un agente viejo imprimiría la factura sin CUFE ni QR (tirilla sin validez) — mejor el navegador.
+    return this.estado().pipe(
+      switchMap((estado) => {
+        if (!estado.ok) return of<PrintResult>({ impreso: false, error: 'Agente de impresión no disponible' });
+        return versionAlMenos(estado.version, VERSION_AGENTE_FACTURA_ELECTRONICA)
+          ? this.enviarAlAgente(contenido, opciones)
+          : of<PrintResult>({ impreso: false, error: 'El agente de impresión no soporta facturas electrónicas — actualízalo' });
+      }),
+    );
+  }
+
+  private enviarAlAgente(contenido: ReciboContenido, opciones: OpcionesImpresion): Observable<PrintResult> {
     // Se consulta el ancho de papel configurado ANTES de tocar el logo — pos-agent es la fuente de
     // verdad de qué impresora hay conectada a esta PC (ver Configuración > Dispositivos), y el
     // ancho máximo del logo depende de eso (384pt en 58mm, 576pt en 80mm).
@@ -99,6 +125,11 @@ export class PrintAgentService {
             mensajeCierre: contenido.mensajeCierre,
             terminos: contenido.terminos,
             dian: contenido.dian,
+            leyenda: contenido.leyenda,
+            // El QR viaja como PNG en base64 (sin el prefijo data:) — pos-agent lo imprime igual que el logo.
+            electronica: contenido.electronica
+              ? { ...contenido.electronica, qrDataUrl: undefined, qrBase64: contenido.electronica.qrDataUrl?.split(',')[1] }
+              : undefined,
           },
           abrirCajon: opciones.abrirCajon ?? true,
         };
@@ -232,6 +263,22 @@ export class PrintAgentService {
       )
       .join('');
 
+    const e = contenido.tipo === 'FACTURA_ELECTRONICA' ? contenido.electronica : undefined;
+    const fiscalHtml = e
+      ? `<hr /><div class="fiscal">
+          ${e.resolucion ? `<div>${this.escapar(e.resolucion)}</div>` : ''}
+          ${e.cufe ? `<div class="cufe">CUFE: ${this.escapar(e.cufe)}</div>` : ''}
+          ${e.qrDataUrl ? `<img class="qr" src="${e.qrDataUrl}" alt="Código QR de la factura" />` : ''}
+          <div>${this.escapar(e.proveedorTecnologico)}</div>
+        </div>`
+      : '';
+    const datosVentaHtml = e
+      ? `Factura No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(e.adquirente.nombre)} — ${this.escapar(e.adquirente.identificacion)}<br />Forma de pago: ${e.formaPago}`
+      : `No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(contenido.cliente)}`;
+    const nombreEmisor = e?.emisor?.razonSocial || contenido.negocio.nombre;
+    const nitEmisor = e?.emisor?.nitConDv || contenido.negocio.nit;
+    const direccionEmisor = e?.emisor?.direccion || contenido.emisor.direccion;
+
     const dianHtml =
       contenido.tipo === 'FACTURA' && contenido.dian
         ? `<hr /><div class="dian">
@@ -276,10 +323,16 @@ export class PrintAgentService {
   .terminos { text-align: center; margin-top: 8px; font-size: 10px; color: #333; }
   .dian { text-align: center; font-size: 9px; color: #333; }
   .iva-linea td { font-size: 10px; color: #555; padding-top: 0; padding-bottom: 4px; }
+  .encabezado-estado { border: 1px solid #000; text-align: center; font-weight: bold; font-size: 11px; padding: 4px; margin-bottom: 8px; }
+  .fiscal { text-align: center; font-size: 9px; color: #333; }
+  .cufe { word-break: break-all; margin: 4px 0; }
+  .qr { display: block; width: 140px; height: 140px; margin: 6px auto; }
+  .leyenda { text-align: center; font-size: 10px; margin-top: 8px; font-weight: bold; }
 </style>
 </head>
 <body>
   ${contenido.negocio.logoUrl ? `<img class="logo" src="${environment.assetsUrl}${contenido.negocio.logoUrl}" alt="Logo" />` : ''}
+  ${e?.encabezado ? `<div class="encabezado-estado">${this.escapar(e.encabezado)}</div>` : ''}
   <h1>${this.escapar(
     contenido.tipo === 'FACTURA_ELECTRONICA'
       ? 'FACTURA ELECTRÓNICA DE VENTA'
@@ -287,12 +340,12 @@ export class PrintAgentService {
         ? 'FACTURA DE VENTA'
         : contenido.negocio.nombre || 'Recibo de venta',
   )}</h1>
-  ${contenido.tipo !== 'RECIBO' ? `<div class="meta">${this.escapar(contenido.negocio.nombre)}</div>` : ''}
-  ${contenido.negocio.nit ? `<div class="meta">NIT: ${this.escapar(contenido.negocio.nit)}</div>` : ''}
+  ${contenido.tipo !== 'RECIBO' ? `<div class="meta">${this.escapar(nombreEmisor)}</div>` : ''}
+  ${nitEmisor ? `<div class="meta">NIT: ${this.escapar(nitEmisor)}</div>` : ''}
   ${contenido.emisor.nombrePersonaNatural ? `<div class="meta">${this.escapar(contenido.emisor.nombrePersonaNatural)}</div>` : ''}
-  ${contenido.emisor.direccion ? `<div class="meta">${this.escapar(contenido.emisor.direccion)}</div>` : ''}
+  ${direccionEmisor ? `<div class="meta">${this.escapar(direccionEmisor)}</div>` : ''}
   ${contenido.emisor.telefono ? `<div class="meta">Tel: ${this.escapar(contenido.emisor.telefono)}</div>` : ''}
-  <div class="meta">No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(contenido.cliente)}</div>
+  <div class="meta">${datosVentaHtml}</div>
   <hr />
   <table>
     <thead>
@@ -312,6 +365,8 @@ export class PrintAgentService {
   <div class="footer">${this.escapar(contenido.mensajeCierre || 'Gracias por su compra')}</div>
   ${contenido.terminos ? `<div class="terminos">${this.escapar(contenido.terminos)}</div>` : ''}
   ${dianHtml}
+  ${fiscalHtml}
+  ${contenido.leyenda ? `<div class="leyenda">${this.escapar(contenido.leyenda)}</div>` : ''}
 </body>
 </html>`;
   }

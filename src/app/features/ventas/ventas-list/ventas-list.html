@@ -142,9 +142,7 @@
         @if (venta.estado !== 'CANCELADA') {
           <ds-button variant="ghost" (click)="abrirCancelar(venta)">Cancelar venta</ds-button>
         }
-        @if (puedeVerFacturas() && venta.documentoElectronico) {
-          <ds-button variant="glass" icon="file-text" (click)="verFactura(venta)">Ver factura electrónica</ds-button>
-        }
+        <ds-button variant="glass" icon="file-text" (click)="verComprobante(venta)">Ver comprobante</ds-button>
         <ds-button variant="primary" icon="printer" (click)="reimprimir(venta)">
           Imprimir
         </ds-button>
@@ -183,6 +181,6 @@
   </ds-modal>
 }
 
-@if (facturaId(); as id) {
-  <app-factura-detalle [documentoId]="id" (close)="facturaId.set(null)" />
+@if (comprobanteAbierto(); as abierto) {
+  <app-ver-comprobante [ventaId]="abierto.ventaId" [documentoElectronicoId]="abierto.documentoId" (close)="comprobanteAbierto.set(null)" />
 }

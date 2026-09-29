@@ -56,7 +56,7 @@
                   <td>{{ formatMoney(fila.montoTotal) }}</td>
                   <td class="caja-fila-acciones">
                     @if (fila.ventaId) {
-                      <ds-button variant="glass" size="sm" (click)="verFactura(fila)">Ver factura</ds-button>
+                      <ds-button variant="glass" size="sm" (click)="verComprobante(fila)">Ver comprobante</ds-button>
                       @if (!ventaCancelada(fila)) {
                         <ds-button variant="ghost" size="sm" (click)="abrirCancelarVenta(fila)">Cancelar</ds-button>
                       }
@@ -190,64 +190,8 @@
   </ds-modal>
 }
 
-@if (showFactura()) {
-  <ds-modal title="Factura de venta" size="md" (close)="showFactura.set(false)">
-    @if (ventaFactura(); as venta) {
-      <div class="factura-header">
-        <span class="factura-header__id">Venta #{{ venta.id.slice(0, 8) }}</span>
-        <span class="factura-header__fecha">{{ venta.createdAt | date: 'medium' }}</span>
-      </div>
-      <p class="factura-cliente">{{ venta.nombreCliente }}</p>
-
-      <ds-table>
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Cant.</th>
-            <th>Precio</th>
-            <th>Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of venta.items; track item.id) {
-            <tr>
-              <td>{{ item.nombreProducto }}</td>
-              <td>{{ item.cantidad }}</td>
-              <td>{{ formatMoney(item.precioUnitario) }}</td>
-              <td>{{ formatMoney(item.subtotal) }}</td>
-            </tr>
-          }
-        </tbody>
-      </ds-table>
-
-      <div class="factura-totales">
-        <div class="factura-totales__row"><span>Subtotal</span><span>{{ formatMoney(venta.subtotal) }}</span></div>
-        @if (venta.descuentoTotal > 0) {
-          <div class="factura-totales__row"><span>Descuento</span><span>-{{ formatMoney(venta.descuentoTotal) }}</span></div>
-        }
-        <div class="factura-totales__row"><span>IVA</span><span>{{ formatMoney(venta.impuestoTotal) }}</span></div>
-        <div class="factura-totales__row factura-totales__row--total"><span>Total</span><span>{{ formatMoney(venta.total) }}</span></div>
-      </div>
-
-      @if (venta.pagos.length > 0) {
-        <div class="factura-pagos">
-          <span class="factura-pagos__titulo">Pagos</span>
-          @for (pago of venta.pagos; track pago.id) {
-            <div class="factura-totales__row"><span>{{ pago.metodoPago }}</span><span>{{ formatMoney(pago.monto) }}</span></div>
-          }
-        </div>
-      }
-    }
-
-    <div modal-footer>
-      <ds-button variant="ghost" (click)="showFactura.set(false)">Cerrar</ds-button>
-      @if (ventaFactura(); as venta) {
-        <ds-button variant="primary" icon="printer" (click)="reimprimir(venta)">
-          Imprimir
-        </ds-button>
-      }
-    </div>
-  </ds-modal>
+@if (comprobanteAbierto(); as abierto) {
+  <app-ver-comprobante [ventaId]="abierto.ventaId" [documentoElectronicoId]="abierto.documentoId" (close)="comprobanteAbierto.set(null)" />
 }
 
 @if (showDetalleTurno()) {

@@ -10,7 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription, forkJoin } from 'rxjs';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
@@ -36,7 +36,11 @@ import { VentasService } from '../../../core/services/ventas.service';
 import { MetodosPagoService } from '../../../core/services/metodos-pago.service';
 import { ClientesService } from '../../../core/services/clientes.service';
 import { CuponesService } from '../../../core/services/cupones.service';
-import { PrintAgentService } from '../../../core/services/print-agent.service';
+import { ImpresionComprobanteService } from '../../../core/services/impresion-comprobante.service';
+import { PoliticaFacturacionService } from '../../../core/services/politica-facturacion.service';
+import { FacturacionElectronicaService } from '../../../core/services/facturacion-electronica.service';
+import { RealtimeService } from '../../../core/services/realtime.service';
+import { DocumentoElectronico } from '../../../core/models/facturacion-electronica.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { PagosWompiService } from '../../../core/services/pagos-wompi.service';
 import {
@@ -52,7 +56,7 @@ import { Bodega } from '../../../core/models/bodega.model';
 import { TurnoCaja } from '../../../core/models/caja.model';
 import { Venta } from '../../../core/models/venta.model';
 import { MetodoPago } from '../../../core/models/metodo-pago.model';
-import { Cliente, VerificarCreditoResponse } from '../../../core/models/cliente.model';
+import { Cliente, TIPOS_DOCUMENTO_IDENTIDAD, VerificarCreditoResponse, siglaDocumento } from '../../../core/models/cliente.model';
 import { CreateDireccionClientePayload, DireccionCliente } from '../../../core/models/direccion-cliente.model';
 import { PrecioVigente } from '../../../core/models/promocion.model';
 import { ConfiguracionWompi, MetodoPagoWompi } from '../../../core/models/pago-wompi.model';
@@ -64,6 +68,9 @@ import { calcularImpuesto, calcularSubtotal, formatMoney, imageUrl } from './pos
 
 /** Sentinel para "cargar una dirección nueva" en el selector — nunca colisiona con un UUID real. */
 const NUEVA_DIRECCION = '__nueva__';
+/** Cuánto espera el POS la respuesta de la DIAN antes de imprimir "En validación DIAN" (spec, decisión 3). */
+const ESPERA_CUFE_MS = 8000;
+const SONDEO_DOCUMENTO_MS = 1000;
 
 interface LineaPago {
   metodoPago: string;
@@ -102,6 +109,7 @@ interface LineaCarrito {
     TurnoCajaPos,
     VentasSuspendidasPos,
     CatalogoGridPos,
+    RouterLink,
   ],
   templateUrl: './punto-venta.html',
   styleUrl: './punto-venta.scss',
@@ -119,7 +127,10 @@ export class PuntoVenta {
   private readonly metodosPagoService = inject(MetodosPagoService);
   private readonly clientesService = inject(ClientesService);
   private readonly cuponesService = inject(CuponesService);
-  protected readonly printAgent = inject(PrintAgentService);
+  private readonly impresion = inject(ImpresionComprobanteService);
+  private readonly facturacionElectronica = inject(FacturacionElectronicaService);
+  private readonly realtime = inject(RealtimeService);
+  private readonly politicaFacturacion = inject(PoliticaFacturacionService);
   protected readonly auth = inject(AuthService);
   private readonly ventasSuspendidasService = inject(VentasSuspendidasService);
   private readonly toast = inject(ToastService);
@@ -127,6 +138,30 @@ export class PuntoVenta {
   private readonly route = inject(ActivatedRoute);
   private readonly pagosWompi = inject(PagosWompiService);
   private readonly destroyRef = inject(DestroyRef);
+
+  // ---------- Política de facturación (unificación de comprobantes, fase 2) ----------
+  protected readonly estadoFacturacion = this.politicaFacturacion.estado;
+  protected readonly esElectronica = computed(() => this.estadoFacturacion()?.modo === 'ELECTRONICA');
+  protected readonly cobroBloqueado = computed(() => this.estadoFacturacion()?.modo === 'BLOQUEADO');
+  protected readonly puedeActivarFacturacion = computed(() => this.auth.tienePermiso('FACTURACION_ELECTRONICA_DIAN', 'VER'));
+
+  protected readonly tiposDocumento = TIPOS_DOCUMENTO_IDENTIDAD;
+  protected readonly siglaDocumento = siglaDocumento;
+  protected readonly docTipo = signal('13');
+  protected readonly docNumero = signal('');
+  protected readonly guardandoDocumento = signal(false);
+
+  /** Resultado de esperar a la DIAN tras cobrar una venta FACTURA_ELECTRONICA (spec 6.1). null = no aplica. */
+  protected readonly validacionDian = signal<'VALIDANDO' | 'ACEPTADA' | 'RECHAZADA' | 'SIN_RESPUESTA' | null>(null);
+  protected readonly reintentandoDian = signal(false);
+  protected readonly puedeReintentarDian = computed(() => this.auth.tienePermiso('VENTAS', 'EDITAR'));
+  private sondeoDian: ReturnType<typeof setInterval> | null = null;
+  private inicioValidacion = 0;
+
+  /** Misma referencia para `on`/`off` — ver RealtimeService.off. */
+  private readonly alCambiarDocumento = (doc: DocumentoElectronico) => {
+    if (doc.ventaId === this.ventaCompletada()?.id && this.validacionDian() === 'VALIDANDO') this.evaluarDocumento(doc);
+  };
 
   /** Referencia al buscador para devolverle el foco tras cada acción — así el lector de código de barras (que solo "escribe" donde esté el cursor) siempre tiene dónde caer. */
   private readonly buscador = viewChild<SearchBar>('buscador');
@@ -237,6 +272,15 @@ export class PuntoVenta {
    */
   protected readonly clienteResueltoId = computed<string | null>(() =>
     this.tipoVenta() === 'CREDITO' ? this.clienteId() || null : (this.clienteVentaSeleccionado()?.id ?? null),
+  );
+  /** Cliente a cuyo nombre saldría la factura electrónica (el de crédito o el elegido en contado). */
+  protected readonly clienteFactura = computed<Cliente | null>(() =>
+    this.tipoVenta() === 'CREDITO'
+      ? (this.clientes().find((c) => c.id === this.clienteId()) ?? null)
+      : this.clienteVentaSeleccionado(),
+  );
+  protected readonly clienteFacturaConDocumento = computed(
+    () => !!this.clienteFactura()?.documentoIdentidad && !!this.clienteFactura()?.tipoDocumentoIdentidad,
   );
   protected readonly domicilioActivo = signal(false);
   protected readonly showDireccionModal = signal(false);
@@ -378,6 +422,12 @@ export class PuntoVenta {
 
     /** Si el componente se destruye con un pago Wompi pendiente (ej. el cajero navega a otra pantalla), no dejar el listener vivo — `PagosWompiService` es un singleton `providedIn: 'root'`, el `Subject` interno sigue vivo más allá de este componente. */
     this.destroyRef.onDestroy(() => this.wompiSub?.unsubscribe());
+
+    this.realtime.on('documentos-electronicos:cambio', this.alCambiarDocumento);
+    this.destroyRef.onDestroy(() => {
+      this.realtime.off('documentos-electronicos:cambio', this.alCambiarDocumento);
+      this.detenerSondeoDian();
+    });
 
     /**
      * El carrito activo vive scopeado por sucursal (localStorage), no solo por negocio — antes de
@@ -1205,6 +1255,10 @@ export class PuntoVenta {
 
   protected confirmarCobro(): void {
     if (this.procesando() || this.creandoClienteVenta()) return;
+    if (this.cobroBloqueado()) {
+      this.toast.error('Tu negocio debe facturar electrónicamente para seguir vendiendo');
+      return;
+    }
     const sucursal = this.sucursal();
     const bodega = this.bodega();
     const turno = this.turno();
@@ -1320,6 +1374,7 @@ export class PuntoVenta {
           this.showCobro.set(false);
           this.cambioVentaCompletada.set(cambioVenta);
           this.ventaCompletada.set(venta);
+          if (venta.tipoComprobanteEmitido === 'FACTURA_ELECTRONICA') this.esperarValidacionDian(venta.id);
           this.descontarStockVendido(this.carrito());
           this.carrito.set([]);
           this.toast.success('Venta registrada');
@@ -1340,7 +1395,84 @@ export class PuntoVenta {
   }
 
   protected nuevaVenta(): void {
+    this.detenerSondeoDian();
+    this.validacionDian.set(null);
     this.ventaCompletada.set(null);
+  }
+
+  // ---------- Factura electrónica: documento del cliente y espera de la DIAN ----------
+
+  /** Completa el documento del cliente ahí mismo — sin él la factura sale a Consumidor final. */
+  protected guardarDocumentoCliente(): void {
+    const cliente = this.clienteFactura();
+    const numero = this.docNumero().trim();
+    if (!cliente || !numero) {
+      this.toast.error('Ingresa el número de documento');
+      return;
+    }
+    this.guardandoDocumento.set(true);
+    this.clientesService.update(cliente.id, { tipoDocumentoIdentidad: this.docTipo(), documentoIdentidad: numero }).subscribe({
+      next: (actualizado) => {
+        this.guardandoDocumento.set(false);
+        this.clientes.update((lista) => lista.map((c) => (c.id === actualizado.id ? actualizado : c)));
+        if (this.clienteVentaSeleccionado()?.id === actualizado.id) this.clienteVentaSeleccionado.set(actualizado);
+        this.docNumero.set('');
+        this.toast.success('Documento guardado');
+      },
+      error: (err) => {
+        this.guardandoDocumento.set(false);
+        const mensaje = err.error?.message;
+        this.toast.error((Array.isArray(mensaje) ? mensaje[0] : mensaje) ?? 'No se pudo guardar el documento');
+      },
+    });
+  }
+
+  private esperarValidacionDian(ventaId: string): void {
+    this.detenerSondeoDian();
+    this.validacionDian.set('VALIDANDO');
+    this.inicioValidacion = Date.now();
+    this.sondeoDian = setInterval(() => {
+      this.facturacionElectronica.miDocumento(ventaId).subscribe({
+        next: (doc) => this.evaluarDocumento(doc),
+        error: () => this.evaluarDocumento(null),
+      });
+    }, SONDEO_DOCUMENTO_MS);
+  }
+
+  private evaluarDocumento(doc: DocumentoElectronico | null): void {
+    if (doc?.estado === 'ACEPTADO' || doc?.estado === 'ACEPTADO_CON_OBSERVACIONES') {
+      this.validacionDian.set('ACEPTADA');
+      this.detenerSondeoDian();
+    } else if (doc?.estado === 'RECHAZADO') {
+      this.validacionDian.set('RECHAZADA');
+      this.detenerSondeoDian();
+    } else if (Date.now() - this.inicioValidacion >= ESPERA_CUFE_MS) {
+      // PENDIENTE/ERROR: el cron sigue reintentando — la tirilla sale "En validación DIAN — reimprimible".
+      this.validacionDian.set('SIN_RESPUESTA');
+      this.detenerSondeoDian();
+    }
+  }
+
+  private detenerSondeoDian(): void {
+    if (this.sondeoDian) clearInterval(this.sondeoDian);
+    this.sondeoDian = null;
+  }
+
+  protected reintentarDian(venta: Venta): void {
+    this.reintentandoDian.set(true);
+    this.facturacionElectronica.reintentar(venta.id).subscribe({
+      next: (doc) => {
+        this.reintentandoDian.set(false);
+        this.inicioValidacion = Date.now();
+        this.validacionDian.set('VALIDANDO');
+        this.evaluarDocumento(doc);
+        if (this.validacionDian() === 'VALIDANDO') this.esperarValidacionDian(venta.id);
+      },
+      error: (err) => {
+        this.reintentandoDian.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo reintentar la factura');
+      },
+    });
   }
 
   /** El backend ya descontó el stock real — esto solo evita que la tarjeta del producto quede desactualizada hasta recargar. */
@@ -1376,22 +1508,9 @@ export class PuntoVenta {
 
   protected imprimirFactura(venta: Venta): void {
     this.imprimiendo.set(true);
-    const opciones = { cambio: this.cambioVentaCompletada() || undefined };
-    this.ventasService.obtenerComprobante(venta.id).subscribe({
-      next: (contenido) => {
-        this.printAgent.imprimirTicket(contenido, opciones).subscribe((result) => {
-          if (!result.impreso) {
-            this.toast.info('Agente de impresión no disponible — abriendo el recibo en el navegador');
-            this.printAgent.imprimirReciboNavegador(contenido, opciones);
-          }
-          this.imprimiendo.set(false);
-          this.nuevaVenta();
-        });
-      },
-      error: () => {
-        this.imprimiendo.set(false);
-        this.toast.error('No se pudo obtener el comprobante de esta venta');
-      },
+    this.impresion.imprimir(venta.id, { cambio: this.cambioVentaCompletada() || undefined }).subscribe(() => {
+      this.imprimiendo.set(false);
+      this.nuevaVenta();
     });
   }
 

@@ -17,7 +17,7 @@ import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { CajaService } from '../../../core/services/caja.service';
 import { VentasService } from '../../../core/services/ventas.service';
-import { PrintAgentService } from '../../../core/services/print-agent.service';
+import { VerComprobante } from '../../comprobantes/ver-comprobante/ver-comprobante';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { TurnoCaja } from '../../../core/models/caja.model';
@@ -60,6 +60,7 @@ interface FilaCaja {
     Paginator,
     FormsModule,
     DatePipe,
+    VerComprobante,
   ],
   templateUrl: './caja-home.html',
   styleUrl: './caja-home.scss',
@@ -68,7 +69,6 @@ interface FilaCaja {
 export class CajaHome {
   private readonly cajaService = inject(CajaService);
   private readonly ventasService = inject(VentasService);
-  private readonly printAgent = inject(PrintAgentService);
   protected readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
 
@@ -84,8 +84,8 @@ export class CajaHome {
   protected readonly guardando = signal(false);
   protected readonly etiquetasTipo = ETIQUETAS_TIPO;
 
-  protected readonly showFactura = signal(false);
-  protected readonly ventaFactura = signal<Venta | null>(null);
+  /** Venta cuyo comprobante se está viendo (factura electrónica, recibo o histórico — lo decide `VerComprobante`). */
+  protected readonly comprobanteAbierto = signal<{ ventaId: string; documentoId: string | null } | null>(null);
 
   protected readonly showDetalleTurno = signal(false);
   protected readonly turnoDetalle = signal<TurnoCaja | null>(null);
@@ -230,21 +230,10 @@ export class CajaHome {
     });
   }
 
-  protected verFactura(mov: { ventaId?: string }): void {
-    if (!mov.ventaId) return;
-    const enCache = this.ventasPorId().get(mov.ventaId);
-    if (enCache) {
-      this.ventaFactura.set(enCache);
-      this.showFactura.set(true);
-      return;
-    }
-    this.ventasService.findOne(mov.ventaId).subscribe({
-      next: (venta) => {
-        this.ventaFactura.set(venta);
-        this.showFactura.set(true);
-      },
-      error: () => this.toast.error('No se pudo cargar la factura'),
-    });
+  protected verComprobante(fila: FilaCaja): void {
+    if (!fila.ventaId) return;
+    const venta = this.ventasPorId().get(fila.ventaId);
+    this.comprobanteAbierto.set({ ventaId: fila.ventaId, documentoId: venta?.documentoElectronico?.id ?? null });
   }
 
   protected abrirCancelarVenta(fila: FilaCaja): void {
@@ -375,17 +364,4 @@ export class CajaHome {
     );
   }
 
-  /** Reimpresión: no hay "cambio" que mostrar (nunca se persiste, solo existe en el momento de la venta original). */
-  protected reimprimir(venta: Venta): void {
-    this.ventasService.obtenerComprobante(venta.id).subscribe({
-      next: (contenido) => {
-        this.printAgent.imprimirTicket(contenido).subscribe((result) => {
-          if (!result.impreso) {
-            this.printAgent.imprimirReciboNavegador(contenido);
-          }
-        });
-      },
-      error: () => this.toast.error('No se pudo obtener el comprobante de esta venta'),
-    });
-  }
 }

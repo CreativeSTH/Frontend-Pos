@@ -141,6 +141,23 @@
 
 @if (showCobro()) {
   <ds-modal title="Cobrar venta" size="md" (close)="pagandoConWompi() ? null : showCobro.set(false)">
+    @if (estadoFacturacion()?.modo === 'GRACIA') {
+      <div class="cobro-aviso cobro-aviso--warning">
+        <span>
+          Te quedan {{ estadoFacturacion()!.diasGraciaRestantes }}
+          {{ estadoFacturacion()!.diasGraciaRestantes === 1 ? 'día' : 'días' }} para activar la facturación electrónica.
+        </span>
+      </div>
+    } @else if (cobroBloqueado()) {
+      <div class="cobro-aviso cobro-aviso--danger">
+        <span>Tu negocio no puede cobrar hasta activar la facturación electrónica.</span>
+        @if (puedeActivarFacturacion()) {
+          <a routerLink="/configuracion/facturacion-electronica" class="pos-cliente-cambiar">Activar</a>
+        } @else {
+          <span>Pídele al administrador que la active.</span>
+        }
+      </div>
+    }
     @if (descuentoVenta() > 0 || descuentoCupon() > 0) {
       <div class="cobro-subtotal-row">
         <span>Subtotal</span>
@@ -411,11 +428,14 @@
 
       <div class="cobro-cliente-switch">
         <ds-switch
-          label="Agregar cliente"
+          [label]="esElectronica() ? 'Factura a nombre de un cliente' : 'Agregar cliente'"
           [ngModel]="clienteVentaActivo()"
           (ngModelChange)="alternarClienteVenta($event)"
         />
       </div>
+      @if (esElectronica() && !clienteVentaActivo()) {
+        <p class="cobro-factura-a">Factura a: Consumidor final</p>
+      }
       @if (clienteVentaActivo()) {
         @if (clienteVentaEtapa() === 'telefono') {
           <div class="cobro-telefono-row">
@@ -528,11 +548,35 @@
       }
     }
 
+    @if (esElectronica() && clienteFactura(); as cliente) {
+      @if (clienteFacturaConDocumento()) {
+        <p class="cobro-factura-a">
+          Factura a nombre de {{ cliente.nombre }} — {{ siglaDocumento(cliente.tipoDocumentoIdentidad) }}
+          {{ cliente.documentoIdentidad }}
+        </p>
+      } @else {
+        <div class="cobro-documento">
+          <p class="cobro-factura-a">
+            Para facturarle a su nombre agrega su documento. Sin documento, la factura sale a Consumidor final.
+          </p>
+          <div class="cobro-telefono-row">
+            <ds-select [ngModel]="docTipo()" (ngModelChange)="docTipo.set($event)">
+              @for (t of tiposDocumento; track t.valor) {
+                <option [value]="t.valor">{{ t.sigla }}</option>
+              }
+            </ds-select>
+            <ds-input [ngModel]="docNumero()" (ngModelChange)="docNumero.set($event)" placeholder="Número" />
+            <ds-button variant="glass" [loading]="guardandoDocumento()" (click)="guardarDocumentoCliente()">Guardar</ds-button>
+          </div>
+        </div>
+      }
+    }
+
     <div modal-footer>
       <ds-button variant="ghost" [disabled]="pagandoConWompi()" (click)="showCobro.set(false)">Cancelar</ds-button>
       <ds-button
         variant="primary"
-        [disabled]="pagandoConWompi()"
+        [disabled]="pagandoConWompi() || cobroBloqueado()"
         [loading]="procesando() || creandoClienteVenta()"
         (click)="confirmarCobro()"
       >
@@ -647,13 +691,41 @@
           </div>
         }
         <p class="venta-ok__meta">Venta #{{ venta.id.slice(0, 8) }}</p>
+        @switch (validacionDian()) {
+          @case ('VALIDANDO') {
+            <div class="venta-ok__dian"><ds-spinner [size]="16" /> Validando con la DIAN…</div>
+          }
+          @case ('ACEPTADA') {
+            <div class="cobro-aviso cobro-aviso--success"><span>Factura electrónica aceptada por la DIAN.</span></div>
+          }
+          @case ('RECHAZADA') {
+            <div class="cobro-aviso cobro-aviso--danger">
+              <span>La DIAN rechazó la factura. Si la imprimes, sale marcada sin validez fiscal.</span>
+              @if (puedeReintentarDian()) {
+                <ds-button variant="ghost" size="sm" [loading]="reintentandoDian()" (click)="reintentarDian(venta)">
+                  Reintentar
+                </ds-button>
+              }
+            </div>
+          }
+          @case ('SIN_RESPUESTA') {
+            <div class="cobro-aviso cobro-aviso--warning">
+              <span>La DIAN aún no responde: la tirilla saldrá «En validación DIAN» y podrás reimprimirla desde Ventas.</span>
+            </div>
+          }
+        }
         <p class="venta-ok__pregunta">¿Imprimir {{ venta.tipoComprobanteEmitido === 'RECIBO' ? 'recibo' : 'factura' }}?</p>
       </div>
     }
     @if (!imprimiendo()) {
       <div modal-footer class="venta-ok__footer">
         <ds-button variant="ghost" (click)="nuevaVenta()">No, gracias</ds-button>
-        <ds-button variant="primary" icon="printer" (click)="imprimirFactura(venta)">
+        <ds-button
+          variant="primary"
+          icon="printer"
+          [disabled]="validacionDian() === 'VALIDANDO'"
+          (click)="imprimirFactura(venta)"
+        >
           Sí, imprimir
         </ds-button>
       </div>
