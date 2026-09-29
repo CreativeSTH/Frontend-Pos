@@ -45,7 +45,7 @@ export class ChecklistOnboarding {
   }
 
   protected irAFacturacionDian(): void {
-    this.router.navigateByUrl('/configuracion/facturacion-electronica');
+    this.router.navigateByUrl('/facturacion/electronica');
   }
 
   protected irAlPos(): void {

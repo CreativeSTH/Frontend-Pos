@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, input } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Topbar } from '../../layout/topbar/topbar';
 import { Button } from '../../shared/ui/atoms/button/button';
@@ -43,6 +43,9 @@ const PASO_POR_ESTADO: Record<EstadoHabilitacion, number> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FacturacionElectronicaWizard {
+  /** Dentro de la pestaña Facturación electrónica de /facturacion: sin topbar propio. */
+  readonly embebido = input(false);
+
   private readonly facturacionService = inject(FacturacionElectronicaService);
   private readonly negociosService = inject(NegociosService);
   private readonly suscripcionService = inject(SuscripcionService);

@@ -1,0 +1,11 @@
+.perfil-fiscal__nota {
+  margin: var(--space-2) 0 var(--space-4);
+  color: var(--text-tertiary);
+  font-size: var(--fs-sm);
+}
+
+.perfil-fiscal__acciones {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-4);
+}

@@ -1,0 +1,97 @@
+@if (cargando()) {
+  <div class="comprobantes-cargando"><ds-icon name="file-text" [size]="28" /><span>Cargando comprobantes...</span></div>
+} @else if (datos(); as d) {
+  <div class="comprobantes-resumen">
+    @for (t of tipos; track t.valor) {
+      @if (t.valor !== 'FACTURA' || d.resumen.porTipo.FACTURA > 0) {
+        <button
+          type="button"
+          class="comprobantes-resumen__card"
+          [class.is-activa]="tipo() === t.valor"
+          [attr.aria-pressed]="tipo() === t.valor"
+          (click)="filtrarPorTipo(tipo() === t.valor ? '' : t.valor)"
+        >
+          <ds-stat-card icon="file-text" [label]="t.etiqueta" [value]="'' + d.resumen.porTipo[t.valor]" />
+        </button>
+      }
+    }
+  </div>
+
+  @if (d.resumen.dian.rechazados > 0) {
+    <button type="button" class="comprobantes-aviso" (click)="filtrarPorEstado('RECHAZADO')">
+      <ds-icon name="alert-triangle" [size]="16" />
+      <span>{{ d.resumen.dian.rechazados }} factura(s) rechazada(s) por la DIAN — revísalas.</span>
+    </button>
+  }
+
+  <div class="comprobantes-toolbar">
+    <ds-search-bar placeholder="Buscar por número o cliente..." [value]="busqueda()" (valueChange)="buscar($event)" />
+    <ds-select [ngModel]="tipo()" (ngModelChange)="filtrarPorTipo($event)">
+      <option value="">Todos los tipos</option>
+      @for (t of tipos; track t.valor) {
+        <option [value]="t.valor">{{ t.etiqueta }}</option>
+      }
+    </ds-select>
+    <ds-select [ngModel]="estadoDian()" (ngModelChange)="filtrarPorEstado($event)">
+      <option value="">Todos los estados DIAN</option>
+      @for (e of estadosFiltro; track e) {
+        <option [value]="e">{{ etiquetaEstado(e) }}</option>
+      }
+    </ds-select>
+    <input type="date" class="comprobantes-fecha" [ngModel]="desde()" (ngModelChange)="cambiarFecha('desde', $event)" aria-label="Desde" />
+    <input type="date" class="comprobantes-fecha" [ngModel]="hasta()" (ngModelChange)="cambiarFecha('hasta', $event)" aria-label="Hasta" />
+  </div>
+
+  @if (d.items.length === 0) {
+    <ds-empty-state icon="file-text" title="Sin comprobantes" description="Ningún comprobante coincide con esos filtros." />
+  } @else {
+    <ds-table>
+      <thead>
+        <tr><th>Tipo</th><th>Número</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Estado</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (f of d.items; track f.tipo + (f.abonoId ?? f.ventaId)) {
+          <tr>
+            <td><ds-badge [tone]="tipoDe(f).tono">{{ tipoDe(f).etiqueta }}</ds-badge></td>
+            <td class="comprobantes-numero">{{ f.numero ?? (f.tipo === 'FACTURA_ELECTRONICA' ? 'En validación DIAN' : '—') }}</td>
+            <td>{{ f.fecha | date: 'short' }}</td>
+            <td>{{ f.cliente ?? '—' }}</td>
+            <td>{{ formatMoney(f.total) }}</td>
+            <td>
+              <span class="comprobantes-estado">
+                @if (f.estadoDian) {
+                  <ds-badge [tone]="tonoEstado(f.estadoDian)">{{ etiquetaEstado(f.estadoDian) }}</ds-badge>
+                }
+                @if (f.ambiente === 'SANDBOX') {
+                  <ds-badge tone="neutral">Prueba</ds-badge>
+                }
+                @if (f.estadoVenta === 'CANCELADA') {
+                  <ds-badge tone="danger">Anulada</ds-badge>
+                }
+              </span>
+            </td>
+            <td>
+              @if (f.tipo === 'RECIBO_CAJA') {
+                <ds-button variant="glass" size="sm" icon="printer" (click)="imprimirReciboCaja(f)">Imprimir</ds-button>
+              } @else {
+                <ds-button variant="glass" size="sm" icon="eye" (click)="verFila.set(f)">Ver</ds-button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </ds-table>
+    <ds-paginator
+      [page]="pagina()"
+      [totalPages]="totalPaginas()"
+      [pageSize]="porPagina()"
+      [totalItems]="d.total"
+      (pageChange)="irAPagina($event)"
+      (pageSizeChange)="cambiarPorPagina($event)"
+    />
+  }
+}
+
+@if (verFila(); as f) {
+  <app-ver-comprobante [ventaId]="f.ventaId" [documentoElectronicoId]="f.documentoId" (close)="cerrarVer()" />
+}

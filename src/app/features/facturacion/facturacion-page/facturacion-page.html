@@ -1,0 +1,9 @@
+<app-topbar title="Facturación" subtitle="Comprobantes de tus ventas y facturación electrónica" />
+
+<nav class="facturacion-tabs" aria-label="Secciones de facturación">
+  @for (p of pestanas(); track p.ruta) {
+    <a class="facturacion-tab" [routerLink]="p.ruta" routerLinkActive="facturacion-tab--active">{{ p.etiqueta }}</a>
+  }
+</nav>
+
+<router-outlet />

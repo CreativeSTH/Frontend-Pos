@@ -1,4 +1,6 @@
-<app-topbar title="Facturación electrónica DIAN" subtitle="Habilitación con Alegra" backTo="/configuracion" />
+@if (!embebido()) {
+  <app-topbar title="Facturación electrónica DIAN" subtitle="Habilitación con Alegra" backTo="/configuracion" />
+}
 
 @if (cargando()) {
   <div class="facturacion-dian-loading">

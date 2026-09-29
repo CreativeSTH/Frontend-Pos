@@ -1,0 +1,73 @@
+@if (estado(); as e) {
+  <section class="electronica-card" [class.electronica-card--alerta]="e.modo === 'GRACIA' || e.modo === 'BLOQUEADO'">
+    <h3 class="electronica-card__titulo">Estado de tu facturación</h3>
+    <p>{{ textoModo() }}</p>
+    @if (e.modo === 'GRACIA' && e.diasGraciaRestantes !== null && e.fechaLimiteGracia) {
+      <p class="electronica-card__destacado">
+        Te quedan {{ e.diasGraciaRestantes }} días, hasta el {{ fechaLarga(e.fechaLimiteGracia) }}. Cumplir con la DIAN
+        durante este tiempo es responsabilidad de tu negocio.
+      </p>
+    }
+  </section>
+
+  <section class="electronica-card">
+    <div class="electronica-card__cabecera">
+      <h3 class="electronica-card__titulo">Perfil fiscal</h3>
+      @if (puedeEditarPerfil() && e.perfil && !editandoPerfil()) {
+        <ds-button variant="glass" size="sm" (click)="editandoPerfil.set(true)">Editar</ds-button>
+      }
+    </div>
+    @if (e.perfil && !editandoPerfil()) {
+      <p>{{ etiquetaPersona(e.perfil.tipoPersona) }} · {{ etiquetaIva(e.perfil.responsabilidadIva) }}</p>
+      <p class="electronica-card__nota">
+        {{
+          e.obligado
+            ? 'Con este perfil estás obligado a facturar electrónicamente.'
+            : 'Con este perfil no estás obligado a facturar electrónicamente.'
+        }}
+      </p>
+    } @else if (puedeEditarPerfil()) {
+      <app-perfil-fiscal-form [inicial]="e.perfil" (guardado)="alGuardarPerfil()" />
+      @if (editandoPerfil()) {
+        <ds-button variant="ghost" size="sm" (click)="editandoPerfil.set(false)">Cancelar</ds-button>
+      }
+    } @else {
+      <p class="electronica-card__nota">Pídele al administrador que declare el perfil fiscal del negocio.</p>
+    }
+  </section>
+
+  @if (tope(); as t) {
+    @if (t.aplica) {
+      <section class="electronica-card">
+        <h3 class="electronica-card__titulo">Tope para no facturar electrónicamente</h3>
+        @if (t.tope !== null && t.anio !== null) {
+          <div class="tope-barra" role="progressbar" [attr.aria-valuenow]="floor(t.porcentaje)" aria-valuemin="0" aria-valuemax="100">
+            <div [class]="'tope-barra__relleno tope-barra__relleno--' + nivelBarra()" [style.width.%]="anchoBarra()"></div>
+          </div>
+          <p>
+            Tus ventas registradas en AURA en {{ t.anio }} suman {{ formatMoney(t.ingresos) }}: el {{ floor(t.porcentaje) }}% del
+            tope de 3.500 UVT ({{ formatMoney(t.tope) }}).
+          </p>
+        } @else {
+          <p>Todavía no hay valor de UVT cargado para este año.</p>
+        }
+        <p class="electronica-card__nota">
+          Es un mínimo: AURA no ve las ventas que hagas por fuera del sistema. Si lo superas, quedas obligado a facturar
+          electrónicamente y AURA te avisará.
+        </p>
+      </section>
+    }
+  }
+}
+
+<section class="electronica-card">
+  <h3 class="electronica-card__titulo">Habilitación ante la DIAN</h3>
+  @if (paqueteConDian() === true) {
+    <app-facturacion-electronica [embebido]="true" />
+  } @else if (paqueteConDian() === false) {
+    <p>Tu plan actual no incluye facturación electrónica.</p>
+    <ds-button variant="primary" routerLink="/configuracion/mi-plan">Ver planes</ds-button>
+  } @else {
+    <p class="electronica-card__nota"><ds-icon name="file-text" [size]="16" /> Cargando...</p>
+  }
+</section>

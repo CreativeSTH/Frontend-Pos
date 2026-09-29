@@ -1,4 +1,4 @@
-.facturas-cargando {
+.comprobantes-cargando {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7,18 +7,14 @@
   color: var(--text-secondary);
 }
 
-.facturas-resumen {
+.comprobantes-resumen {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: var(--space-3);
   margin-bottom: var(--space-4);
-
-  @media (max-width: 720px) {
-    grid-template-columns: 1fr;
-  }
 }
 
-.facturas-resumen__card {
+.comprobantes-resumen__card {
   all: unset;
   display: block;
   cursor: pointer;
@@ -34,7 +30,8 @@
   }
 }
 
-.facturas-aviso {
+.comprobantes-aviso {
+  all: unset;
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -45,13 +42,10 @@
   border: 1px solid var(--glass-border);
   color: var(--text-secondary);
   font-size: var(--fs-sm);
-
-  a {
-    color: var(--accent-primary);
-  }
+  cursor: pointer;
 }
 
-.facturas-toolbar {
+.comprobantes-toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -62,7 +56,7 @@
   }
 }
 
-.facturas-fecha {
+.comprobantes-fecha {
   min-width: 0;
   height: 46px;
   padding: 0 var(--space-4);
@@ -79,20 +73,14 @@
   }
 }
 
-.facturas-numero {
+.comprobantes-numero {
   font-family: var(--font-mono);
   font-weight: var(--fw-semibold);
   white-space: nowrap;
 }
 
-.facturas-estado {
+.comprobantes-estado {
   display: inline-flex;
   flex-wrap: wrap;
   gap: var(--space-1);
-}
-
-.facturas-vacio-accion {
-  display: flex;
-  justify-content: center;
-  margin-top: var(--space-3);
 }

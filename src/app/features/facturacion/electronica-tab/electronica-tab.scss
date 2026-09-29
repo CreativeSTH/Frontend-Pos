@@ -1,0 +1,61 @@
+.electronica-card {
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+
+  p {
+    margin: 0 0 var(--space-2);
+  }
+
+  &--alerta {
+    border-color: var(--accent-warning);
+  }
+}
+
+.electronica-card__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.electronica-card__titulo {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-md);
+}
+
+.electronica-card__destacado {
+  font-weight: var(--fw-medium);
+}
+
+.electronica-card__nota {
+  color: var(--text-tertiary);
+  font-size: var(--fs-sm);
+}
+
+.tope-barra {
+  height: 10px;
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg-hover);
+  overflow: hidden;
+}
+
+.tope-barra__relleno {
+  height: 100%;
+  border-radius: inherit;
+
+  &--bajo {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  }
+
+  &--medio {
+    background: var(--accent-warning);
+  }
+
+  &--alto {
+    background: var(--accent-danger);
+  }
+}

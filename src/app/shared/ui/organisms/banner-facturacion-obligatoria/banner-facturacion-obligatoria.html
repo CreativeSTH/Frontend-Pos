@@ -6,12 +6,12 @@
       {{ estado()!.diasGraciaRestantes === 1 ? 'día' : 'días' }} para activarla; después no podrás cobrar.
       Mientras tanto, cumplir con la DIAN es responsabilidad de tu negocio.
     </span>
-    <a routerLink="/configuracion/facturacion-electronica" class="banner-facturacion-obligatoria__cta">Activar ahora</a>
+    <a routerLink="/facturacion/electronica" class="banner-facturacion-obligatoria__cta">Activar ahora</a>
   </div>
 } @else if (modo() === 'BLOQUEADO') {
   <div class="banner-facturacion-obligatoria banner-facturacion-obligatoria--bloqueado">
     <ds-icon name="alert-triangle" [size]="18" />
     <span>Tu negocio no puede cobrar hasta activar la facturación electrónica.</span>
-    <a routerLink="/configuracion/facturacion-electronica" class="banner-facturacion-obligatoria__cta">Activar ahora</a>
+    <a routerLink="/facturacion/electronica" class="banner-facturacion-obligatoria__cta">Activar ahora</a>
   </div>
 }

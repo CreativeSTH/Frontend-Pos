@@ -4,6 +4,7 @@ import { ApiService } from './api.service';
 import { SuscripcionService } from './suscripcion.service';
 import { RealtimeService } from './realtime.service';
 import { DeclaracionPerfilFiscal, EstadoFacturacion } from '../models/politica-facturacion.model';
+import { MedicionTopeUvt } from '../models/comprobante-facturacion.model';
 
 /**
  * Estado de la política de facturación del negocio en un signal compartido: lo leen el banner,
@@ -54,5 +55,10 @@ export class PoliticaFacturacionService {
     return this.api
       .patch<EstadoFacturacion>('/politica-facturacion/perfil-fiscal', payload)
       .pipe(tap((estado) => this._estado.set(estado)));
+  }
+
+  /** Ventas registradas frente al tope de 3.500 UVT (pestaña Facturación electrónica). */
+  topeUvt() {
+    return this.api.get<MedicionTopeUvt>('/politica-facturacion/tope-uvt');
   }
 }

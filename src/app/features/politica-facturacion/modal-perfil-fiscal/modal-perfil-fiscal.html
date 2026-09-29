@@ -4,39 +4,6 @@
       Necesitamos saber si tu negocio está obligado a facturar electrónicamente. Responde según tu RUT; toma un minuto.
     </p>
 
-    <ds-form-field label="Tipo de persona">
-      <ds-select [ngModel]="tipoPersona()" (ngModelChange)="tipoPersona.set($event)">
-        <option value="">Selecciona...</option>
-        <option value="NATURAL">Persona natural</option>
-        <option value="JURIDICA">Persona jurídica (empresa, SAS, etc.)</option>
-      </ds-select>
-    </ds-form-field>
-
-    <ds-form-field label="Responsabilidad de IVA en tu RUT">
-      <ds-select [ngModel]="responsabilidadIva()" (ngModelChange)="responsabilidadIva.set($event)">
-        <option value="">Selecciona...</option>
-        <option value="RESPONSABLE">Responsable de IVA (48)</option>
-        <option value="NO_RESPONSABLE">No responsable de IVA (49)</option>
-        <option value="REGIMEN_SIMPLE">Régimen Simple de Tributación (47)</option>
-      </ds-select>
-    </ds-form-field>
-
-    <p class="perfil-fiscal__nota">
-      Las personas jurídicas, los responsables de IVA y el Régimen Simple están obligados a facturar
-      electrónicamente. Si eres persona natural no responsable de IVA, AURA te avisará si tus ventas se acercan
-      al tope de 3.500 UVT.
-    </p>
-
-    <ds-switch
-      label="Declaro que estos datos coinciden con mi RUT"
-      [ngModel]="acepta()"
-      (ngModelChange)="acepta.set($event)"
-    />
-
-    <div modal-footer>
-      <ds-button variant="primary" [disabled]="!completo()" [loading]="guardando()" (click)="guardar()">
-        Guardar
-      </ds-button>
-    </div>
+    <app-perfil-fiscal-form />
   </ds-modal>
 }

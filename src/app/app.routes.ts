@@ -1,4 +1,6 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
+import { AuthService } from './core/services/auth.service';
 import { authGuard, guestGuard, landingGuard, soloNegocioGuard } from './core/guards/auth.guard';
 import { permisoGuard } from './core/guards/permiso.guard';
 import { sucursalGuard } from './core/guards/sucursal.guard';
@@ -253,19 +255,37 @@ export const routes: Routes = [
           import('./features/configuracion/tienda-online/tienda-online').then((m) => m.TiendaOnlineConfig),
       },
       {
-        path: 'configuracion/facturacion-electronica',
-        canActivate: [permisoGuard('FACTURACION_ELECTRONICA_DIAN')],
+        path: 'facturacion',
         loadComponent: () =>
-          import('./features/facturacion-electronica/facturacion-electronica').then(
-            (m) => m.FacturacionElectronicaWizard,
-          ),
+          import('./features/facturacion/facturacion-page/facturacion-page').then((m) => m.FacturacionPage),
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            // La primera pestaña que el usuario puede ver; sin ninguna, el guard de "electronica" lo manda al dashboard.
+            redirectTo: () => (inject(AuthService).tienePermiso('FACTURACION', 'VER') ? 'comprobantes' : 'electronica'),
+          },
+          {
+            path: 'comprobantes',
+            canActivate: [permisoGuard('FACTURACION')],
+            loadComponent: () =>
+              import('./features/facturacion/comprobantes-tab/comprobantes-tab').then((m) => m.ComprobantesTab),
+          },
+          {
+            path: 'electronica',
+            canActivate: [permisoGuard('FACTURACION_ELECTRONICA_DIAN')],
+            loadComponent: () =>
+              import('./features/facturacion/electronica-tab/electronica-tab').then((m) => m.ElectronicaTab),
+          },
+        ],
       },
+      // Rutas viejas (correos, favoritos). Un redirectTo absoluto en texto pierde los query params,
+      // así que se arma el UrlTree pasándolos (?estado=RECHAZADO filtra el listado nuevo).
       {
         path: 'facturas-electronicas',
-        canActivate: [permisoGuard('FACTURACION_ELECTRONICA_DIAN')],
-        loadComponent: () =>
-          import('./features/facturas-electronicas/facturas-list/facturas-list').then((m) => m.FacturasList),
+        redirectTo: ({ queryParams }) => inject(Router).createUrlTree(['/facturacion/comprobantes'], { queryParams }),
       },
+      { path: 'configuracion/facturacion-electronica', redirectTo: '/facturacion/electronica' },
     ],
   },
   {

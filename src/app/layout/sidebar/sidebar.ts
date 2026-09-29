@@ -19,6 +19,8 @@ interface NavItem {
   icon: string;
   route?: string;
   modulo?: ModuloPermiso;
+  /** Además de `modulo`: el ítem se ve si el usuario puede VER cualquiera de estos. */
+  modulosAlternativos?: ModuloPermiso[];
   /** Pantallas operativas de un negocio, sin sentido para un usuario de tier SISTEMA (no pertenece a ninguno). */
   soloNegocio?: boolean;
 }
@@ -30,6 +32,14 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', soloNegocio: true },
   { label: 'Punto de venta', icon: 'shopping-bag', route: '/punto-venta', soloNegocio: true },
   { label: 'Caja', icon: 'cash-register', route: '/caja', modulo: 'CAJA' },
+  {
+    label: 'Facturación',
+    icon: 'file-text',
+    route: '/facturacion',
+    modulo: 'FACTURACION',
+    modulosAlternativos: ['FACTURACION_ELECTRONICA_DIAN'],
+    soloNegocio: true,
+  },
 ];
 
 @Component({
@@ -55,7 +65,8 @@ export class Sidebar {
   protected readonly navItems = computed(() =>
     NAV_ITEMS.filter(
       (item) =>
-        (!item.modulo || this.auth.tienePermiso(item.modulo, 'VER')) &&
+        (!item.modulo ||
+          [item.modulo, ...(item.modulosAlternativos ?? [])].some((m) => this.auth.tienePermiso(m, 'VER'))) &&
         (!item.soloNegocio || !this.auth.esSistema()),
     ),
   );
