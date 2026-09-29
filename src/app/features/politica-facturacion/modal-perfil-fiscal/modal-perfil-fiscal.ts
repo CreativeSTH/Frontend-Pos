@@ -13,7 +13,8 @@ import { ResponsabilidadIva, TipoPersona } from '../../../core/models/politica-f
 /**
  * Declaración obligatoria del perfil fiscal: sin él, AURA no sabe si el negocio está obligado a
  * facturar electrónicamente. No se puede cerrar (se ignora el `close` del modal) y solo lo ve quien
- * puede editar los datos del negocio — los cajeros siguen vendiendo sin verlo.
+ * puede editar los datos del negocio — los cajeros siguen vendiendo sin verlo. Con la suscripción
+ * vencida no aparece: primero hay que reactivarla (banner de solo lectura), y después vuelve solo.
  */
 @Component({
   selector: 'app-modal-perfil-fiscal',
@@ -35,7 +36,13 @@ export class ModalPerfilFiscal {
 
   protected readonly visible = computed(() => {
     const estado = this.politica.estado();
-    return !!estado && estado.perfil === null && !this.auth.esSistema() && this.auth.tienePermiso('NEGOCIO', 'EDITAR');
+    return (
+      !!estado &&
+      estado.perfil === null &&
+      !this.politica.suscripcionInactiva() &&
+      !this.auth.esSistema() &&
+      this.auth.tienePermiso('NEGOCIO', 'EDITAR')
+    );
   });
 
   protected readonly completo = computed(() => !!this.tipoPersona() && !!this.responsabilidadIva() && this.acepta());

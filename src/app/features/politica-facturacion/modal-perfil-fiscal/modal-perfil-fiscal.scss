@@ -1,5 +1,6 @@
-// Modal no descartable: la X de `ds-modal` no haría nada, así que no se muestra.
-:host ::ng-deep .modal-panel__close {
+// Modal no descartable: la X de `ds-modal` no haría nada, así que no se muestra. El `.modal-panel` extra
+// le gana en especificidad a la regla encapsulada de `ds-modal` (`display: inline-flex`).
+:host ::ng-deep .modal-panel .modal-panel__close {
   display: none;
 }
 
