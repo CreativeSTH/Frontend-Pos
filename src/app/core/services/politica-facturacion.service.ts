@@ -28,6 +28,9 @@ export class PoliticaFacturacionService {
     // Al confirmarse la reactivación (u otro cambio de la suscripción) se recarga, y el modal
     // de perfil fiscal aparece solo si todavía falta declararlo.
     this.realtime.on('suscripcion:cambio', () => this.cargar());
+    // El cron del tope de 3.500 UVT puede volver obligado al negocio de madrugada: el banner de
+    // gracia aparece sin recargar la página.
+    this.realtime.on('politica-facturacion:cambio', () => this.cargar());
   }
 
   /** Al pasar a un usuario de tier SISTEMA (p. ej. "Salir" del modo soporte) — no pertenece a un negocio. */
