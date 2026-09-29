@@ -3,6 +3,7 @@ import { Observable, catchError, map, of, switchMap } from 'rxjs';
 import { VentasService } from './ventas.service';
 import { PrintAgentService, OpcionesImpresion } from './print-agent.service';
 import { ToastService } from './toast.service';
+import { ReciboContenido } from '../models/recibo-contenido.model';
 
 export type ResultadoImpresion = 'AGENTE' | 'NAVEGADOR' | 'FALLIDO';
 
@@ -18,7 +19,28 @@ export class ImpresionComprobanteService {
   private readonly toast = inject(ToastService);
 
   imprimir(ventaId: string, opciones: OpcionesImpresion = {}): Observable<ResultadoImpresion> {
-    return this.ventasService.obtenerComprobante(ventaId).pipe(
+    return this.imprimirContenido(
+      this.ventasService.obtenerComprobante(ventaId),
+      opciones,
+      'No se pudo obtener el comprobante de esta venta',
+    );
+  }
+
+  /** Recibo de caja de un abono a crédito (fase 4); la fase 5 lo usa para reimprimir. */
+  imprimirAbono(abonoId: string, opciones: OpcionesImpresion = {}): Observable<ResultadoImpresion> {
+    return this.imprimirContenido(
+      this.ventasService.obtenerComprobanteAbono(abonoId),
+      opciones,
+      'No se pudo obtener el recibo de caja de este abono',
+    );
+  }
+
+  private imprimirContenido(
+    contenido$: Observable<ReciboContenido>,
+    opciones: OpcionesImpresion,
+    mensajeError: string,
+  ): Observable<ResultadoImpresion> {
+    return contenido$.pipe(
       switchMap((contenido) =>
         this.printAgent.imprimirTicket(contenido, opciones).pipe(
           map((resultado): ResultadoImpresion => {
@@ -33,7 +55,7 @@ export class ImpresionComprobanteService {
         ),
       ),
       catchError(() => {
-        this.toast.error('No se pudo obtener el comprobante de esta venta');
+        this.toast.error(mensajeError);
         return of<ResultadoImpresion>('FALLIDO');
       }),
     );

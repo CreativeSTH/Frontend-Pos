@@ -31,6 +31,11 @@ export class VentasService {
     ventaId: string,
     payload: { numeroCuota: number; montoAbono: number; metodoPago: string; referenciaPago?: string; notas?: string },
   ) {
-    return this.api.patch(`/ventas/${ventaId}/abonar-cuota`, payload);
+    return this.api.patch<{ abono: { id: string; numeroRecibo: string } }>(`/ventas/${ventaId}/abonar-cuota`, payload);
+  }
+
+  /** Recibo de caja de un abono — mismo `ReciboContenido` que el comprobante de una venta. */
+  obtenerComprobanteAbono(abonoId: string) {
+    return this.api.get<ReciboContenido>(`/ventas/abonos/${abonoId}/comprobante`);
   }
 }

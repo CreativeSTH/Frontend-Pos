@@ -19,6 +19,7 @@ import { CobrosService } from '../../../core/services/cobros.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { MetodosPagoService } from '../../../core/services/metodos-pago.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ImpresionComprobanteService } from '../../../core/services/impresion-comprobante.service';
 import { CobroItem, CobrosTotales } from '../../../core/models/cobro.model';
 import { MetodoPago } from '../../../core/models/metodo-pago.model';
 
@@ -37,6 +38,7 @@ export class CobrosList {
   private readonly ventasService = inject(VentasService);
   private readonly metodosPagoService = inject(MetodosPagoService);
   private readonly toast = inject(ToastService);
+  private readonly impresion = inject(ImpresionComprobanteService);
 
   protected readonly loading = signal(true);
   protected readonly totales = signal<CobrosTotales | null>(null);
@@ -107,11 +109,14 @@ export class CobrosList {
         metodoPago: this.metodoPago(),
       })
       .subscribe({
-        next: () => {
+        next: ({ abono }) => {
           this.guardando.set(false);
           this.showAbono.set(false);
-          this.toast.success('Abono registrado');
+          this.toast.success(`Abono registrado — recibo de caja ${abono.numeroRecibo}`);
           this.load();
+          // Como el POS al cobrar: el recibo sale solo y el cajón se abre únicamente si entró efectivo.
+          const esEfectivo = this.metodosPago().find((m) => m.nombre === this.metodoPago())?.esEfectivo ?? false;
+          this.impresion.imprimirAbono(abono.id, { abrirCajon: esEfectivo }).subscribe();
         },
         error: (err) => {
           this.guardando.set(false);

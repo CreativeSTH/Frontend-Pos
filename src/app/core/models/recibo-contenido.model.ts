@@ -40,8 +40,23 @@ export interface ElectronicaComprobante {
   proveedorTecnologico: string;
 }
 
+/** Recibo de caja de un abono a crédito — espejo de `AbonoComprobante` del backend. */
+export interface AbonoComprobante {
+  numeroCuota: number;
+  totalCuotas: number;
+  comprobanteVenta: string;
+  tipoComprobanteVenta: 'Factura electrónica' | 'Recibo' | 'Factura';
+  moraPagada: number;
+  saldoAnterior: number | null;
+  saldoNuevo: number | null;
+  referenciaPago: string | null;
+}
+
+/** Lo que se puede imprimir: el comprobante de una venta o el recibo de caja de un abono. */
+export type TipoContenidoImpresion = TipoComprobanteVenta | 'RECIBO_CAJA';
+
 export interface ReciboContenido {
-  tipo: TipoComprobanteVenta;
+  tipo: TipoContenidoImpresion;
   negocio: { nombre: string; nit?: string; logoUrl?: string };
   emisor: { nombrePersonaNatural?: string; direccion?: string; telefono?: string };
   numero: string;
@@ -59,4 +74,6 @@ export interface ReciboContenido {
   electronica?: ElectronicaComprobante;
   /** Solo en comprobantes que no son factura electrónica. */
   leyenda?: string;
+  /** Solo en el recibo de caja de un abono a crédito. */
+  abono?: AbonoComprobante;
 }

@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, from, of, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ReciboContenido } from '../models/recibo-contenido.model';
+import { ReciboContenido, TipoContenidoImpresion } from '../models/recibo-contenido.model';
 
 interface PrintResult {
   impreso: boolean;
@@ -29,8 +29,11 @@ export interface OpcionesImpresion {
   cambio?: number;
 }
 
-/** Primera versión de pos-agent que imprime el bloque fiscal de la factura electrónica (CUFE, QR...). */
-const VERSION_AGENTE_FACTURA_ELECTRONICA = '1.1.0';
+/** Versión mínima de pos-agent que sabe imprimir cada tipo sin perder datos (el resto: cualquier versión). */
+const VERSION_MINIMA_AGENTE: Partial<Record<TipoContenidoImpresion, string>> = {
+  FACTURA_ELECTRONICA: '1.1.0', // bloque fiscal: CUFE, QR…
+  RECIBO_CAJA: '1.2.0', // título "RECIBO DE CAJA" y saldos
+};
 
 function versionAlMenos(version: string | undefined, minima: string): boolean {
   if (!version) return false;
@@ -84,14 +87,15 @@ export class PrintAgentService {
    * no reconstruyen nada por su cuenta.
    */
   imprimirTicket(contenido: ReciboContenido, opciones: OpcionesImpresion = {}): Observable<PrintResult> {
-    if (contenido.tipo !== 'FACTURA_ELECTRONICA') return this.enviarAlAgente(contenido, opciones);
-    // Un agente viejo imprimiría la factura sin CUFE ni QR (tirilla sin validez) — mejor el navegador.
+    const minima = VERSION_MINIMA_AGENTE[contenido.tipo];
+    if (!minima) return this.enviarAlAgente(contenido, opciones);
+    // Un agente viejo imprimiría el documento sin sus datos propios (factura sin CUFE/QR, recibo de caja sin título ni saldos).
     return this.estado().pipe(
       switchMap((estado) => {
         if (!estado.ok) return of<PrintResult>({ impreso: false, error: 'Agente de impresión no disponible' });
-        return versionAlMenos(estado.version, VERSION_AGENTE_FACTURA_ELECTRONICA)
+        return versionAlMenos(estado.version, minima)
           ? this.enviarAlAgente(contenido, opciones)
-          : of<PrintResult>({ impreso: false, error: 'El agente de impresión no soporta facturas electrónicas — actualízalo' });
+          : of<PrintResult>({ impreso: false, error: 'El agente de impresión no soporta este comprobante — actualízalo' });
       }),
     );
   }
@@ -126,6 +130,7 @@ export class PrintAgentService {
             terminos: contenido.terminos,
             dian: contenido.dian,
             leyenda: contenido.leyenda,
+            abono: contenido.abono,
             // El QR viaja como PNG en base64 (sin el prefijo data:) — pos-agent lo imprime igual que el logo.
             electronica: contenido.electronica
               ? { ...contenido.electronica, qrDataUrl: undefined, qrBase64: contenido.electronica.qrDataUrl?.split(',')[1] }
@@ -239,6 +244,8 @@ export class PrintAgentService {
       new Date(contenido.fecha),
     );
 
+    // Un recibo de caja es un pago, no una venta: sin discriminación de IVA por línea.
+    const esReciboCaja = contenido.tipo === 'RECIBO_CAJA';
     const filasItems = contenido.items
       .map(
         (item) => `
@@ -247,9 +254,13 @@ export class PrintAgentService {
             <td class="num">${item.cantidad}</td>
             <td class="num">${money(item.subtotal)}</td>
           </tr>
-          <tr class="iva-linea">
+          ${
+            esReciboCaja
+              ? ''
+              : `<tr class="iva-linea">
             <td colspan="3">IVA (${money(item.impuesto)} sobre ${money(item.baseImponible)})</td>
-          </tr>`,
+          </tr>`
+          }`,
       )
       .join('');
 
@@ -264,6 +275,15 @@ export class PrintAgentService {
       .join('');
 
     const e = contenido.tipo === 'FACTURA_ELECTRONICA' ? contenido.electronica : undefined;
+    const a = contenido.tipo === 'RECIBO_CAJA' ? contenido.abono : undefined;
+    const abonoHtml = a
+      ? `<table class="totales">
+          ${a.moraPagada > 0 ? `<tr><td class="label">Intereses de mora</td><td class="num">${money(a.moraPagada)}</td></tr>` : ''}
+          ${a.referenciaPago ? `<tr><td class="label">Ref. pago</td><td class="num">${this.escapar(a.referenciaPago)}</td></tr>` : ''}
+          ${a.saldoAnterior != null ? `<tr><td class="label">Saldo anterior</td><td class="num">${money(a.saldoAnterior)}</td></tr>` : ''}
+          ${a.saldoNuevo != null ? `<tr><td class="label">Saldo pendiente</td><td class="num">${money(a.saldoNuevo)}</td></tr>` : ''}
+        </table>`
+      : '';
     const fiscalHtml = e
       ? `<hr /><div class="fiscal">
           ${e.resolucion ? `<div>${this.escapar(e.resolucion)}</div>` : ''}
@@ -274,7 +294,9 @@ export class PrintAgentService {
       : '';
     const datosVentaHtml = e
       ? `Factura No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(e.adquirente.nombre)} — ${this.escapar(e.adquirente.identificacion)}<br />Forma de pago: ${e.formaPago}`
-      : `No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(contenido.cliente)}`;
+      : a
+        ? `Recibo de caja No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(contenido.cliente)}<br />Abono a: ${this.escapar(a.tipoComprobanteVenta)} ${this.escapar(a.comprobanteVenta)} · Cuota ${a.numeroCuota} de ${a.totalCuotas}`
+        : `No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(contenido.cliente)}`;
     const nombreEmisor = e?.emisor?.razonSocial || contenido.negocio.nombre;
     const nitEmisor = e?.emisor?.nitConDv || contenido.negocio.nit;
     const direccionEmisor = e?.emisor?.direccion || contenido.emisor.direccion;
@@ -298,7 +320,7 @@ export class PrintAgentService {
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<title>${contenido.tipo === 'RECIBO' ? 'Recibo' : 'Factura'} ${this.escapar(contenido.numero)}</title>
+<title>${contenido.tipo === 'RECIBO_CAJA' ? 'Recibo de caja' : contenido.tipo === 'RECIBO' ? 'Recibo' : 'Factura'} ${this.escapar(contenido.numero)}</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -338,7 +360,9 @@ export class PrintAgentService {
       ? 'FACTURA ELECTRÓNICA DE VENTA'
       : contenido.tipo === 'FACTURA'
         ? 'FACTURA DE VENTA'
-        : contenido.negocio.nombre || 'Recibo de venta',
+        : contenido.tipo === 'RECIBO_CAJA'
+          ? 'RECIBO DE CAJA'
+          : contenido.negocio.nombre || 'Recibo de venta',
   )}</h1>
   ${contenido.tipo !== 'RECIBO' ? `<div class="meta">${this.escapar(nombreEmisor)}</div>` : ''}
   ${nitEmisor ? `<div class="meta">NIT: ${this.escapar(nitEmisor)}</div>` : ''}
@@ -349,7 +373,7 @@ export class PrintAgentService {
   <hr />
   <table>
     <thead>
-      <tr><td>Producto</td><td class="num">Cant.</td><td class="num">Subtotal</td></tr>
+      <tr><td>${esReciboCaja ? 'Concepto' : 'Producto'}</td><td class="num">Cant.</td><td class="num">Subtotal</td></tr>
     </thead>
     <tbody>${filasItems}</tbody>
   </table>
@@ -357,10 +381,11 @@ export class PrintAgentService {
   <table class="totales">
     <tr><td class="label">Subtotal</td><td class="num">${money(contenido.subtotal)}</td></tr>
     ${contenido.descuento > 0 ? `<tr><td class="label">Descuento</td><td class="num">-${money(contenido.descuento)}</td></tr>` : ''}
-    <tr><td class="label">IVA</td><td class="num">${money(contenido.impuesto)}</td></tr>
+    ${esReciboCaja ? '' : `<tr><td class="label">IVA</td><td class="num">${money(contenido.impuesto)}</td></tr>`}
     <tr class="total-final"><td>Total</td><td class="num">${money(contenido.total)}</td></tr>
   </table>
   ${filasPagos ? `<hr /><table>${filasPagos}</table>` : ''}
+  ${abonoHtml}
   ${opciones.cambio ? `<div class="meta">Cambio: ${money(opciones.cambio)}</div>` : ''}
   <div class="footer">${this.escapar(contenido.mensajeCierre || 'Gracias por su compra')}</div>
   ${contenido.terminos ? `<div class="terminos">${this.escapar(contenido.terminos)}</div>` : ''}
