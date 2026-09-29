@@ -84,7 +84,11 @@ El switch "Domicilio" vive en `features/pos/punto-venta/` (diálogo de cobro), n
 ## Confirmaciones y notificaciones
 
 - `ConfirmService` + `ds-confirm-dialog` (montado en `DashboardLayout`) reemplazan el `confirm()` nativo del navegador en toda la app — nunca usar `confirm()` directo, inyectar `ConfirmService` y `await this.confirmService.ask({ message, danger: true })`.
-- `RealtimeService` (`core/services/realtime.service.ts`) conecta un socket por sesión (mismo patrón `effect()` que `AlertasService`/`CajaService`) y expone `on(evento, callback)` — los listeners sobreviven a una reconexión/relogin porque se reenganchan solos al socket nuevo. `AlertasService` lo usa para refrescar la campana al instante (`alertas:cambio`); el polling de 30s bajó a 60s y quedó como respaldo si el socket cae.
+- `RealtimeService` (`core/services/realtime.service.ts`) conecta un socket por sesión (mismo patrón `effect()` que `AlertasService`/`CajaService`) y expone `on(evento, callback)` — los listeners sobreviven a una reconexión/relogin porque se reenganchan solos al socket nuevo. `AlertasService` lo usa para refrescar la campana al instante (`alertas:cambio`); el polling de 30s bajó a 60s y quedó como respaldo si el socket cae. También expone `off(evento, callback)` — un componente que se suscribe en su constructor tiene que desengancharse en `DestroyRef.onDestroy` pasando **la misma referencia** de función (guardarla en una propiedad, no una arrow inline), si no el listener sobrevive al componente.
+
+## Facturas electrónicas (`/facturas-electronicas`)
+
+`features/facturas-electronicas/`: `facturas-list` (resumen por estado que filtra al click, filtros, paginado del lado del servidor, se refresca con `documentos-electronicos:cambio`; acepta `?estado=RECHAZADO`) y `factura-detalle`, modal reutilizable (input `documentoId`) que también abre Ventas desde la columna DIAN / "Ver factura electrónica". El PDF lo genera el backend (Alegra no da PDF): el visor lo trae con `ApiService.getBlob` y lo muestra en un `<iframe>` sobre un `blob:` URL, porque un `src` directo no mandaría el JWT. Etiquetas/tonos del estado DIAN en una sola fuente, `estado-documento.util.ts`. "Ver venta" navega a `/ventas?venta=<id>`; `VentasList` escucha `queryParamMap` (no un snapshot) porque desde el mismo `/ventas` Angular reutiliza el componente. El logo del negocio se carga en `/mi-negocio` con `ds-image-upload` (input `hint` para el límite real de cada endpoint).
 
 ## Roles y permisos (Fase 4)
 
