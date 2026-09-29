@@ -1,9 +1,7 @@
-import { DatosDianPlantilla } from './plantilla-comprobante.model';
-import { TipoComprobante } from './plantilla-comprobante.model';
 import type { EstadoDocumentoElectronico } from './facturacion-electronica.model';
 
-/** Comprobante de una venta: `FACTURA_ELECTRONICA` no existe en plantillas/numeraciones, solo en ventas. */
-export type TipoComprobanteVenta = TipoComprobante | 'FACTURA_ELECTRONICA';
+/** Comprobante de una venta. `FACTURA` = factura convencional histórica (nunca se asigna a una venta nueva). */
+export type TipoComprobanteVenta = 'RECIBO' | 'FACTURA' | 'FACTURA_ELECTRONICA';
 
 export interface ItemComprobante {
   nombre: string;
@@ -58,7 +56,7 @@ export type TipoContenidoImpresion = TipoComprobanteVenta | 'RECIBO_CAJA';
 export interface ReciboContenido {
   tipo: TipoContenidoImpresion;
   negocio: { nombre: string; nit?: string; logoUrl?: string };
-  emisor: { nombrePersonaNatural?: string; direccion?: string; telefono?: string };
+  emisor: { direccion?: string; telefono?: string };
   numero: string;
   fecha: string;
   cliente: string;
@@ -70,7 +68,6 @@ export interface ReciboContenido {
   pagos: PagoComprobante[];
   mensajeCierre?: string;
   terminos?: string;
-  dian?: DatosDianPlantilla;
   electronica?: ElectronicaComprobante;
   /** Solo en comprobantes que no son factura electrónica. */
   leyenda?: string;

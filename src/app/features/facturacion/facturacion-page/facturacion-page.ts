@@ -23,6 +23,7 @@ export class FacturacionPage {
         etiqueta: 'Facturación electrónica',
         visible: this.auth.tienePermiso('FACTURACION_ELECTRONICA_DIAN', 'VER'),
       },
+      { ruta: 'formato', etiqueta: 'Formato de impresión', visible: this.auth.tienePermiso('FACTURACION', 'EDITAR') },
     ].filter((p) => p.visible),
   );
 }

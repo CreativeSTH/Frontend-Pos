@@ -120,7 +120,7 @@ export class NegocioDatos {
       next: ({ logoUrl }) => {
         this.subiendoLogo.set(false);
         this.negocio.update((n) => (n ? { ...n, logoUrl } : n));
-        this.toast.success('Logo actualizado — ya aparece en tus facturas electrónicas');
+        this.toast.success('Logo actualizado — ya aparece en tus recibos y facturas');
       },
       error: (err) => {
         this.subiendoLogo.set(false);
@@ -133,7 +133,7 @@ export class NegocioDatos {
   private async quitarLogo(): Promise<void> {
     if (!this.negocio()?.logoUrl) return;
     const ok = await this.confirmService.ask({
-      message: '¿Quitar el logo del negocio? Tus facturas usarán el de la plantilla de factura o el de la tienda online, si hay.',
+      message: '¿Quitar el logo del negocio? Tus recibos y facturas saldrán sin logo (o con el de la tienda online, si hay).',
       danger: true,
     });
     if (!ok) return;

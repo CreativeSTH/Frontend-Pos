@@ -128,7 +128,6 @@ export class PrintAgentService {
             cambio: opciones.cambio,
             mensajeCierre: contenido.mensajeCierre,
             terminos: contenido.terminos,
-            dian: contenido.dian,
             leyenda: contenido.leyenda,
             abono: contenido.abono,
             // El QR viaja como PNG en base64 (sin el prefijo data:) — pos-agent lo imprime igual que el logo.
@@ -301,21 +300,6 @@ export class PrintAgentService {
     const nitEmisor = e?.emisor?.nitConDv || contenido.negocio.nit;
     const direccionEmisor = e?.emisor?.direccion || contenido.emisor.direccion;
 
-    const dianHtml =
-      contenido.tipo === 'FACTURA' && contenido.dian
-        ? `<hr /><div class="dian">
-            ${contenido.dian.resolucionNumero ? `<div>Resolución DIAN No. ${this.escapar(contenido.dian.resolucionNumero)}</div>` : ''}
-            ${
-              contenido.dian.prefijo || contenido.dian.rangoDesde || contenido.dian.rangoHasta
-                ? `<div>Numeración: ${this.escapar(contenido.dian.prefijo ?? '')}${contenido.dian.rangoDesde ?? ''} - ${this.escapar(contenido.dian.prefijo ?? '')}${contenido.dian.rangoHasta ?? ''}</div>`
-                : ''
-            }
-            ${contenido.dian.fechaVigencia ? `<div>Vigente hasta: ${this.escapar(contenido.dian.fechaVigencia)}</div>` : ''}
-            ${contenido.dian.regimenFiscal ? `<div>Régimen: ${this.escapar(contenido.dian.regimenFiscal)}</div>` : ''}
-            ${(contenido.dian.camposExtra ?? []).map((c) => `<div>${this.escapar(c.etiqueta)}: ${this.escapar(c.valor)}</div>`).join('')}
-          </div>`
-        : '';
-
     return `<!doctype html>
 <html lang="es">
 <head>
@@ -366,7 +350,6 @@ export class PrintAgentService {
   )}</h1>
   ${contenido.tipo !== 'RECIBO' ? `<div class="meta">${this.escapar(nombreEmisor)}</div>` : ''}
   ${nitEmisor ? `<div class="meta">NIT: ${this.escapar(nitEmisor)}</div>` : ''}
-  ${contenido.emisor.nombrePersonaNatural ? `<div class="meta">${this.escapar(contenido.emisor.nombrePersonaNatural)}</div>` : ''}
   ${direccionEmisor ? `<div class="meta">${this.escapar(direccionEmisor)}</div>` : ''}
   ${contenido.emisor.telefono ? `<div class="meta">Tel: ${this.escapar(contenido.emisor.telefono)}</div>` : ''}
   <div class="meta">${datosVentaHtml}</div>
@@ -389,7 +372,6 @@ export class PrintAgentService {
   ${opciones.cambio ? `<div class="meta">Cambio: ${money(opciones.cambio)}</div>` : ''}
   <div class="footer">${this.escapar(contenido.mensajeCierre || 'Gracias por su compra')}</div>
   ${contenido.terminos ? `<div class="terminos">${this.escapar(contenido.terminos)}</div>` : ''}
-  ${dianHtml}
   ${fiscalHtml}
   ${contenido.leyenda ? `<div class="leyenda">${this.escapar(contenido.leyenda)}</div>` : ''}
 </body>

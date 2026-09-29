@@ -7,9 +7,6 @@ export interface SucursalPayload {
   direccion?: string;
   telefono?: string;
   metaVentasDiaria?: number;
-  tipoComprobanteDefecto?: 'RECIBO' | 'FACTURA';
-  plantillaReciboDefectoId?: string;
-  plantillaFacturaDefectoId?: string;
   bodegaOperativaId?: string;
 }
 
@@ -27,15 +24,6 @@ export class SucursalesService {
 
   update(id: string, payload: Partial<SucursalPayload>) {
     return this.api.patch<Sucursal>(`/sucursales/${id}`, payload);
-  }
-
-  /** Setea o limpia (null) el default de plantilla de recibo/factura de una sucursal — usado por el wizard de Facturación. */
-  updateDefaultPlantilla(
-    id: string,
-    campo: 'plantillaReciboDefectoId' | 'plantillaFacturaDefectoId',
-    valor: string | null,
-  ) {
-    return this.api.patch<Sucursal>(`/sucursales/${id}`, { [campo]: valor });
   }
 
   remove(id: string) {

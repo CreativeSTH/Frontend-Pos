@@ -3,11 +3,16 @@
   @if (e()?.encabezado; as encabezado) {
     <div class="tirilla__estado">{{ encabezado }}</div>
   }
+  @if (c.negocio.logoUrl) {
+    <img class="tirilla__logo" [src]="assetsUrl + c.negocio.logoUrl" alt="Logo" />
+  }
   <div class="tirilla__centro tirilla__titulo">
     @if (c.tipo === 'FACTURA_ELECTRONICA') {
       FACTURA ELECTRÓNICA DE VENTA
     } @else if (c.tipo === 'FACTURA') {
       FACTURA DE VENTA
+    } @else if (c.tipo === 'RECIBO_CAJA') {
+      RECIBO DE CAJA
     } @else {
       RECIBO DE VENTA
     }
@@ -55,6 +60,12 @@
       }
       <div>{{ fe.proveedorTecnologico }}</div>
     </div>
+  }
+  @if (c.mensajeCierre) {
+    <div class="tirilla__centro tirilla__cierre">{{ c.mensajeCierre }}</div>
+  }
+  @if (c.terminos) {
+    <div class="tirilla__terminos">{{ c.terminos }}</div>
   }
   @if (c.leyenda) {
     <div class="tirilla__leyenda">{{ c.leyenda }}</div>

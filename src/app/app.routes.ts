@@ -206,18 +206,9 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/configuracion/dispositivos/dispositivos').then((m) => m.Dispositivos),
       },
-      {
-        path: 'configuracion/facturacion',
-        canActivate: [permisoGuard('FACTURACION')],
-        loadComponent: () =>
-          import('./features/facturacion/facturacion-list/facturacion-list').then((m) => m.FacturacionList),
-      },
-      {
-        path: 'configuracion/facturacion/wizard',
-        canActivate: [permisoGuard('FACTURACION', 'CREAR')],
-        loadComponent: () =>
-          import('./features/facturacion/facturacion-wizard/facturacion-wizard').then((m) => m.FacturacionWizard),
-      },
+      // Las plantillas se reemplazaron por un solo formato de impresión (fase 5b).
+      { path: 'configuracion/facturacion', redirectTo: '/facturacion/formato' },
+      { path: 'configuracion/facturacion/wizard', redirectTo: '/facturacion/formato' },
       {
         path: 'configuracion/cupones',
         canActivate: [permisoGuard('CUPONES')],
@@ -276,6 +267,11 @@ export const routes: Routes = [
             canActivate: [permisoGuard('FACTURACION_ELECTRONICA_DIAN')],
             loadComponent: () =>
               import('./features/facturacion/electronica-tab/electronica-tab').then((m) => m.ElectronicaTab),
+          },
+          {
+            path: 'formato',
+            canActivate: [permisoGuard('FACTURACION', 'EDITAR')],
+            loadComponent: () => import('./features/facturacion/formato-tab/formato-tab').then((m) => m.FormatoTab),
           },
         ],
       },

@@ -1,0 +1,51 @@
+@if (cargando()) {
+  <p class="formato-nota">Cargando formato...</p>
+} @else {
+  <div class="formato">
+    <section class="formato-card formato-card--logo">
+      <h3 class="formato-card__titulo">Logo</h3>
+      @if (puedeCambiarLogo()) {
+        @for (v of [versionLogo()]; track v) {
+          <ds-image-upload
+            label="Logo del negocio"
+            hint="JPG, PNG o WEBP, hasta 2 MB. Es el mismo logo de tus facturas electrónicas."
+            [existingUrl]="logoUrlCompleta()"
+            (fileSelected)="alElegirLogo($event)"
+          />
+        }
+      } @else if (logoUrlCompleta(); as url) {
+        <img class="formato-logo" [src]="url" alt="Logo del negocio" />
+        <p class="formato-nota">El logo lo cambia quien administra los <a routerLink="/mi-negocio">datos del negocio</a>.</p>
+      } @else {
+        <p class="formato-nota">Tu negocio no tiene logo.</p>
+      }
+    </section>
+
+    <section class="formato-card formato-card--textos">
+      <h3 class="formato-card__titulo">Textos</h3>
+      <ds-form-field label="Mensaje de cierre" hint="Hasta 120 caracteres. Ejemplo: ¡Gracias por tu compra!">
+        <ds-input [ngModel]="mensajeCierre()" (ngModelChange)="mensajeCierre.set($event)" [disabled]="!puedeEditar()" />
+      </ds-form-field>
+      <ds-form-field label="Términos y condiciones" hint="Hasta 500 caracteres: devoluciones, garantías…">
+        <textarea
+          class="formato-textarea"
+          rows="4"
+          maxlength="500"
+          [ngModel]="terminos()"
+          (ngModelChange)="terminos.set($event)"
+          [disabled]="!puedeEditar()"
+        ></textarea>
+      </ds-form-field>
+      @if (puedeEditar()) {
+        <div class="formato-acciones">
+          <ds-button variant="primary" [loading]="guardando()" (click)="guardar()">Guardar</ds-button>
+        </div>
+      }
+    </section>
+
+    <section class="formato-card formato-card--preview">
+      <h3 class="formato-card__titulo">Así sale impreso</h3>
+      <ds-tirilla-comprobante [contenido]="ejemplo()" />
+    </section>
+  </div>
+}
