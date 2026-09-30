@@ -36,8 +36,10 @@ const VERSION_MINIMA_AGENTE: Partial<Record<TipoContenidoImpresion, string>> = {
 };
 /** Fase 6a: un agente anterior imprimiría la factura de papel con el título de factura electrónica. */
 const VERSION_MINIMA_CONTINGENCIA = '1.3.0';
+/** Fase 6b: la tirilla armada sin conexión trae el QR como texto (lo dibuja el agente desde 1.4.0). */
+const VERSION_MINIMA_SIN_CONEXION = '1.4.0';
 
-function versionAlMenos(version: string | undefined, minima: string): boolean {
+export function versionAlMenos(version: string | undefined, minima: string): boolean {
   if (!version) return false;
   const a = version.split('.').map(Number);
   const b = minima.split('.').map(Number);
@@ -89,7 +91,12 @@ export class PrintAgentService {
    * no reconstruyen nada por su cuenta.
    */
   imprimirTicket(contenido: ReciboContenido, opciones: OpcionesImpresion = {}): Observable<PrintResult> {
-    const minima = contenido.electronica?.contingencia ? VERSION_MINIMA_CONTINGENCIA : VERSION_MINIMA_AGENTE[contenido.tipo];
+    const sinConexion = !!contenido.electronica?.qrTexto || contenido.numero.startsWith('SC');
+    const minima = sinConexion
+      ? VERSION_MINIMA_SIN_CONEXION
+      : contenido.electronica?.contingencia
+        ? VERSION_MINIMA_CONTINGENCIA
+        : VERSION_MINIMA_AGENTE[contenido.tipo];
     if (!minima) return this.enviarAlAgente(contenido, opciones);
     // Un agente viejo imprimiría el documento sin sus datos propios (factura sin CUFE/QR, recibo de caja sin título ni saldos).
     return this.estado().pipe(

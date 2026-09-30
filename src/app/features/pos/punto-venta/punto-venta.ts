@@ -41,6 +41,13 @@ import { PoliticaFacturacionService } from '../../../core/services/politica-fact
 import { FacturacionElectronicaService } from '../../../core/services/facturacion-electronica.service';
 import { RealtimeService } from '../../../core/services/realtime.service';
 import { ContingenciaService } from '../../../core/services/contingencia.service';
+import { ConexionService, esErrorDeConexion } from '../../../core/services/conexion.service';
+import { SinConexionService } from '../../../core/services/sin-conexion.service';
+import { AgenteSinConexionService } from '../../../core/services/agente-sin-conexion.service';
+import { PrintAgentService } from '../../../core/services/print-agent.service';
+import { FormatoImpresionService } from '../../../core/services/formato-impresion.service';
+import { DatosVentaSinConexion, SnapshotPos } from '../../../core/models/sin-conexion.model';
+import { construirContenidoSinConexion } from './contenido-sin-conexion.util';
 import { DocumentoElectronico } from '../../../core/models/facturacion-electronica.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { PagosWompiService } from '../../../core/services/pagos-wompi.service';
@@ -133,6 +140,11 @@ export class PuntoVenta {
   private readonly realtime = inject(RealtimeService);
   private readonly politicaFacturacion = inject(PoliticaFacturacionService);
   private readonly contingenciaService = inject(ContingenciaService);
+  private readonly conexion = inject(ConexionService);
+  protected readonly sinConexionSvc = inject(SinConexionService);
+  private readonly agente = inject(AgenteSinConexionService);
+  private readonly printAgent = inject(PrintAgentService);
+  private readonly formatoImpresion = inject(FormatoImpresionService);
   protected readonly auth = inject(AuthService);
   private readonly ventasSuspendidasService = inject(VentasSuspendidasService);
   private readonly toast = inject(ToastService);
@@ -155,6 +167,21 @@ export class PuntoVenta {
       this.auth.tienePermiso('FACTURACION_ELECTRONICA_DIAN', 'EDITAR') &&
       this.hayResolucionContingencia(),
   );
+  // ---------- Fase 6b: vender sin conexión ----------
+  protected readonly sinConexion = computed(() => !this.conexion.enLinea());
+  protected readonly puedeVenderSinConexion = computed(() => {
+    const modo = this.estadoFacturacion()?.modo;
+    // Sin saber el modo (ni en línea ni en la foto) no se sabe qué documento imprimir: no se vende.
+    if (!this.sinConexionSvc.agenteListo() || !this.turno() || !this.sinConexionSvc.ultimaFoto() || !modo || modo === 'BLOQUEADO') {
+      return false;
+    }
+    return modo !== 'ELECTRONICA' || (this.sinConexionSvc.estadoAgente()?.disponibles ?? 0) > 0;
+  });
+  /** Se incrementa al volver la conexión para que turno, stock y precios se recarguen. */
+  private readonly recargaDatos = signal(0);
+  private readonly formato = signal<{ mensajeCierre?: string; terminos?: string }>({});
+  private temporizadorFoto: ReturnType<typeof setTimeout> | null = null;
+
   protected readonly modoTalonario = signal(false);
   protected readonly talonarioNumero = signal<number | null>(null);
   protected readonly talonarioFecha = signal('');
@@ -490,13 +517,17 @@ export class PuntoVenta {
     /** Turno y stock dependen de la sucursal/bodega activa — se recargan solos cuando cambian. */
     effect(() => {
       const sucursalId = this.sucursal()?.id;
+      this.recargaDatos();
       if (!sucursalId) {
         this.turno.set(null);
         return;
       }
       this.cajaService.findAllTurnos(sucursalId).subscribe({
         next: (turnos) => this.turno.set(turnos.find((t) => t.estado === 'ABIERTO') ?? null),
-        error: () => this.turno.set(null),
+        // Sin conexión (fase 6b) se conserva el turno que ya se conocía.
+        error: (err) => {
+          if (!esErrorDeConexion(err)) this.turno.set(null);
+        },
       });
     });
 
@@ -509,6 +540,7 @@ export class PuntoVenta {
 
     effect(() => {
       const bodegaId = this.bodega()?.id;
+      this.recargaDatos();
       if (!bodegaId) {
         this.stockPorProducto.set(new Map());
         return;
@@ -525,9 +557,10 @@ export class PuntoVenta {
           this.stockPorProducto.set(mapa);
           this.cargandoStock.set(false);
         },
-        error: () => {
+        error: (err) => {
           this.cargandoStock.set(false);
-          this.toast.error('No se pudo cargar el stock de esta bodega');
+          // Sin conexión (fase 6b) se conserva el stock que ya se conocía (el de la foto de la caja).
+          if (!esErrorDeConexion(err)) this.toast.error('No se pudo cargar el stock de esta bodega');
         },
       });
     });
@@ -536,6 +569,7 @@ export class PuntoVenta {
     effect(() => {
       const sucursalId = this.sucursal()?.id;
       const bodegaId = this.bodega()?.id;
+      this.recargaDatos();
       if (!sucursalId || !bodegaId) {
         this.preciosVigentes.set(new Map());
         return;
@@ -544,8 +578,95 @@ export class PuntoVenta {
         next: (precios) => {
           this.preciosVigentes.set(new Map(precios.map((p) => [p.productoId, p])));
         },
-        error: () => this.preciosVigentes.set(new Map()),
+        error: (err) => {
+          if (!esErrorDeConexion(err)) this.preciosVigentes.set(new Map());
+        },
       });
+    });
+
+    /** Fase 6b: con conexión, guarda en el pos-agent la foto del POS (3 s después del último cambio). */
+    effect(() => {
+      const enLinea = this.conexion.enLinea();
+      this.productos();
+      this.clientes();
+      this.stockPorProducto();
+      this.preciosVigentes();
+      this.turno();
+      this.estadoFacturacion();
+      this.formato();
+      if (!enLinea || this.loading()) return;
+      if (this.temporizadorFoto) clearTimeout(this.temporizadorFoto);
+      this.temporizadorFoto = setTimeout(() => this.guardarFoto(), 3000);
+    });
+    this.destroyRef.onDestroy(() => {
+      if (this.temporizadorFoto) clearTimeout(this.temporizadorFoto);
+    });
+
+    /** Fase 6b: al volver la conexión, se recargan los datos (la sincronización la hace SinConexionService). */
+    let estabaEnLinea = this.conexion.enLinea();
+    effect(() => {
+      const enLinea = this.conexion.enLinea();
+      if (enLinea && !estabaEnLinea) {
+        this.load();
+        this.recargaDatos.update((n) => n + 1);
+        this.politicaFacturacion.cargar();
+      }
+      estabaEnLinea = enLinea;
+    });
+  }
+
+  /** Fase 6b: todo lo que la caja necesita para vender e imprimir sin backend. */
+  private guardarFoto(): void {
+    const usuario = this.auth.usuario();
+    const sucursal = this.sucursal();
+    const bodega = this.bodega();
+    if (!usuario?.negocioId || !sucursal || !bodega) return;
+    const foto: Omit<SnapshotPos, 'datos'> = {
+      negocioId: usuario.negocioId,
+      sucursalId: sucursal.id,
+      bodegaId: bodega.id,
+      usuarioId: usuario.id,
+      productos: this.productos(),
+      categorias: this.categorias(),
+      sucursales: this.sucursales(),
+      bodegas: this.bodegas(),
+      clientes: this.clientes(),
+      metodosPago: this.metodosPago(),
+      turno: this.turno(),
+      stock: [...this.stockPorProducto()],
+      preciosVigentes: [...this.preciosVigentes().values()],
+      estadoFacturacion: this.estadoFacturacion() ?? null,
+      emisorSucursal: { direccion: sucursal.direccion ?? undefined, telefono: sucursal.telefono ?? undefined },
+      mensajeCierre: this.formato().mensajeCierre,
+      terminos: this.formato().terminos,
+    };
+    this.sinConexionSvc.prepararse(foto);
+  }
+
+  /** Fase 6b: sin backend, el POS arranca con la última foto guardada en el pos-agent. */
+  private cargarDesdeFoto(): void {
+    this.agente.leerSnapshot().subscribe({
+      next: (foto) => {
+        this.productos.set(foto.productos);
+        this.categorias.set(foto.categorias);
+        this.sucursales.set(foto.sucursales);
+        this.bodegas.set(foto.bodegas);
+        this.clientes.set(foto.clientes);
+        this.metodosPago.set(foto.metodosPago);
+        this.turno.set(foto.turno);
+        this.stockPorProducto.set(new Map(foto.stock));
+        this.preciosVigentes.set(new Map(foto.preciosVigentes.map((p) => [p.productoId, p])));
+        this.formato.set({ mensajeCierre: foto.mensajeCierre, terminos: foto.terminos });
+        this.sinConexionSvc.ultimaFoto.set(foto);
+        this.politicaFacturacion.usarEstadoGuardado(foto.estadoFacturacion);
+        if (!this.sucursal()) this.sucursalContext.elegir(foto.sucursalId);
+        this.loading.set(false);
+        this.toast.info('Sin conexión: usando los datos guardados en esta caja');
+      },
+      error: () => {
+        this.loading.set(false);
+        this.toast.error('Sin conexión y esta caja no tiene datos guardados');
+      },
     });
   }
 
@@ -568,10 +689,19 @@ export class PuntoVenta {
         this.metodosPago.set(metodosPago);
         this.loading.set(false);
       },
-      error: () => {
+      error: (err) => {
+        if (esErrorDeConexion(err)) {
+          this.cargarDesdeFoto();
+          return;
+        }
         this.loading.set(false);
         this.toast.error('No se pudo cargar el punto de venta');
       },
+    });
+    // Mensaje de cierre y términos para la tirilla sin conexión (requiere FACTURACION:VER; sin él se omiten).
+    this.formatoImpresion.obtener().subscribe({
+      next: (f) => this.formato.set({ mensajeCierre: f.mensajeCierre ?? undefined, terminos: f.terminos ?? undefined }),
+      error: () => undefined,
     });
   }
 
@@ -1365,6 +1495,10 @@ export class PuntoVenta {
     clienteContadoId?: string,
     nombreClienteContado?: string,
   ): void {
+    if (this.sinConexion()) {
+      this.registrarVentaSinConexion(sucursalId, bodegaId, esCredito, clienteContadoId, nombreClienteContado);
+      return;
+    }
     const direccion = this.direccionElegida();
     const talonario = this.modoTalonario()
       ? { numero: Number(this.talonarioNumero()), fecha: this.talonarioFecha() }
@@ -1450,6 +1584,85 @@ export class PuntoVenta {
           this.reiniciarPagoWompi();
           this.procesando.set(false);
           this.toast.error(err.error?.message ?? 'No se pudo registrar la venta');
+        },
+      });
+  }
+
+  /** Fase 6b: la venta se guarda en el pos-agent, se imprime desde acá y se sincroniza al volver la conexión. */
+  private registrarVentaSinConexion(
+    sucursalId: string,
+    bodegaId: string,
+    esCredito: boolean,
+    clienteContadoId?: string,
+    nombreClienteContado?: string,
+  ): void {
+    const turno = this.turno();
+    const foto = this.sinConexionSvc.ultimaFoto();
+    if (!turno || !foto || !this.puedeVenderSinConexion()) {
+      this.toast.error('Esta caja no puede vender sin conexión (revisa el agente, el turno o la numeración de contingencia)');
+      return;
+    }
+    const cliente = esCredito
+      ? (this.clientes().find((c) => c.id === this.clienteId()) ?? null)
+      : (this.clientes().find((c) => c.id === clienteContadoId) ?? null);
+    const lineas = this.carrito().map((l) => {
+      const producto = this.productos().find((p) => p.id === l.productoId);
+      return {
+        productoId: l.productoId,
+        nombre: l.nombre,
+        cantidad: l.cantidad,
+        precioUnitario: Number(l.precioUnitario),
+        porcentajeImpuesto: Number(producto?.porcentajeImpuesto ?? 0),
+      };
+    });
+    const total = lineas.reduce((a, l) => a + l.precioUnitario * l.cantidad * (1 + l.porcentajeImpuesto / 100), 0);
+    // Mismo criterio que `ClientesService.verificarCredito` del backend, con los datos de la foto.
+    if (esCredito && cliente && (cliente.bloqueadoPorMora || Number(cliente.limiteCredito) - Number(cliente.deudaActual) < total)) {
+      this.toast.error(cliente.bloqueadoPorMora ? 'El cliente está bloqueado por mora' : 'El cliente no tiene cupo suficiente para esta venta');
+      return;
+    }
+    const creadaEn = new Date();
+    const datos: DatosVentaSinConexion = {
+      creadaEn: creadaEn.toISOString(),
+      turnoId: turno.id,
+      sucursalId,
+      bodegaId,
+      tipoVenta: esCredito ? 'CREDITO' : 'CONTADO',
+      clienteId: cliente?.id,
+      nombreCliente: cliente?.nombre ?? nombreClienteContado ?? 'Consumidor final',
+      items: lineas.map(({ productoId, cantidad, precioUnitario, porcentajeImpuesto }) => ({ productoId, cantidad, precioUnitario, porcentajeImpuesto })),
+      ...(esCredito
+        ? { numeroCuotas: this.numeroCuotas(), fechaPrimerPago: this.fechaPrimerPago() }
+        : { pagos: this.pagosParaEnviar().map((p) => ({ metodoPago: p.metodoPago, monto: p.monto })) }),
+    };
+    const cambioVenta = !esCredito ? this.cambio() : 0;
+    this.procesando.set(true);
+    this.agente
+      .registrarVenta({ idLocal: crypto.randomUUID(), requiereNumero: this.estadoFacturacion()?.modo === 'ELECTRONICA', datos })
+      .subscribe({
+        next: (asignacion) => {
+          const contenido = construirContenidoSinConexion({
+            foto,
+            asignacion,
+            creadaEn,
+            lineas,
+            pagos: (datos.pagos ?? []).map((p) => ({ metodo: p.metodoPago, monto: p.monto })),
+            cliente,
+            credito: esCredito,
+          });
+          this.printAgent.imprimirTicket(contenido, { cambio: cambioVenta || undefined }).subscribe((r) => {
+            if (!r.impreso) this.toast.error(r.error ?? 'No se pudo imprimir');
+          });
+          this.procesando.set(false);
+          this.showCobro.set(false);
+          this.descontarStockVendido(this.carrito());
+          this.carrito.set([]);
+          this.sinConexionSvc.refrescarEstado();
+          this.toast.success(`Venta guardada sin conexión (${contenido.numero})`);
+        },
+        error: (err) => {
+          this.procesando.set(false);
+          this.toast.error(err.error?.mensaje ?? 'No se pudo guardar la venta en esta caja');
         },
       });
   }

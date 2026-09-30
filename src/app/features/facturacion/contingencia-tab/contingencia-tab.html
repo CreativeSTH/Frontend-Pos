@@ -13,7 +13,7 @@
     </div>
     @if (e.activa; as a) {
       <p class="contingencia-card__destacado">
-        Estás en contingencia desde el {{ fechaHora(a.inicio) }} ({{ a.origen === 'AUTOMATICA' ? 'AURA la activó porque Alegra/DIAN no responde' : 'declarada a mano' }}).
+        Estás en contingencia desde el {{ fechaHora(a.inicio) }} ({{ a.origen === 'AUTOMATICA' ? 'AURA la activó porque Alegra/DIAN no responde' : a.origen === 'SIN_CONEXION' ? 'una caja se quedó sin conexión' : 'declarada a mano' }}).
       </p>
       <p>
         Cada venta sale como <strong>factura de papel</strong> con la numeración {{ e.resolucion?.prefijo }}. Entrégasela al
@@ -147,7 +147,7 @@
                 <td>{{ fechaHora(d.fechaEmision) }}</td>
                 <td>{{ d.nombreCliente }}</td>
                 <td class="num">{{ formatMoney(d.total) }}</td>
-                <td>{{ d.transcritaDeTalonario ? 'Talonario' : 'Impresa por AURA' }}</td>
+                <td>{{ origenFactura(d) }}</td>
                 <td>
                   <ds-badge [tone]="tonoEstado(d)">{{ etiquetaEstado(d) }}</ds-badge>
                   @if (d.errorMensaje && (d.estado === 'RECHAZADO' || d.estado === 'ERROR')) {
@@ -177,7 +177,7 @@
         @for (p of e.periodos; track p.id) {
           <li>
             {{ fechaHora(p.inicio) }} — {{ p.fin ? fechaHora(p.fin) : 'en curso' }} ·
-            {{ p.origen === 'AUTOMATICA' ? 'Automática' : 'Manual' }} · {{ p.motivo }}
+            {{ etiquetaOrigen(p.origen) }} · {{ p.motivo }}
           </li>
         }
       </ul>

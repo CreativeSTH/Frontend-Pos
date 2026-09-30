@@ -43,6 +43,8 @@ export interface ElectronicaComprobante {
   etiquetaCodigo: 'CUFE' | 'CUDE';
   /** Solo en contingencia: fabricante del software (el emisor sigue siendo el negocio). */
   fabricanteSoftware: string | null;
+  /** Fase 6b: QR como texto (sin conexión no hay imagen); lo dibuja el pos-agent. */
+  qrTexto?: string;
 }
 
 /** Recibo de caja de un abono a crédito — espejo de `AbonoComprobante` del backend. */

@@ -25,6 +25,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { GraficosService } from '../../../core/services/graficos.service';
 import { ChecklistOnboarding } from '../checklist-onboarding/checklist-onboarding';
 import { ResumenTurno } from '../../../core/models/caja.model';
+import { SinConexionService } from '../../../core/services/sin-conexion.service';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { GraficoConfigurado, WidgetLayoutGrafico } from '../../../core/models/grafico.model';
 
@@ -59,6 +60,7 @@ export class DashboardHome {
   private readonly sucursalContext = inject(SucursalContextService);
   private readonly inventarioService = inject(InventarioService);
   private readonly toast = inject(ToastService);
+  private readonly sinConexion = inject(SinConexionService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly graficosService = inject(GraficosService);
@@ -211,6 +213,11 @@ export class DashboardHome {
   protected cerrarTurno(): void {
     const turno = this.turnoAbierto();
     if (!turno) return;
+    // Fase 6b: las ventas hechas sin conexión en esta caja pertenecen a este turno — primero se envían.
+    if ((this.sinConexion.estadoAgente()?.pendientes ?? 0) > 0) {
+      this.toast.error('Esta caja tiene ventas hechas sin conexión sin enviar. Envíalas desde el punto de venta antes de cerrar el turno.');
+      return;
+    }
     const montosContados = Object.entries(this.montosContados()).map(([metodoPago, monto]) => ({
       metodoPago,
       monto,

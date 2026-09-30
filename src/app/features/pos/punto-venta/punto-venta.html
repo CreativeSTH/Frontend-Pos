@@ -20,7 +20,7 @@
     (suspendida)="onVentaSuspendida()"
     (retomada)="onVentaRetomada($event)"
   />
-  @if (turno()) {
+  @if (turno() && !sinConexion()) {
     <app-turno-caja-pos />
   }
 </app-topbar>
@@ -39,6 +39,34 @@
     <ds-button variant="glass" icon="cash-register" (click)="showAbrirTurno.set(true)">Abrir caja</ds-button>
   </ds-empty-state>
 } @else {
+  @if (sinConexion()) {
+    <div class="cobro-aviso" [class.cobro-aviso--warning]="puedeVenderSinConexion()" [class.cobro-aviso--danger]="!puedeVenderSinConexion()">
+      <span>
+        @if (puedeVenderSinConexion()) {
+          Sin conexión: las ventas se guardan en esta caja y se envían solas cuando vuelva el internet.
+          @if (estadoFacturacion()?.modo === 'ELECTRONICA') {
+            Quedan {{ sinConexionSvc.estadoAgente()?.disponibles }} números de factura de papel.
+          }
+        } @else {
+          Sin conexión y esta caja no puede vender: necesita el agente de impresión actualizado, un turno abierto, los datos
+          guardados y, si facturas electrónicamente, números de contingencia.
+        }
+      </span>
+    </div>
+  }
+  @if (!sinConexion() && (sinConexionSvc.estadoAgente()?.pendientes ?? 0) > 0) {
+    <div class="cobro-aviso cobro-aviso--warning">
+      <span>
+        {{ sinConexionSvc.estadoAgente()?.pendientes }} venta(s) hechas sin conexión por enviar
+        @if (sinConexionSvc.estadoAgente()?.errores) {
+          ({{ sinConexionSvc.estadoAgente()?.errores }} con error)
+        }
+      </span>
+      <ds-button variant="ghost" size="sm" [loading]="sinConexionSvc.sincronizando()" (click)="sinConexionSvc.sincronizar()">
+        Enviar ahora
+      </ds-button>
+    </div>
+  }
   @if (enContingencia()) {
     <div class="cobro-aviso cobro-aviso--warning">
       <span>
@@ -206,56 +234,58 @@
         </button>
       </div>
 
-      <div class="cobro-descuento-switch">
-        <ds-switch
-          label="Aplicar descuento a la venta"
-          [ngModel]="descuentoActivo()"
-          (ngModelChange)="alternarDescuentoActivo($event)"
-        />
-      </div>
-      @if (descuentoActivo()) {
-        <ds-form-field label="Descuento en la venta">
-          <ds-input
-            type="number"
-            icon="banknote"
-            [ngModel]="descuentoVenta()"
-            (ngModelChange)="actualizarDescuentoVenta($event)"
+      @if (!sinConexion()) {
+        <div class="cobro-descuento-switch">
+          <ds-switch
+            label="Aplicar descuento a la venta"
+            [ngModel]="descuentoActivo()"
+            (ngModelChange)="alternarDescuentoActivo($event)"
           />
-        </ds-form-field>
-        @if (requierePinDescuento()) {
-          <ds-form-field label="PIN de un administrador" hint="Tu usuario no tiene permisos para aplicar descuentos directamente">
+        </div>
+        @if (descuentoActivo()) {
+          <ds-form-field label="Descuento en la venta">
             <ds-input
-              type="password"
-              icon="lock"
-              placeholder="••••"
-              [ngModel]="pinAutorizacionDescuento()"
-              (ngModelChange)="pinAutorizacionDescuento.set($event)"
+              type="number"
+              icon="banknote"
+              [ngModel]="descuentoVenta()"
+              (ngModelChange)="actualizarDescuentoVenta($event)"
             />
           </ds-form-field>
-        }
-      }
-
-      <div class="cobro-descuento-switch">
-        <ds-switch label="Cupón de descuento" [ngModel]="cuponActivo()" (ngModelChange)="alternarCupon($event)" />
-      </div>
-      @if (cuponActivo()) {
-        <div class="cobro-cupon-row">
-          @if (!cuponAplicado()) {
-            <ds-input
-              icon="tag"
-              placeholder="Código del cupón"
-              [ngModel]="codigoCupon()"
-              (ngModelChange)="codigoCupon.set($event)"
-            />
-            <ds-button variant="glass" [loading]="validandoCupon()" (click)="redimirCupon()">Redimir</ds-button>
-          } @else {
-            <div class="cobro-cupon-aplicado">
-              <ds-icon name="tag" [size]="14" />
-              <span>{{ cuponAplicado()?.codigo }}</span>
-            </div>
-            <ds-button variant="ghost" icon="x" (click)="quitarCupon()">Quitar</ds-button>
+          @if (requierePinDescuento()) {
+            <ds-form-field label="PIN de un administrador" hint="Tu usuario no tiene permisos para aplicar descuentos directamente">
+              <ds-input
+                type="password"
+                icon="lock"
+                placeholder="••••"
+                [ngModel]="pinAutorizacionDescuento()"
+                (ngModelChange)="pinAutorizacionDescuento.set($event)"
+              />
+            </ds-form-field>
           }
+        }
+
+        <div class="cobro-descuento-switch">
+          <ds-switch label="Cupón de descuento" [ngModel]="cuponActivo()" (ngModelChange)="alternarCupon($event)" />
         </div>
+        @if (cuponActivo()) {
+          <div class="cobro-cupon-row">
+            @if (!cuponAplicado()) {
+              <ds-input
+                icon="tag"
+                placeholder="Código del cupón"
+                [ngModel]="codigoCupon()"
+                (ngModelChange)="codigoCupon.set($event)"
+              />
+              <ds-button variant="glass" [loading]="validandoCupon()" (click)="redimirCupon()">Redimir</ds-button>
+            } @else {
+              <div class="cobro-cupon-aplicado">
+                <ds-icon name="tag" [size]="14" />
+                <span>{{ cuponAplicado()?.codigo }}</span>
+              </div>
+              <ds-button variant="ghost" icon="x" (click)="quitarCupon()">Quitar</ds-button>
+            }
+          </div>
+        }
       }
     </div>
 
@@ -333,7 +363,7 @@
       </button>
       </div>
 
-      @if (configWompi()?.activo && (configWompi()?.qrHabilitado || configWompi()?.nequiHabilitado || pagandoConWompi())) {
+      @if (!sinConexion() && configWompi()?.activo && (configWompi()?.qrHabilitado || configWompi()?.nequiHabilitado || pagandoConWompi())) {
         <div class="cobro-wompi">
           @if (!pagandoConWompi()) {
             <div class="cobro-wompi__botones">
@@ -465,28 +495,34 @@
           <ds-form-field label="Nombre">
             <ds-input [ngModel]="nuevoClienteNombre()" (ngModelChange)="nuevoClienteNombre.set($event)" placeholder="Nombre del cliente" />
           </ds-form-field>
-          <ds-button
-            class="cobro-guardar-cliente"
-            variant="glass"
-            [fullWidth]="true"
-            [loading]="creandoClienteVenta()"
-            (click)="guardarClienteVenta()"
-          >
-            Guardar cliente
-          </ds-button>
+          @if (sinConexion()) {
+            <p class="cobro-factura-a">Sin conexión no se pueden crear clientes: vende a Consumidor final o elige uno existente.</p>
+          } @else {
+            <ds-button
+              class="cobro-guardar-cliente"
+              variant="glass"
+              [fullWidth]="true"
+              [loading]="creandoClienteVenta()"
+              (click)="guardarClienteVenta()"
+            >
+              Guardar cliente
+            </ds-button>
+          }
         } @else if (clienteVentaSeleccionado(); as cliente) {
           <div class="cobro-aviso cobro-aviso--success">
             <span>{{ cliente.nombre }} — {{ cliente.telefono }}</span>
             <button type="button" class="pos-cliente-cambiar" (click)="cambiarClienteVenta()">Cambiar</button>
           </div>
 
-          <div class="cobro-cliente-switch">
-            <ds-switch
-              label="Domicilio"
-              [ngModel]="domicilioActivo()"
-              (ngModelChange)="alternarDomicilio($event)"
-            />
-          </div>
+          @if (!sinConexion()) {
+            <div class="cobro-cliente-switch">
+              <ds-switch
+                label="Domicilio"
+                [ngModel]="domicilioActivo()"
+                (ngModelChange)="alternarDomicilio($event)"
+              />
+            </div>
+          }
           @if (domicilioActivo() && direccionElegida(); as direccion) {
             <div class="cobro-aviso cobro-aviso--success">
               <span>{{ direccion.direccionLinea1 }}@if (direccion.barrio) {, {{ direccion.barrio }}}</span>
@@ -518,7 +554,7 @@
         </div>
       }
 
-      @if (clienteId()) {
+      @if (clienteId() && !sinConexion()) {
         <div class="cobro-cliente-switch">
           <ds-switch
             label="Domicilio"
@@ -562,7 +598,7 @@
           Factura a nombre de {{ cliente.nombre }} — {{ siglaDocumento(cliente.tipoDocumentoIdentidad) }}
           {{ cliente.documentoIdentidad }}
         </p>
-      } @else {
+      } @else if (!sinConexion()) {
         <div class="cobro-documento">
           <p class="cobro-factura-a">
             Para facturarle a su nombre agrega su documento. Sin documento, la factura sale a Consumidor final.
@@ -580,7 +616,7 @@
       }
     }
 
-    @if (puedeTranscribir()) {
+    @if (puedeTranscribir() && !sinConexion()) {
       <div class="cobro-talonario">
         <label class="cobro-talonario__check">
           <input type="checkbox" [ngModel]="modoTalonario()" (ngModelChange)="modoTalonario.set($event)" />
@@ -600,7 +636,7 @@
       <ds-button variant="ghost" [disabled]="pagandoConWompi()" (click)="showCobro.set(false)">Cancelar</ds-button>
       <ds-button
         variant="primary"
-        [disabled]="pagandoConWompi() || cobroBloqueado()"
+        [disabled]="pagandoConWompi() || cobroBloqueado() || (sinConexion() && !puedeVenderSinConexion())"
         [loading]="procesando() || creandoClienteVenta()"
         (click)="confirmarCobro()"
       >

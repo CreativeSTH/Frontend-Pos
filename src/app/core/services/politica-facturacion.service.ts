@@ -42,6 +42,14 @@ export class PoliticaFacturacionService {
     this._suscripcionInactiva.set(false);
   }
 
+  /**
+   * Fase 6b: sin conexión, el POS arranca con la política guardada en la foto de la caja (sin ella no
+   * sabría si tiene que imprimir factura de papel o recibo). Solo si todavía no hay una cargada.
+   */
+  usarEstadoGuardado(estado: EstadoFacturacion | null): void {
+    if (estado && !this._estado()) this._estado.set(estado);
+  }
+
   cargar(): void {
     this.api.get<EstadoFacturacion>('/politica-facturacion/estado').subscribe({
       next: (estado) => this._estado.set(estado),

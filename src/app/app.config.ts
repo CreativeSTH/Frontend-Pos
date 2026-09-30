@@ -2,8 +2,11 @@ import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
+  isDevMode,
 } from '@angular/core';
 import { provideRouter, withRouterConfig } from '@angular/router';
+import { provideServiceWorker } from '@angular/service-worker';
+import { conexionInterceptor } from './core/interceptors/conexion.interceptor';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
@@ -19,6 +22,8 @@ export const appConfig: ApplicationConfig = {
     // propaga parámetros del padre a hijos de path vacío (por eso el catálogo, en path '', ya
     // funcionaba sin esto, pero el resto de rutas de la tienda recibían negocioId=null).
     provideRouter(routes, withRouterConfig({ paramsInheritanceStrategy: 'always' })),
-    provideHttpClient(withInterceptors([clienteAuthInterceptor, authInterceptor])),
+    // Fase 6b: la app (no la API) queda en caché para poder recargar el POS sin internet. Solo en producción.
+    provideServiceWorker('ngsw-worker.js', { enabled: !isDevMode(), registrationStrategy: 'registerWhenStable:30000' }),
+    provideHttpClient(withInterceptors([conexionInterceptor, clienteAuthInterceptor, authInterceptor])),
   ],
 };

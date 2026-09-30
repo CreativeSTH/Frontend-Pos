@@ -245,6 +245,17 @@ export class ContingenciaTab {
     return this.puedeEditar() && (doc.estado === 'RECHAZADO' || doc.estado === 'ERROR');
   }
 
+  protected etiquetaOrigen(origen: PeriodoContingencia['origen']): string {
+    return origen === 'AUTOMATICA' ? 'Automática' : origen === 'SIN_CONEXION' ? 'Sin conexión en la caja' : 'Manual';
+  }
+
+  /** Talonario escrito a mano, vendida sin conexión (6b) o impresa por AURA con el backend arriba (6a). */
+  protected origenFactura(doc: DocumentoElectronico): string {
+    if (doc.transcritaDeTalonario) return 'Talonario';
+    const periodo = this.estado()?.periodos.find((p) => p.id === doc.periodoContingenciaId);
+    return periodo?.origen === 'SIN_CONEXION' ? 'Vendida sin conexión' : 'Impresa por AURA';
+  }
+
   protected fechaHora(valor: string | null | undefined): string {
     return valor
       ? new Date(valor).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'medium', timeStyle: 'short' })

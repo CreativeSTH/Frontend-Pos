@@ -1,5 +1,5 @@
 /** Contingencia de facturación (fase 6a) — espejo de `ContingenciaService` del backend. */
-export type OrigenContingencia = 'AUTOMATICA' | 'MANUAL';
+export type OrigenContingencia = 'AUTOMATICA' | 'MANUAL' | 'SIN_CONEXION';
 
 export interface PeriodoContingencia {
   id: string;
