@@ -269,6 +269,12 @@ export const routes: Routes = [
               import('./features/facturacion/electronica-tab/electronica-tab').then((m) => m.ElectronicaTab),
           },
           {
+            path: 'contingencia',
+            canActivate: [permisoGuard('FACTURACION_ELECTRONICA_DIAN')],
+            loadComponent: () =>
+              import('./features/facturacion/contingencia-tab/contingencia-tab').then((m) => m.ContingenciaTab),
+          },
+          {
             path: 'formato',
             canActivate: [permisoGuard('FACTURACION', 'EDITAR')],
             loadComponent: () => import('./features/facturacion/formato-tab/formato-tab').then((m) => m.FormatoTab),

@@ -74,6 +74,10 @@ export interface DocumentoElectronico {
   qrContenido?: string;
   ambiente?: 'SANDBOX' | 'PRODUCCION';
   nombreCliente?: string;
+  /** Fase 6a: período de contingencia en que se expidió como factura de papel; null = factura electrónica normal. */
+  periodoContingenciaId?: string | null;
+  /** true = factura de talonario escrita a mano y registrada después. */
+  transcritaDeTalonario?: boolean;
   /** `numeric` de Postgres — llega como string por JSON, pasar siempre por `Number(...)`. */
   total?: number | string;
   createdAt: string;

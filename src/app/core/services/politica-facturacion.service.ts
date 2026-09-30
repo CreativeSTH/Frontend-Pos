@@ -32,6 +32,8 @@ export class PoliticaFacturacionService {
     // El cron del tope de 3.500 UVT puede volver obligado al negocio de madrugada: el banner de
     // gracia aparece sin recargar la página.
     this.realtime.on('politica-facturacion:cambio', () => this.cargar());
+    // Fase 6a: al entrar o salir de contingencia, el POS muestra u oculta su aviso sin recargar.
+    this.realtime.on('contingencia:cambio', () => this.cargar());
   }
 
   /** Al pasar a un usuario de tier SISTEMA (p. ej. "Salir" del modo soporte) — no pertenece a un negocio. */

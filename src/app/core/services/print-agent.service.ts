@@ -34,6 +34,8 @@ const VERSION_MINIMA_AGENTE: Partial<Record<TipoContenidoImpresion, string>> = {
   FACTURA_ELECTRONICA: '1.1.0', // bloque fiscal: CUFE, QR…
   RECIBO_CAJA: '1.2.0', // título "RECIBO DE CAJA" y saldos
 };
+/** Fase 6a: un agente anterior imprimiría la factura de papel con el título de factura electrónica. */
+const VERSION_MINIMA_CONTINGENCIA = '1.3.0';
 
 function versionAlMenos(version: string | undefined, minima: string): boolean {
   if (!version) return false;
@@ -87,7 +89,7 @@ export class PrintAgentService {
    * no reconstruyen nada por su cuenta.
    */
   imprimirTicket(contenido: ReciboContenido, opciones: OpcionesImpresion = {}): Observable<PrintResult> {
-    const minima = VERSION_MINIMA_AGENTE[contenido.tipo];
+    const minima = contenido.electronica?.contingencia ? VERSION_MINIMA_CONTINGENCIA : VERSION_MINIMA_AGENTE[contenido.tipo];
     if (!minima) return this.enviarAlAgente(contenido, opciones);
     // Un agente viejo imprimiría el documento sin sus datos propios (factura sin CUFE/QR, recibo de caja sin título ni saldos).
     return this.estado().pipe(
@@ -286,9 +288,10 @@ export class PrintAgentService {
     const fiscalHtml = e
       ? `<hr /><div class="fiscal">
           ${e.resolucion ? `<div>${this.escapar(e.resolucion)}</div>` : ''}
-          ${e.cufe ? `<div class="cufe">CUFE: ${this.escapar(e.cufe)}</div>` : ''}
+          ${e.cufe ? `<div class="cufe">${e.etiquetaCodigo || 'CUFE'}: ${this.escapar(e.cufe)}</div>` : ''}
           ${e.qrDataUrl ? `<img class="qr" src="${e.qrDataUrl}" alt="Código QR de la factura" />` : ''}
           <div>${this.escapar(e.proveedorTecnologico)}</div>
+          ${e.fabricanteSoftware ? `<div>${this.escapar(e.fabricanteSoftware)}</div>` : ''}
         </div>`
       : '';
     const datosVentaHtml = e
@@ -341,7 +344,7 @@ export class PrintAgentService {
   ${e?.encabezado ? `<div class="encabezado-estado">${this.escapar(e.encabezado)}</div>` : ''}
   <h1>${this.escapar(
     contenido.tipo === 'FACTURA_ELECTRONICA'
-      ? 'FACTURA ELECTRÓNICA DE VENTA'
+      ? e?.titulo || 'FACTURA ELECTRÓNICA DE VENTA'
       : contenido.tipo === 'FACTURA'
         ? 'FACTURA DE VENTA'
         : contenido.tipo === 'RECIBO_CAJA'

@@ -1,0 +1,207 @@
+@if (estado(); as e) {
+  <!-- Estado actual -->
+  <section class="contingencia-card" [class.contingencia-card--alerta]="!!e.activa">
+    <div class="contingencia-card__cabecera">
+      <h3 class="contingencia-card__titulo">Estado</h3>
+      @if (puedeEditar()) {
+        @if (e.activa) {
+          <ds-button variant="primary" [loading]="procesando()" (click)="terminar()">Terminar contingencia</ds-button>
+        } @else {
+          <ds-button variant="glass" [disabled]="!e.resolucion" (click)="abrirDeclarar()">Declarar contingencia</ds-button>
+        }
+      }
+    </div>
+    @if (e.activa; as a) {
+      <p class="contingencia-card__destacado">
+        Estás en contingencia desde el {{ fechaHora(a.inicio) }} ({{ a.origen === 'AUTOMATICA' ? 'AURA la activó porque Alegra/DIAN no responde' : 'declarada a mano' }}).
+      </p>
+      <p>
+        Cada venta sale como <strong>factura de papel</strong> con la numeración {{ e.resolucion?.prefijo }}. Entrégasela al
+        cliente: AURA la envía a la DIAN cuando termine la contingencia.
+      </p>
+      @if (a.origen === 'AUTOMATICA') {
+        <p class="contingencia-card__nota">Se termina sola cuando Alegra vuelva a responder.</p>
+      }
+    } @else {
+      <p>Todo normal: las ventas salen con factura electrónica.</p>
+      @if (!e.resolucion) {
+        <p class="contingencia-card__nota">Carga primero la resolución de contingencia (abajo) para poder usarla.</p>
+      }
+    }
+    @if (e.pendientes > 0) {
+      <p class="contingencia-card__nota">
+        {{ e.pendientes }} factura(s) de papel todavía sin aceptar por la DIAN.
+        @if (e.venceEl) {
+          Plazo para enviarlas: hasta el {{ fechaHora(e.venceEl) }}
+        }
+      </p>
+    }
+  </section>
+
+  <!-- Aviso a la DIAN -->
+  @if (periodosConCarta().length) {
+    <section class="contingencia-card">
+      <h3 class="contingencia-card__titulo">Aviso a la DIAN</h3>
+      <p class="contingencia-card__nota">
+        Descarga la carta, fírmala (representante legal) y envíala en PDF a <strong>{{ correoDian }}</strong>. Asunto: tu NIT
+        con dígito de verificación y el nombre del negocio. En el cuerpo, un nombre y un teléfono de contacto.
+      </p>
+      @for (p of periodosConCarta(); track p.id) {
+        <div class="contingencia-aviso">
+          <span class="contingencia-aviso__periodo">
+            {{ fechaHora(p.inicio) }} — {{ p.fin ? fechaHora(p.fin) : 'en curso' }}
+          </span>
+          <div class="contingencia-aviso__acciones">
+            <ds-button variant="ghost" size="sm" (click)="descargarCarta(p, 'INICIO')">Carta de inicio</ds-button>
+            @if (p.avisoInicioEn) {
+              <ds-badge tone="success">Inicio enviado {{ fechaHora(p.avisoInicioEn) }}</ds-badge>
+            } @else if (puedeEditar()) {
+              <ds-button variant="glass" size="sm" (click)="marcarAviso(p, 'INICIO')">Ya la envié</ds-button>
+            }
+            @if (p.fin) {
+              <ds-button variant="ghost" size="sm" (click)="descargarCarta(p, 'FIN')">Carta de fin</ds-button>
+              @if (p.avisoFinEn) {
+                <ds-badge tone="success">Fin enviado {{ fechaHora(p.avisoFinEn) }}</ds-badge>
+              } @else if (puedeEditar()) {
+                <ds-button variant="glass" size="sm" (click)="marcarAviso(p, 'FIN')">Ya la envié</ds-button>
+              }
+            }
+          </div>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- Resolución -->
+  <section class="contingencia-card">
+    <div class="contingencia-card__cabecera">
+      <h3 class="contingencia-card__titulo">Resolución de contingencia</h3>
+      @if (puedeEditar() && !editandoResolucion() && !e.activa) {
+        <ds-button variant="glass" size="sm" (click)="editarResolucion()">{{ e.resolucion ? 'Editar' : 'Cargar' }}</ds-button>
+      }
+    </div>
+    <p class="contingencia-card__nota">
+      <strong>Antes de necesitarla.</strong> Pide a la DIAN una numeración de tipo <strong>"Factura de talonario o de papel"</strong>
+      (portal DIAN → Usuario registrado → Numeración de facturación → Solicitar), con un <strong>prefijo distinto</strong> al de
+      tu factura electrónica. Después asocia ese prefijo a tu proveedor tecnológico en el portal de facturación electrónica,
+      igual que hiciste con la numeración electrónica. Si Alegra o la DIAN no responden por más de 5 minutos, AURA pasa sola a
+      contingencia y sigue facturando en papel con esta numeración.
+    </p>
+    @if (editandoResolucion()) {
+      <div class="contingencia-form">
+        <ds-form-field label="Número de resolución">
+          <ds-input [ngModel]="resNumero()" (ngModelChange)="resNumero.set($event)" placeholder="18764000000000" />
+        </ds-form-field>
+        <ds-form-field label="Prefijo" hint="Hasta 4 letras o números">
+          <ds-input [ngModel]="resPrefijo()" (ngModelChange)="resPrefijo.set($event)" placeholder="CONT" />
+        </ds-form-field>
+        <ds-form-field label="Vigente desde">
+          <input type="date" class="contingencia-campo" [ngModel]="resFechaInicio()" (ngModelChange)="resFechaInicio.set($event)" />
+        </ds-form-field>
+        <ds-form-field label="Vigente hasta">
+          <input type="date" class="contingencia-campo" [ngModel]="resFechaFin()" (ngModelChange)="resFechaFin.set($event)" />
+        </ds-form-field>
+        <ds-form-field label="Rango desde">
+          <ds-input type="number" [ngModel]="resDesde()" (ngModelChange)="resDesde.set($event)" />
+        </ds-form-field>
+        <ds-form-field label="Rango hasta">
+          <ds-input type="number" [ngModel]="resHasta()" (ngModelChange)="resHasta.set($event)" />
+        </ds-form-field>
+      </div>
+      <div class="contingencia-acciones">
+        <ds-button variant="ghost" (click)="editandoResolucion.set(false)">Cancelar</ds-button>
+        <ds-button variant="primary" [loading]="procesando()" (click)="guardarResolucion()">Guardar</ds-button>
+      </div>
+    } @else if (e.resolucion; as r) {
+      <p>
+        Resolución {{ r.numero }} · prefijo <strong>{{ r.prefijo }}</strong> · del {{ r.rangoDesde }} al {{ r.rangoHasta }} ·
+        vigente del {{ r.fechaInicio }} al {{ r.fechaFin }}
+      </p>
+      <p class="contingencia-card__nota">Siguiente número: {{ r.prefijo }}{{ r.siguienteNumero }}</p>
+    } @else {
+      <p>Todavía no cargaste una resolución de contingencia.</p>
+    }
+  </section>
+
+  <!-- Facturas de papel -->
+  <section class="contingencia-card">
+    <h3 class="contingencia-card__titulo">Facturas de papel</h3>
+    @if (documentos().length) {
+      <div class="contingencia-tabla">
+        <table>
+          <thead>
+            <tr>
+              <th>Número</th>
+              <th>Fecha del papel</th>
+              <th>Cliente</th>
+              <th class="num">Total</th>
+              <th>Origen</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of documentos(); track d.id) {
+              <tr>
+                <td>{{ d.numeroCompleto }}</td>
+                <td>{{ fechaHora(d.fechaEmision) }}</td>
+                <td>{{ d.nombreCliente }}</td>
+                <td class="num">{{ formatMoney(d.total) }}</td>
+                <td>{{ d.transcritaDeTalonario ? 'Talonario' : 'Impresa por AURA' }}</td>
+                <td>
+                  <ds-badge [tone]="tonoEstado(d)">{{ etiquetaEstado(d) }}</ds-badge>
+                  @if (d.errorMensaje && (d.estado === 'RECHAZADO' || d.estado === 'ERROR')) {
+                    <div class="contingencia-card__nota">{{ d.errorMensaje }}</div>
+                  }
+                </td>
+                <td>
+                  @if (puedeReintentar(d)) {
+                    <ds-button variant="ghost" size="sm" (click)="reintentar(d)">Reintentar</ds-button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="contingencia-card__nota">No hay facturas de contingencia.</p>
+    }
+  </section>
+
+  <!-- Historial -->
+  @if (e.periodos.length) {
+    <section class="contingencia-card">
+      <h3 class="contingencia-card__titulo">Historial</h3>
+      <ul class="contingencia-historial">
+        @for (p of e.periodos; track p.id) {
+          <li>
+            {{ fechaHora(p.inicio) }} — {{ p.fin ? fechaHora(p.fin) : 'en curso' }} ·
+            {{ p.origen === 'AUTOMATICA' ? 'Automática' : 'Manual' }} · {{ p.motivo }}
+          </li>
+        }
+      </ul>
+    </section>
+  }
+} @else {
+  <p class="contingencia-card__nota">Cargando...</p>
+}
+
+@if (mostrandoDeclarar()) {
+  <ds-modal title="Declarar contingencia" size="sm" (close)="mostrandoDeclarar.set(false)">
+    <p class="contingencia-card__nota">
+      Úsala cuando no puedas facturar electrónicamente (sin internet, falla del sistema). Mientras dure, cada venta sale como
+      factura de papel con la numeración de contingencia.
+    </p>
+    <ds-form-field label="Motivo">
+      <ds-input [ngModel]="motivo()" (ngModelChange)="motivo.set($event)" placeholder="Sin internet en el local" />
+    </ds-form-field>
+    <ds-form-field label="¿Empezó antes? (opcional)" hint="Si ya estabas facturando en talonario desde antes, pon cuándo empezó.">
+      <input type="datetime-local" class="contingencia-campo" [ngModel]="inicioPasado()" (ngModelChange)="inicioPasado.set($event)" />
+    </ds-form-field>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="mostrandoDeclarar.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="procesando()" (click)="declarar()">Declarar</ds-button>
+    </div>
+  </ds-modal>
+}

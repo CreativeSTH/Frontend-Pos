@@ -40,6 +40,7 @@ import { ImpresionComprobanteService } from '../../../core/services/impresion-co
 import { PoliticaFacturacionService } from '../../../core/services/politica-facturacion.service';
 import { FacturacionElectronicaService } from '../../../core/services/facturacion-electronica.service';
 import { RealtimeService } from '../../../core/services/realtime.service';
+import { ContingenciaService } from '../../../core/services/contingencia.service';
 import { DocumentoElectronico } from '../../../core/models/facturacion-electronica.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { PagosWompiService } from '../../../core/services/pagos-wompi.service';
@@ -54,7 +55,7 @@ import { Categoria } from '../../../core/models/categoria.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { Bodega } from '../../../core/models/bodega.model';
 import { TurnoCaja } from '../../../core/models/caja.model';
-import { Venta } from '../../../core/models/venta.model';
+import { CreateVentaPayload, Venta } from '../../../core/models/venta.model';
 import { MetodoPago } from '../../../core/models/metodo-pago.model';
 import { Cliente, TIPOS_DOCUMENTO_IDENTIDAD, VerificarCreditoResponse, siglaDocumento } from '../../../core/models/cliente.model';
 import { CreateDireccionClientePayload, DireccionCliente } from '../../../core/models/direccion-cliente.model';
@@ -131,6 +132,7 @@ export class PuntoVenta {
   private readonly facturacionElectronica = inject(FacturacionElectronicaService);
   private readonly realtime = inject(RealtimeService);
   private readonly politicaFacturacion = inject(PoliticaFacturacionService);
+  private readonly contingenciaService = inject(ContingenciaService);
   protected readonly auth = inject(AuthService);
   private readonly ventasSuspendidasService = inject(VentasSuspendidasService);
   private readonly toast = inject(ToastService);
@@ -143,6 +145,19 @@ export class PuntoVenta {
   protected readonly estadoFacturacion = this.politicaFacturacion.estado;
   protected readonly esElectronica = computed(() => this.estadoFacturacion()?.modo === 'ELECTRONICA');
   protected readonly cobroBloqueado = computed(() => this.estadoFacturacion()?.modo === 'BLOQUEADO');
+  /** Fase 6a: contingencia abierta — cada venta sale como factura de papel. */
+  protected readonly enContingencia = computed(() => this.esElectronica() && this.estadoFacturacion()?.contingenciaActiva === true);
+  /** Fase 6a: registrar una factura de talonario escrita a mano (solo quien edita la facturación electrónica). */
+  private readonly hayResolucionContingencia = signal(false);
+  protected readonly puedeTranscribir = computed(
+    () =>
+      this.esElectronica() &&
+      this.auth.tienePermiso('FACTURACION_ELECTRONICA_DIAN', 'EDITAR') &&
+      this.hayResolucionContingencia(),
+  );
+  protected readonly modoTalonario = signal(false);
+  protected readonly talonarioNumero = signal<number | null>(null);
+  protected readonly talonarioFecha = signal('');
   protected readonly puedeActivarFacturacion = computed(() => this.auth.tienePermiso('FACTURACION_ELECTRONICA_DIAN', 'VER'));
 
   protected readonly tiposDocumento = TIPOS_DOCUMENTO_IDENTIDAD;
@@ -152,7 +167,9 @@ export class PuntoVenta {
   protected readonly guardandoDocumento = signal(false);
 
   /** Resultado de esperar a la DIAN tras cobrar una venta FACTURA_ELECTRONICA (spec 6.1). null = no aplica. */
-  protected readonly validacionDian = signal<'VALIDANDO' | 'ACEPTADA' | 'RECHAZADA' | 'SIN_RESPUESTA' | null>(null);
+  protected readonly validacionDian = signal<'VALIDANDO' | 'ACEPTADA' | 'RECHAZADA' | 'SIN_RESPUESTA' | 'CONTINGENCIA' | null>(
+    null,
+  );
   protected readonly reintentandoDian = signal(false);
   protected readonly puedeReintentarDian = computed(() => this.auth.tienePermiso('VENTAS', 'EDITAR'));
   private sondeoDian: ReturnType<typeof setInterval> | null = null;
@@ -761,7 +778,20 @@ export class PuntoVenta {
     this.reiniciarClienteVenta();
     this.reiniciarDomicilio();
     this.reiniciarPagoWompi();
+    this.reiniciarTalonario();
+    if (this.esElectronica() && this.auth.tienePermiso('FACTURACION_ELECTRONICA_DIAN', 'VER')) {
+      this.contingenciaService.estado().subscribe({
+        next: (e) => this.hayResolucionContingencia.set(!!e.resolucion),
+        error: () => this.hayResolucionContingencia.set(false),
+      });
+    }
     this.showCobro.set(true);
+  }
+
+  private reiniciarTalonario(): void {
+    this.modoTalonario.set(false);
+    this.talonarioNumero.set(null);
+    this.talonarioFecha.set('');
   }
 
   protected alternarClienteVenta(activo: boolean): void {
@@ -1336,11 +1366,17 @@ export class PuntoVenta {
     nombreClienteContado?: string,
   ): void {
     const direccion = this.direccionElegida();
+    const talonario = this.modoTalonario()
+      ? { numero: Number(this.talonarioNumero()), fecha: this.talonarioFecha() }
+      : null;
+    if (talonario && (!talonario.numero || !talonario.fecha)) {
+      this.toast.error('Ingresa el número y la fecha de la factura de talonario');
+      return;
+    }
     // Se captura antes de limpiar el carrito — `cambio()` depende de `pagos()`/`total()`, que se resetean abajo.
     const cambioVenta = !esCredito ? this.cambio() : 0;
     this.procesando.set(true);
-    this.ventasService
-      .create({
+    const payload: CreateVentaPayload = {
         sucursalId,
         bodegaId,
         items: this.carrito().map((l) => ({ productoId: l.productoId, cantidad: l.cantidad })),
@@ -1363,7 +1399,31 @@ export class PuntoVenta {
         ...(this.domicilioActivo() && direccion
           ? { domicilio: { direccionClienteId: direccion.id } }
           : {}),
-      })
+      };
+    if (talonario) {
+      // Fase 6a: el cliente ya tiene su factura de papel — no se imprime nada ni se espera a la DIAN.
+      this.ventasService
+        .transcribirTalonario({ venta: payload, talonario: { numero: talonario.numero, fecha: new Date(talonario.fecha).toISOString() } })
+        .subscribe({
+          next: () => {
+            this.procesando.set(false);
+            this.showCobro.set(false);
+            this.reiniciarTalonario();
+            this.descontarStockVendido(this.carrito());
+            this.carrito.set([]);
+            this.toast.success('Factura de talonario registrada');
+            this.alertasService.refrescarConteo().subscribe();
+          },
+          error: (err) => {
+            this.procesando.set(false);
+            const mensaje = err.error?.message;
+            this.toast.error((Array.isArray(mensaje) ? mensaje[0] : mensaje) ?? 'No se pudo registrar la factura de talonario');
+          },
+        });
+      return;
+    }
+    this.ventasService
+      .create(payload)
       .subscribe({
         next: (venta) => {
           // Sin efecto si la venta no vino de Wompi (todos los signals ya están en su default) —
@@ -1440,7 +1500,11 @@ export class PuntoVenta {
   }
 
   private evaluarDocumento(doc: DocumentoElectronico | null): void {
-    if (doc?.estado === 'ACEPTADO' || doc?.estado === 'ACEPTADO_CON_OBSERVACIONES') {
+    if (doc?.periodoContingenciaId) {
+      // Factura de papel (fase 6a): ya tiene número de contingencia — se imprime sin esperar a la DIAN.
+      this.validacionDian.set('CONTINGENCIA');
+      this.detenerSondeoDian();
+    } else if (doc?.estado === 'ACEPTADO' || doc?.estado === 'ACEPTADO_CON_OBSERVACIONES') {
       this.validacionDian.set('ACEPTADA');
       this.detenerSondeoDian();
     } else if (doc?.estado === 'RECHAZADO') {

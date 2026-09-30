@@ -23,6 +23,11 @@ export class VentasService {
     return this.api.post<Venta>('/ventas', payload);
   }
 
+  /** Fase 6a: registra una venta ya facturada en un talonario de papel durante una contingencia. */
+  transcribirTalonario(payload: { venta: CreateVentaPayload; talonario: { numero: number; fecha: string } }) {
+    return this.api.post<Venta>('/ventas/transcripcion-talonario', payload);
+  }
+
   cancelar(id: string, motivo: string, devolverStock = true, pinAutorizacion?: string) {
     return this.api.post<Venta>(`/ventas/${id}/cancelar`, { motivo, devolverStock, pinAutorizacion });
   }

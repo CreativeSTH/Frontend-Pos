@@ -36,6 +36,13 @@ export interface ElectronicaComprobante {
   adquirente: { nombre: string; identificacion: string };
   formaPago: 'Contado' | 'Crédito';
   proveedorTecnologico: string;
+  /** Fase 6a: factura de talonario o de papel expedida en contingencia. */
+  contingencia: boolean;
+  /** 'FACTURA ELECTRÓNICA DE VENTA' | 'FACTURA DE VENTA DE TALONARIO O DE PAPEL' */
+  titulo: string;
+  etiquetaCodigo: 'CUFE' | 'CUDE';
+  /** Solo en contingencia: fabricante del software (el emisor sigue siendo el negocio). */
+  fabricanteSoftware: string | null;
 }
 
 /** Recibo de caja de un abono a crédito — espejo de `AbonoComprobante` del backend. */

@@ -16,6 +16,8 @@ export interface EstadoFacturacion {
   /** 'YYYY-MM-DD' — último día en que todavía se puede cobrar sin facturación electrónica. */
   fechaLimiteGracia: string | null;
   perfil: PerfilFiscal | null;
+  /** Fase 6a: hay un período de contingencia abierto — las ventas salen como factura de papel. */
+  contingenciaActiva: boolean;
 }
 
 export interface DeclaracionPerfilFiscal {

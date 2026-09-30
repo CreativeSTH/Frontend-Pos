@@ -39,6 +39,14 @@
     <ds-button variant="glass" icon="cash-register" (click)="showAbrirTurno.set(true)">Abrir caja</ds-button>
   </ds-empty-state>
 } @else {
+  @if (enContingencia()) {
+    <div class="cobro-aviso cobro-aviso--warning">
+      <span>
+        Modo contingencia: cada venta sale como <strong>factura de papel</strong>. Entrégasela al cliente; AURA la envía a
+        la DIAN cuando vuelva la conexión.
+      </span>
+    </div>
+  }
   <div class="pos-layout">
     <section class="pos-catalog">
       <div class="pos-catalog-filtros">
@@ -572,6 +580,22 @@
       }
     }
 
+    @if (puedeTranscribir()) {
+      <div class="cobro-talonario">
+        <label class="cobro-talonario__check">
+          <input type="checkbox" [ngModel]="modoTalonario()" (ngModelChange)="modoTalonario.set($event)" />
+          Es una factura de talonario escrita a mano
+        </label>
+        @if (modoTalonario()) {
+          <div class="cobro-telefono-row">
+            <ds-input type="number" [ngModel]="talonarioNumero()" (ngModelChange)="talonarioNumero.set($event)" placeholder="Número del talonario" />
+            <input type="datetime-local" class="cobro-talonario__fecha" [ngModel]="talonarioFecha()" (ngModelChange)="talonarioFecha.set($event)" />
+          </div>
+          <p class="cobro-factura-a">La venta entra a la caja de hoy. No se imprime nada: el cliente ya tiene su factura de papel.</p>
+        }
+      </div>
+    }
+
     <div modal-footer>
       <ds-button variant="ghost" [disabled]="pagandoConWompi()" (click)="showCobro.set(false)">Cancelar</ds-button>
       <ds-button
@@ -706,6 +730,11 @@
                   Reintentar
                 </ds-button>
               }
+            </div>
+          }
+          @case ('CONTINGENCIA') {
+            <div class="cobro-aviso cobro-aviso--warning">
+              <span>Factura de papel (contingencia). Imprímela y entrégasela al cliente: AURA la enviará a la DIAN al terminar la contingencia.</span>
             </div>
           }
           @case ('SIN_RESPUESTA') {
