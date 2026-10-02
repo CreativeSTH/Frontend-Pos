@@ -1,0 +1,51 @@
+<app-topbar [title]="articulo()?.titulo ?? 'Ayuda'" [subtitle]="categoria()?.nombre ?? ''" backTo="/ayuda" />
+
+@if (cargando()) {
+  <div class="ayuda-estado"><ds-icon name="help-circle" [size]="28" /><span>Cargando el artículo...</span></div>
+} @else if (error()) {
+  <ds-empty-state icon="alert-triangle" title="No pudimos cargar la ayuda" description="Revisa tu conexión a internet e intenta de nuevo.">
+    <div class="ayuda-estado__acciones">
+      <ds-button variant="primary" icon="history" (click)="cargar()">Reintentar</ds-button>
+      <a class="ayuda-enlace-externo" [href]="urlPublica()" target="_blank" rel="noopener">Abrir en somosaura.com.co</a>
+    </div>
+  </ds-empty-state>
+} @else if (articulo(); as a) {
+  <article class="ayuda-articulo">
+    <p class="ayuda-articulo__meta">Última revisión: {{ fechaLarga(a.revisado) }}</p>
+    <div class="ayuda-prosa" [innerHTML]="a.html" (click)="alHacerClic($event)"></div>
+
+    @if (a.fuentes.length) {
+      <section class="ayuda-articulo__seccion">
+        <h2>Fuentes</h2>
+        <ul>
+          @for (f of a.fuentes; track $index) {
+            <li>
+              @if (f.url) {
+                <a [href]="f.url" target="_blank" rel="noopener">{{ f.texto }}</a>
+              } @else {
+                {{ f.texto }}
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (relacionados().length) {
+      <section class="ayuda-articulo__seccion">
+        <h2>También te puede servir</h2>
+        <ul>
+          @for (r of relacionados(); track r.slug) {
+            <li><a [routerLink]="['/ayuda', r.slug]">{{ r.titulo }}</a></li>
+          }
+        </ul>
+      </section>
+    }
+
+    <a class="ayuda-enlace-externo ayuda-articulo__publico" [href]="urlPublica()" target="_blank" rel="noopener">Ver en somosaura.com.co</a>
+  </article>
+} @else {
+  <ds-empty-state icon="search" title="Este artículo no existe" description="Puede que lo hayamos movido o cambiado de nombre.">
+    <a routerLink="/ayuda" class="ayuda-enlace-externo">Ir al Centro de ayuda</a>
+  </ds-empty-state>
+}

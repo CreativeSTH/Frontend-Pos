@@ -50,6 +50,9 @@
                   <div class="topbar__notif-item__info">
                     <span class="topbar__notif-item__mensaje">{{ alerta.mensaje }}</span>
                     <span class="topbar__notif-item__fecha">{{ alerta.createdAt | date: 'short' }}</span>
+                    @if (ayudaPorTipo[alerta.tipo]; as slug) {
+                      <ds-enlace-ayuda [slug]="slug" (abierto)="showNotificaciones.set(false)">Más información</ds-enlace-ayuda>
+                    }
                     @if (esAlertaDeStock(alerta)) {
                       <button
                         type="button"

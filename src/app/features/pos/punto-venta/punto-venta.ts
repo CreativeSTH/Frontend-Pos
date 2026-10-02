@@ -73,6 +73,7 @@ import { TurnoCajaPos } from './turno-caja-pos/turno-caja-pos';
 import { VentasSuspendidasPos } from './ventas-suspendidas-pos/ventas-suspendidas-pos';
 import { CatalogoGridPos } from './catalogo-grid-pos/catalogo-grid-pos';
 import { calcularImpuesto, calcularSubtotal, formatMoney, imageUrl } from './pos-shared.util';
+import { EnlaceAyuda } from '../../../shared/ui/molecules/enlace-ayuda/enlace-ayuda';
 
 /** Sentinel para "cargar una dirección nueva" en el selector — nunca colisiona con un UUID real. */
 const NUEVA_DIRECCION = '__nueva__';
@@ -98,7 +99,7 @@ interface LineaCarrito {
 @Component({
   selector: 'app-punto-venta',
   standalone: true,
-  imports: [
+  imports: [EnlaceAyuda, 
     Topbar,
     Button,
     Icon,

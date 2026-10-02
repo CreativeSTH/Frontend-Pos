@@ -16,6 +16,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { DetalleFactura, DocumentoElectronico } from '../../../core/models/facturacion-electronica.model';
 import { etiquetaEstadoDocumento, tonoEstadoDocumento } from '../estado-documento.util';
+import { EnlaceAyuda } from '../../../shared/ui/molecules/enlace-ayuda/enlace-ayuda';
 
 /**
  * Detalle de una factura electrónica (CUFE, QR, errores DIAN, venta, PDF y XML). Reutilizable:
@@ -24,7 +25,7 @@ import { etiquetaEstadoDocumento, tonoEstadoDocumento } from '../estado-document
 @Component({
   selector: 'app-factura-detalle',
   standalone: true,
-  imports: [Modal, Button, Badge, Icon, Table, Input, FormField, FormsModule, DatePipe],
+  imports: [EnlaceAyuda, Modal, Button, Badge, Icon, Table, Input, FormField, FormsModule, DatePipe],
   templateUrl: './factura-detalle.html',
   styleUrl: './factura-detalle.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

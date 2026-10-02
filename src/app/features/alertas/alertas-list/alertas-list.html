@@ -62,6 +62,9 @@
             <td>{{ etiquetasTipo[alerta.tipo] }}</td>
             <td>
               {{ alerta.mensaje }}
+              @if (ayudaPorTipo[alerta.tipo]; as slug) {
+                <ds-enlace-ayuda [slug]="slug">Más información</ds-enlace-ayuda>
+              }
               @if (esAlertaDeStock(alerta)) {
                 <button type="button" class="alertas-lista-pedidos-btn" (click)="agregarAListaPedidos(alerta)">
                   + Añadir a lista de pedidos

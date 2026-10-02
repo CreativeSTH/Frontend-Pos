@@ -14,6 +14,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 import { EstadoContingencia, PeriodoContingencia } from '../../../core/models/contingencia.model';
 import { DocumentoElectronico } from '../../../core/models/facturacion-electronica.model';
 import { BadgeTone } from '../../../shared/ui/atoms/badge/badge';
+import { EnlaceAyuda } from '../../../shared/ui/molecules/enlace-ayuda/enlace-ayuda';
 
 const CORREO_DIAN = 'contingencia.facturadorvp@dian.gov.co';
 
@@ -24,7 +25,7 @@ const CORREO_DIAN = 'contingencia.facturadorvp@dian.gov.co';
 @Component({
   selector: 'app-contingencia-tab',
   standalone: true,
-  imports: [Button, Badge, Input, FormField, Modal, FormsModule],
+  imports: [EnlaceAyuda, Button, Badge, Input, FormField, Modal, FormsModule],
   templateUrl: './contingencia-tab.html',
   styleUrl: './contingencia-tab.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

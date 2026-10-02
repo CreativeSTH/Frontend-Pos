@@ -19,6 +19,8 @@ import { AlertasService } from '../../../core/services/alertas.service';
 import { ListaPedidosService } from '../../../core/services/lista-pedidos.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
+import { EnlaceAyuda } from '../../../shared/ui/molecules/enlace-ayuda/enlace-ayuda';
+import { AYUDA_POR_TIPO_ALERTA } from '../../../core/models/ayuda.model';
 import {
   Alerta,
   ReglaAlerta,
@@ -85,7 +87,7 @@ const POLL_MS = 30_000;
 @Component({
   selector: 'app-alertas-list',
   standalone: true,
-  imports: [
+  imports: [EnlaceAyuda, 
     Topbar,
     Button,
     Badge,
@@ -107,6 +109,8 @@ const POLL_MS = 30_000;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlertasList {
+  /** Alertas con un artículo del Centro de ayuda que las explica. */
+  protected readonly ayudaPorTipo = AYUDA_POR_TIPO_ALERTA;
   private readonly alertasService = inject(AlertasService);
   private readonly listaPedidosService = inject(ListaPedidosService);
   private readonly toast = inject(ToastService);

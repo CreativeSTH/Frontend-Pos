@@ -2,7 +2,10 @@
   <!-- Estado actual -->
   <section class="contingencia-card" [class.contingencia-card--alerta]="!!e.activa">
     <div class="contingencia-card__cabecera">
-      <h3 class="contingencia-card__titulo">Estado</h3>
+      <div class="contingencia-card__titulo-grupo">
+        <h3 class="contingencia-card__titulo">Estado</h3>
+        <ds-enlace-ayuda slug="trabajar-sin-internet">¿Cómo funciona la contingencia?</ds-enlace-ayuda>
+      </div>
       @if (puedeEditar()) {
         @if (e.activa) {
           <ds-button variant="primary" [loading]="procesando()" (click)="terminar()">Terminar contingencia</ds-button>

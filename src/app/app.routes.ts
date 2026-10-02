@@ -47,6 +47,15 @@ export const routes: Routes = [
         loadComponent: () => import('./features/asistente/asistente').then((m) => m.Asistente),
       },
       {
+        // Centro de ayuda: sin permiso a propósito (también cajeros y negocios en solo lectura).
+        path: 'ayuda',
+        loadComponent: () => import('./features/ayuda/ayuda-portada/ayuda-portada').then((m) => m.AyudaPortada),
+      },
+      {
+        path: 'ayuda/:slug',
+        loadComponent: () => import('./features/ayuda/ayuda-articulo/ayuda-articulo').then((m) => m.AyudaArticulo),
+      },
+      {
         path: 'dashboard',
         canActivate: [soloNegocioGuard, sucursalGuard],
         loadComponent: () =>

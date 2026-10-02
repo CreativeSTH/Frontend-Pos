@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ReciboContenido } from '../../../core/models/recibo-contenido.model';
 import { environment } from '../../../../environments/environment';
+import { EnlaceAyuda } from '../../../shared/ui/molecules/enlace-ayuda/enlace-ayuda';
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 
@@ -19,7 +20,7 @@ const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 @Component({
   selector: 'app-formato-tab',
   standalone: true,
-  imports: [Button, FormField, Input, ImageUpload, TirillaComprobante, FormsModule, RouterLink],
+  imports: [EnlaceAyuda, Button, FormField, Input, ImageUpload, TirillaComprobante, FormsModule, RouterLink],
   templateUrl: './formato-tab.html',
   styleUrl: './formato-tab.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

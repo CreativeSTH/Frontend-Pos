@@ -28,6 +28,15 @@
   </nav>
 
   <div class="sidebar__bottom">
+    <a
+      class="sidebar__item"
+      routerLink="/ayuda"
+      routerLinkActive="sidebar__item--active"
+      title="Ayuda"
+      (click)="mobileNav.close()"
+    >
+      <ds-icon name="help-circle" [size]="19" />
+    </a>
     @if (configuracionVisible()) {
       <a
         class="sidebar__item"

@@ -3,6 +3,7 @@ import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { AuthService } from '../../../core/services/auth.service';
 import { PoliticaFacturacionService } from '../../../core/services/politica-facturacion.service';
 import { PerfilFiscalForm } from '../perfil-fiscal-form/perfil-fiscal-form';
+import { EnlaceAyuda } from '../../../shared/ui/molecules/enlace-ayuda/enlace-ayuda';
 
 /**
  * Declaración obligatoria del perfil fiscal: sin él, AURA no sabe si el negocio está obligado a
@@ -14,7 +15,7 @@ import { PerfilFiscalForm } from '../perfil-fiscal-form/perfil-fiscal-form';
 @Component({
   selector: 'app-modal-perfil-fiscal',
   standalone: true,
-  imports: [Modal, PerfilFiscalForm],
+  imports: [EnlaceAyuda, Modal, PerfilFiscalForm],
   templateUrl: './modal-perfil-fiscal.html',
   styleUrl: './modal-perfil-fiscal.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

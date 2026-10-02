@@ -9,6 +9,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Alerta, SeveridadAlerta } from '../../core/models/alerta.model';
 import { DatePipe } from '@angular/common';
+import { EnlaceAyuda } from '../../shared/ui/molecules/enlace-ayuda/enlace-ayuda';
+import { AYUDA_POR_TIPO_ALERTA } from '../../core/models/ayuda.model';
 
 const TONOS_SEVERIDAD: Record<SeveridadAlerta, BadgeTone> = {
   BAJA: 'neutral',
@@ -20,7 +22,7 @@ const TONOS_SEVERIDAD: Record<SeveridadAlerta, BadgeTone> = {
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [Icon, Badge, DatePipe],
+  imports: [EnlaceAyuda, Icon, Badge, DatePipe],
   templateUrl: './topbar.html',
   styleUrl: './topbar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,6 +47,8 @@ export class Topbar {
 
   /** `ultimasAlertas` vive en el servicio (se refresca solo cada 30s) — el panel solo la muestra. */
   protected readonly showNotificaciones = signal(false);
+  /** Alertas con un artículo del Centro de ayuda que las explica. */
+  protected readonly ayudaPorTipo = AYUDA_POR_TIPO_ALERTA;
 
   protected tonoSeveridad(severidad: SeveridadAlerta): BadgeTone {
     return TONOS_SEVERIDAD[severidad];

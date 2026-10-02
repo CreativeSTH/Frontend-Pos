@@ -3,9 +3,11 @@ import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  if (req.url.includes('/catalogo-cliente/')) {
+  // La landing (Centro de ayuda) es otro dominio: nunca se le manda el token de AURA.
+  if (req.url.includes('/catalogo-cliente/') || req.url.startsWith(environment.landingUrl)) {
     return next(req);
   }
 

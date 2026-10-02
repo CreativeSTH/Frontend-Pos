@@ -14,6 +14,9 @@
     @if (d.estado === 'RECHAZADO' || d.estado === 'ACEPTADO_CON_OBSERVACIONES') {
       <div class="factura-detalle__dian" [class.factura-detalle__dian--rechazo]="d.estado === 'RECHAZADO'">
         <strong>{{ d.estado === 'RECHAZADO' ? 'La DIAN rechazó esta factura' : 'La DIAN la aceptó con observaciones' }}</strong>
+        @if (d.estado === 'RECHAZADO') {
+          <ds-enlace-ayuda slug="factura-rechazada-por-la-dian">¿Qué hago?</ds-enlace-ayuda>
+        }
         @if (d.errorMensaje) {
           <p>{{ d.errorMensaje }}</p>
         }
@@ -40,6 +43,7 @@
           </div>
         } @else {
           <span class="factura-detalle__vacio">Esperando respuesta de la DIAN</span>
+          <ds-enlace-ayuda slug="en-validacion-dian">¿Qué significa?</ds-enlace-ayuda>
         }
       </div>
     </div>
@@ -94,6 +98,7 @@
     @if (d.tipo === 'FACTURA') {
       <div class="factura-detalle__correo">
         <span class="factura-detalle__etiqueta">Correo al cliente</span>
+        <ds-enlace-ayuda slug="factura-por-correo">¿Cómo funciona?</ds-enlace-ayuda>
         @switch (d.correoEstado) {
           @case ('ENVIADO') {
             <p>Enviada a <strong>{{ d.correoDestinatario }}</strong> el {{ d.correoEnviadoEn | date: 'medium' }}</p>

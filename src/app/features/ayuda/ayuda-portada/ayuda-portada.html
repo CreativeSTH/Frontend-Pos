@@ -1,0 +1,31 @@
+<app-topbar title="Ayuda" subtitle="Respuestas sencillas sobre facturación, recibos y el día a día con AURA" />
+
+@if (cargando()) {
+  <div class="ayuda-estado"><ds-icon name="help-circle" [size]="28" /><span>Cargando la ayuda...</span></div>
+} @else if (error()) {
+  <ds-empty-state icon="alert-triangle" title="No pudimos cargar la ayuda" description="Revisa tu conexión a internet e intenta de nuevo.">
+    <div class="ayuda-estado__acciones">
+      <ds-button variant="primary" icon="history" (click)="cargar()">Reintentar</ds-button>
+      <a class="ayuda-enlace-externo" [href]="urlLanding" target="_blank" rel="noopener">Abrir la ayuda en somosaura.com.co</a>
+    </div>
+  </ds-empty-state>
+} @else {
+  <div class="ayuda-buscador">
+    <ds-search-bar placeholder="Busca tu pregunta: factura, recibo, sin internet…" [(value)]="consulta" />
+  </div>
+  @for (c of categorias(); track c.id) {
+    <section class="ayuda-categoria">
+      <h2 class="ayuda-categoria__titulo">{{ c.nombre }}</h2>
+      <div class="ayuda-categoria__grid">
+        @for (a of c.items; track a.slug) {
+          <a class="ayuda-tarjeta" [routerLink]="['/ayuda', a.slug]">
+            <span class="ayuda-tarjeta__titulo">{{ a.titulo }}</span>
+            <span class="ayuda-tarjeta__resumen">{{ a.resumen }}</span>
+          </a>
+        }
+      </div>
+    </section>
+  } @empty {
+    <ds-empty-state icon="search" title="No encontramos artículos con esas palabras" description="Prueba con otras, como «factura» o «recibo»." />
+  }
+}

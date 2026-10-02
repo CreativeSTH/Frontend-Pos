@@ -38,6 +38,11 @@
     color: var(--text-secondary);
   }
 
+  // Va justo después del <strong>: Angular quita el espacio entre dos elementos seguidos.
+  ds-enlace-ayuda {
+    margin-left: var(--space-2);
+  }
+
   &--rechazo {
     background: rgba(var(--accent-danger-rgb), 0.08);
     border-color: rgba(var(--accent-danger-rgb), 0.35);
