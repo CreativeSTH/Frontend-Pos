@@ -1,0 +1,17 @@
+@use 'mixins' as mix;
+
+.historial-pagos {
+  @include mix.glass-panel;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+}
+
+.historial-pagos__titulo {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}

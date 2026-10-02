@@ -33,13 +33,7 @@
     </div>
   }
 
-  @if (qrImagen()) {
-    <p>Escaneá el código con tu app bancaria para pagar:</p>
-    <img [src]="qrImagen()" alt="Código QR de pago Wompi" class="selector-plan-pago__qr" />
-    @if (esperandoConfirmacion()) {
-      <p class="selector-plan-pago__espera">Esperando la confirmación del pago...</p>
-    }
-  } @else {
+  @if (!qrImagen()) {
     <ds-button variant="primary" [loading]="pagando()" (click)="reactivarConQr()">
       Pagar {{ paqueteSeleccionado() ? formatMoney(precioTotalAPagar(paqueteSeleccionado()!)) : '' }} · {{ ciclo() === 'ANUAL' ? '12 meses' : '1 mes' }} (QR)
     </ds-button>
@@ -65,3 +59,40 @@
     }
   }
 </div>
+
+@if (pagoEnCurso(); as p) {
+  <ds-modal title="Confirmando tu pago" size="sm" [cerrable]="false">
+    <div class="pago-dialogo">
+      <p class="pago-dialogo__resumen">
+        {{ p.plan }} · {{ p.ciclo === 'ANUAL' ? 'Anual' : 'Mensual' }}
+        @if (p.monto) {
+          · <strong>{{ formatMoney(p.monto) }}</strong>
+        }
+      </p>
+
+      @if (p.metodo === 'QR') {
+        @if (qrImagen(); as qr) {
+          <p class="pago-dialogo__texto">Escanea el código con tu app bancaria para pagar:</p>
+          <img [src]="qr" alt="Código QR de pago Wompi" class="selector-plan-pago__qr" />
+        } @else {
+          <ds-spinner [size]="32" />
+          <p class="pago-dialogo__texto">Generando tu código QR…</p>
+        }
+      } @else {
+        <ds-spinner [size]="32" />
+        <p class="pago-dialogo__texto">Confirmando el pago con tu banco…</p>
+      }
+
+      @if (esperandoConfirmacion()) {
+        <p class="pago-dialogo__espera">Esperando la confirmación del pago… No cierres esta ventana.</p>
+      }
+
+      @if (mostrarSalida()) {
+        <p class="pago-dialogo__texto">
+          Está tardando más de lo normal. Si ya pagaste, tu plan se actualiza solo en unos minutos.
+        </p>
+        <ds-button variant="ghost" (click)="cerrarYRevisarDespues()">Cerrar y revisar después</ds-button>
+      }
+    </div>
+  </ds-modal>
+}

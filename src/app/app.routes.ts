@@ -227,12 +227,8 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/configuracion/pagos-wompi/pagos-wompi').then((m) => m.PagosWompi),
       },
-      {
-        path: 'configuracion/medio-pago',
-        canActivate: [permisoGuard('NEGOCIO')],
-        loadComponent: () =>
-          import('./features/suscripcion/medio-pago/medio-pago').then((m) => m.MedioPago),
-      },
+      // Medio de pago vive dentro de Mi plan desde 2026-10-01.
+      { path: 'configuracion/medio-pago', redirectTo: '/configuracion/mi-plan' },
       {
         path: 'configuracion/mi-plan',
         canActivate: [permisoGuard('NEGOCIO')],

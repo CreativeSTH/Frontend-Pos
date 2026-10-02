@@ -1,6 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
-import { ReactivarSuscripcionPayload, Suscripcion } from '../models/suscripcion.model';
+import {
+  MedioPagoEstado,
+  PaginaPagosSuscripcion,
+  ReactivarSuscripcionPayload,
+  Suscripcion,
+} from '../models/suscripcion.model';
 
 @Injectable({ providedIn: 'root' })
 export class SuscripcionService {
@@ -18,7 +23,16 @@ export class SuscripcionService {
   }
 
   medioPago() {
-    return this.api.get<{ activo: boolean; ultimosCuatroDigitos: string | null }>('/suscripcion/medio-pago');
+    return this.api.get<MedioPagoEstado>('/suscripcion/medio-pago');
+  }
+
+  /** Guarda o reemplaza la tarjeta del cobro automático, sin cobrar. Exige correo confirmado (403 si no). */
+  guardarMedioPago(token: string, ultimosCuatroDigitos: string) {
+    return this.api.post<MedioPagoEstado>('/suscripcion/medio-pago', { token, ultimosCuatroDigitos });
+  }
+
+  pagos(pagina: number, porPagina: number) {
+    return this.api.get<PaginaPagosSuscripcion>('/suscripcion/pagos', { pagina, porPagina });
   }
 
   quitarMedioPago() {

@@ -33,3 +33,28 @@ export interface RegistroPublicoPayload {
   adminEmail: string;
   adminPassword: string;
 }
+
+export interface MedioPagoEstado {
+  activo: boolean;
+  ultimosCuatroDigitos: string | null;
+}
+
+export interface PagoSuscripcion {
+  id: string;
+  fecha: string;
+  confirmadoEn: string | null;
+  paquete: string;
+  ciclo: CicloFacturacion;
+  metodo: 'QR' | 'NEQUI' | 'PSE' | 'TARJETA';
+  montoEnCentavos: number;
+  estado: 'PENDIENTE' | 'APROBADA' | 'DECLINADA';
+  origen: 'MANUAL' | 'AUTOMATICO';
+}
+
+/** No se llama `HistorialPagos` para no chocar con el componente del mismo nombre. */
+export interface PaginaPagosSuscripcion {
+  items: PagoSuscripcion[];
+  total: number;
+  pagina: number;
+  porPagina: number;
+}

@@ -114,3 +114,27 @@
   color: var(--text-secondary);
   text-align: center;
 }
+
+.pago-dialogo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+
+  &__resumen {
+    margin: 0;
+    color: var(--text-primary);
+  }
+
+  &__texto,
+  &__espera {
+    margin: 0;
+    font-size: var(--fs-sm);
+    color: var(--text-secondary);
+  }
+
+  &__espera {
+    color: var(--accent-primary);
+  }
+}

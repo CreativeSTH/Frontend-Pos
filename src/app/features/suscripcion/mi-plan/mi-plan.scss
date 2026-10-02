@@ -1,44 +1,68 @@
+@use 'mixins' as mix;
+
 .mi-plan {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  max-width: 480px;
-  padding: var(--space-6);
+  max-width: 960px;
 
-  &__resumen {
+  &__card {
+    @include mix.glass-panel;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
     gap: var(--space-4);
     padding: var(--space-5);
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
   }
 
+  // Mismo aspecto que la tarjeta de vidrio pero SIN backdrop-filter: un ancestro con backdrop-filter se vuelve el
+  // contenedor de los position: fixed y el diálogo "Confirmando tu pago" quedaría encerrado en este bloque.
+  &__pago {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--glass-bg-elevated);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  &__resumen {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  &__datos {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
   &__nombre {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     font-family: var(--font-display);
     font-weight: var(--fw-semibold);
     font-size: var(--fs-lg);
     color: var(--text-primary);
   }
 
-  &__fecha {
+  &__detalle,
+  &__nota {
+    margin: 0;
     font-size: var(--fs-sm);
     color: var(--text-secondary);
-    margin-top: var(--space-1);
   }
 
-  &__ciclo {
-    font-size: var(--fs-sm);
-    color: var(--text-secondary);
-    margin-top: var(--space-1);
-  }
-
-  &__link-tarjeta {
-    color: var(--text-secondary);
-    font-size: var(--fs-sm);
-    text-decoration: underline;
+  &__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
   }
 
   &__motivo-label {

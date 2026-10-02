@@ -1,0 +1,37 @@
+<section class="medio-pago-card">
+  <h3 class="medio-pago-card__titulo">Medio de pago</h3>
+
+  @if (cargando()) {
+    <p class="medio-pago-card__texto">Cargando…</p>
+  } @else if (estado()?.activo) {
+    <p class="medio-pago-card__tarjeta"><ds-icon name="credit-card" [size]="18" /> Tarjeta •••• {{ estado()!.ultimosCuatroDigitos }}</p>
+    <p class="medio-pago-card__texto">
+      Se cobra automáticamente cada {{ ciclo() === 'ANUAL' ? 'año' : 'mes' }}, el día de tu próximo cobro.
+    </p>
+  } @else {
+    <p class="medio-pago-card__texto">
+      No tienes una tarjeta guardada: cuando venza tu plan tendrás que pagar a mano (QR o tarjeta).
+    </p>
+  }
+
+  @if (!cargando()) {
+    @if (!emailVerificado()) {
+      <p class="medio-pago-card__aviso">{{ mensajeCorreo }}</p>
+    }
+    @if (mostrandoForm()) {
+      <app-tarjeta-form (tokenizada)="guardar($event)" />
+      <div class="medio-pago-card__acciones">
+        <ds-button variant="ghost" [disabled]="guardando()" (click)="mostrandoForm.set(false)">Cancelar</ds-button>
+      </div>
+    } @else {
+      <div class="medio-pago-card__acciones">
+        <ds-button variant="primary" icon="credit-card" [disabled]="!emailVerificado()" (click)="mostrandoForm.set(true)">
+          {{ estado()?.activo ? 'Reemplazar tarjeta' : 'Agregar tarjeta' }}
+        </ds-button>
+        @if (estado()?.activo) {
+          <ds-button variant="ghost" [loading]="quitando()" (click)="quitar()">Quitar</ds-button>
+        }
+      </div>
+    }
+  }
+</section>

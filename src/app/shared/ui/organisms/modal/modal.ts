@@ -12,14 +12,16 @@ import { Icon } from '../../atoms/icon/icon';
 export class Modal {
   readonly title = input<string>('');
   readonly size = input<'sm' | 'md' | 'lg'>('md');
+  /** false: sin X y sin cerrar con Escape ni clic afuera (p. ej. mientras se confirma un pago). */
+  readonly cerrable = input(true);
   readonly close = output<void>();
 
   @HostListener('document:keydown.escape')
   protected onEscape(): void {
-    this.close.emit();
+    if (this.cerrable()) this.close.emit();
   }
 
   protected onBackdropClick(): void {
-    this.close.emit();
+    if (this.cerrable()) this.close.emit();
   }
 }

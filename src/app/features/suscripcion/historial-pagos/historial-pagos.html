@@ -1,0 +1,36 @@
+<section class="historial-pagos">
+  <h3 class="historial-pagos__titulo">Historial de pagos</h3>
+  @if (!cargando() && pagos().length === 0) {
+    <ds-empty-state icon="receipt" title="Todavía no tienes pagos" />
+  } @else {
+    <ds-table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Plan</th>
+          <th>Ciclo</th>
+          <th>Método</th>
+          <th>Origen</th>
+          <th>Monto</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of pagos(); track p.id) {
+          <tr>
+            <td>{{ fecha(p.fecha) }}</td>
+            <td>{{ p.paquete }}</td>
+            <td>{{ p.ciclo === 'ANUAL' ? 'Anual' : 'Mensual' }}</td>
+            <td>{{ metodo(p.metodo) }}</td>
+            <td>{{ p.origen === 'AUTOMATICO' ? 'Automático' : 'Manual' }}</td>
+            <td>{{ monto(p.montoEnCentavos) }}</td>
+            <td><ds-badge [tone]="estado(p.estado).tono">{{ estado(p.estado).texto }}</ds-badge></td>
+          </tr>
+        }
+      </tbody>
+    </ds-table>
+    @if (totalPaginas() > 1) {
+      <ds-paginator [page]="pagina()" [totalPages]="totalPaginas()" (pageChange)="recargar($event)" />
+    }
+  }
+</section>

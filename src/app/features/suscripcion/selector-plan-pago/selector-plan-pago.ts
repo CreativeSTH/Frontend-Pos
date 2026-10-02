@@ -10,9 +10,23 @@ import { Suscripcion } from '../../../core/models/suscripcion.model';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Switch } from '../../../shared/ui/atoms/switch/switch';
 import { TarjetaForm } from '../tarjeta-form/tarjeta-form';
+import { Modal } from '../../../shared/ui/organisms/modal/modal';
+import { Spinner } from '../../../shared/ui/atoms/spinner/spinner';
 
 const POLL_MS = 2000;
-const POLL_MAX_INTENTOS = 45; // ~90s — mismo presupuesto de espera que un cajero tolera en el POS antes de que el pago se sienta colgado.
+/**
+ * A los 2 minutos sin confirmación aparece "Cerrar y revisar después" en el diálogo de pago (decisión del
+ * usuario 2026-10-01). El polling sigue mientras el diálogo esté abierto: un QR se puede pagar más tarde.
+ */
+const INTENTOS_HASTA_SALIDA = 60;
+
+/** Lo que se está pagando, para mostrarlo en el diálogo mientras se confirma. */
+interface PagoEnCurso {
+  metodo: 'QR' | 'TARJETA';
+  plan: string;
+  ciclo: 'MENSUAL' | 'ANUAL';
+  monto: number;
+}
 
 /**
  * Selector de plan + flujo de pago QR/tarjeta, reusado tanto por el bloqueo forzado de
@@ -22,7 +36,7 @@ const POLL_MAX_INTENTOS = 45; // ~90s — mismo presupuesto de espera que un caj
 @Component({
   selector: 'app-selector-plan-pago',
   standalone: true,
-  imports: [Button, FormsModule, Switch, TarjetaForm],
+  imports: [Button, FormsModule, Switch, TarjetaForm, Modal, Spinner],
   templateUrl: './selector-plan-pago.html',
   styleUrl: './selector-plan-pago.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,7 +49,8 @@ export class SelectorPlanPago {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly suscripcionActual = input.required<Suscripcion>();
-  readonly pagado = output<void>();
+  /** Lleva la suscripción ya actualizada: quien la use puede mostrar el plan nuevo en el mismo instante en que se cierra el diálogo. */
+  readonly pagado = output<Suscripcion>();
 
   protected readonly paquetes = signal<Paquete[]>([]);
   protected readonly paqueteSeleccionadoId = signal<string>('');
@@ -77,6 +92,10 @@ export class SelectorPlanPago {
   protected readonly pagando = signal(false);
   protected readonly qrImagen = signal<string | null>(null);
   protected readonly esperandoConfirmacion = signal(false);
+  /** Mientras no sea null se muestra el diálogo "Confirmando tu pago", que no se puede cerrar. */
+  protected readonly pagoEnCurso = signal<PagoEnCurso | null>(null);
+  /** A los 2 minutos sin confirmación: aparece la salida "Cerrar y revisar después". */
+  protected readonly mostrarSalida = signal(false);
 
   protected readonly mostrandoFormTarjeta = signal(false);
   // Opt-in explícito: como esto habilita cobros recurrentes sin más confirmación cada 30 días,
@@ -122,6 +141,7 @@ export class SelectorPlanPago {
     this.detenerPolling(); // por si quedó un polling anterior corriendo (no debería, el botón queda oculto mientras hay QR, pero blinda contra ese caso)
     this.pagando.set(true);
     this.qrImagen.set(null);
+    this.abrirDialogo('QR');
     this.suscripcionService.reactivar({ metodo: 'QR', datosMetodo: {}, paqueteId: this.paqueteSeleccionadoId() || undefined, cicloFacturacion: this.ciclo() }).subscribe({
       next: (resultado) => {
         const qr = resultado.extra?.['qr_image'];
@@ -132,11 +152,13 @@ export class SelectorPlanPago {
           // Wompi no generó el QR a tiempo (se agotó el polling del backend) — no hay nada que
           // mostrarle al cajero para pagar, así que no tiene sentido seguir esperando.
           this.pagando.set(false);
+          this.pagoEnCurso.set(null);
           this.toast.error('Wompi no generó el código QR — intentá de nuevo en unos segundos');
         }
       },
       error: (err) => {
         this.pagando.set(false);
+        this.pagoEnCurso.set(null);
         this.toast.error(err.error?.message ?? 'No se pudo iniciar el pago con Wompi');
       },
     });
@@ -155,6 +177,7 @@ export class SelectorPlanPago {
    */
   protected pagarConTarjeta(datos: { token: string; ultimosCuatroDigitos: string }): void {
     this.pagando.set(true);
+    this.abrirDialogo('TARJETA');
     this.suscripcionService
       .reactivar({
         metodo: 'TARJETA',
@@ -169,6 +192,7 @@ export class SelectorPlanPago {
         next: () => this.esperarPago(),
         error: (err) => {
           this.pagando.set(false);
+          this.pagoEnCurso.set(null);
           // El correo pudo quedar sin confirmar aunque la sesión diga lo contrario: se apaga "Guardar" para que el reintento pase.
           if (err.status === 403) this.guardarTarjeta.set(false);
           this.toast.error(err.error?.message ?? 'No se pudo procesar el pago con la tarjeta');
@@ -176,7 +200,7 @@ export class SelectorPlanPago {
       });
   }
 
-  /** Polling corto contra /suscripcion/mi-estado hasta que la suscripción quede ACTIVA o se agote el presupuesto de tiempo. */
+  /** Polling corto contra /suscripcion/mi-estado hasta que la suscripción quede ACTIVA con una fecha de fin nueva, o se agote el presupuesto de tiempo. */
   private esperarPago(): void {
     this.esperandoConfirmacion.set(true);
     let intentos = 0;
@@ -187,33 +211,49 @@ export class SelectorPlanPago {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (data) => {
-            if (data.estado === 'ACTIVA') {
+            // Todo pago aprobado extiende fechaFin (activarTrasPago). Mirar solo `estado === 'ACTIVA'` daba el pago
+            // por confirmado al instante cuando la suscripción ya estaba ACTIVA (cambio de plan desde Mi plan).
+            if (data.estado === 'ACTIVA' && data.fechaFin !== this.suscripcionActual().fechaFin) {
               this.detenerPolling();
-              this.pagado.emit();
+              // Primero se entrega la suscripción nueva y después se cierra el diálogo: la pantalla
+              // ya muestra el plan pagado cuando el diálogo desaparece.
+              this.pagado.emit(data);
+              this.pagoEnCurso.set(null);
+              this.qrImagen.set(null);
               return;
             }
-            if (intentos >= POLL_MAX_INTENTOS) this.agotarEsperaDePago();
+            if (intentos >= INTENTOS_HASTA_SALIDA) this.mostrarSalida.set(true);
           },
-          // Un error puntual de red durante el polling no debe abortar la espera —
-          // se reintenta en la próxima vuelta, salvo que también se agote el presupuesto.
+          // Un error puntual de red durante el polling no debe abortar la espera: se reintenta en la próxima vuelta.
           error: () => {
-            if (intentos >= POLL_MAX_INTENTOS) this.agotarEsperaDePago();
+            if (intentos >= INTENTOS_HASTA_SALIDA) this.mostrarSalida.set(true);
           },
         });
     }, POLL_MS);
   }
 
+  private abrirDialogo(metodo: 'QR' | 'TARJETA'): void {
+    const paquete = this.paqueteSeleccionado();
+    this.mostrarSalida.set(false);
+    this.pagoEnCurso.set({
+      metodo,
+      plan: paquete?.nombre ?? this.suscripcionActual().paquete.nombre,
+      ciclo: this.ciclo(),
+      monto: paquete ? this.precioTotalAPagar(paquete) : 0,
+    });
+  }
+
   /**
-   * Al agotar el presupuesto de polling del frontend (90s) NO se borra el QR ni se invita a
-   * generar uno nuevo — `SuscripcionesService.iniciarReactivacion` en el backend tiene su propia
-   * ventana de idempotencia de 10 minutos (evita cobros duplicados) y rechazaría exactamente ese
-   * intento con un mensaje contradictorio. El QR sigue siendo válido y pagable más allá de los
-   * 90s (un QR de Bancolombia vive bastante más que eso); esto solo detiene el polling activo del
-   * frontend, no invalida el pago.
+   * Salida del diálogo a los 2 minutos sin confirmación. NO invita a generar otro QR:
+   * `iniciarReactivacion` tiene su propia ventana de idempotencia de 10 minutos (evita cobros
+   * duplicados) y lo rechazaría. Si el pago llega después, el cron de reconciliación del backend
+   * actualiza el plan solo.
    */
-  private agotarEsperaDePago(): void {
+  protected cerrarYRevisarDespues(): void {
     this.detenerPolling();
-    this.toast.error('Seguimos sin confirmar el pago. Si ya pagaste, esperá unos segundos y recargá la página.');
+    this.pagoEnCurso.set(null);
+    this.qrImagen.set(null);
+    this.toast.info('Si ya pagaste, tu plan se actualiza solo en unos minutos.');
   }
 
   private detenerPolling(): void {
@@ -223,6 +263,7 @@ export class SelectorPlanPago {
     }
     this.pagando.set(false);
     this.esperandoConfirmacion.set(false);
+    this.mostrarSalida.set(false);
   }
 
   /**
