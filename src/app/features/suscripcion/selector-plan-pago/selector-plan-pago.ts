@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SuscripcionService } from '../../../core/services/suscripcion.service';
 import { PaquetesService } from '../../../core/services/paquetes.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Paquete } from '../../../core/models/paquete.model';
 import { Suscripcion } from '../../../core/models/suscripcion.model';
 import { Button } from '../../../shared/ui/atoms/button/button';
@@ -30,6 +31,7 @@ export class SelectorPlanPago {
   private readonly suscripcionService = inject(SuscripcionService);
   private readonly paquetesService = inject(PaquetesService);
   private readonly toast = inject(ToastService);
+  private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly suscripcionActual = input.required<Suscripcion>();
@@ -80,6 +82,11 @@ export class SelectorPlanPago {
   // Opt-in explícito: como esto habilita cobros recurrentes sin más confirmación cada 30 días,
   // arranca destildado — el usuario tiene que activarlo a propósito, no desactivarlo.
   protected readonly guardarTarjeta = signal(false);
+  /**
+   * Guardar la tarjeta exige el correo confirmado (EmailVerificadoGuard en `POST /suscripcion/reactivar`).
+   * Mismo dato que el banner de "Confirmá tu correo": sin esto el pago se rechazaba con un toast pasajero.
+   */
+  protected readonly emailVerificado = computed(() => !!this.auth.usuario()?.emailVerificado);
 
   private pollHandle: ReturnType<typeof setInterval> | null = null;
 
@@ -152,7 +159,7 @@ export class SelectorPlanPago {
       .reactivar({
         metodo: 'TARJETA',
         datosMetodo: { token: datos.token, installments: 1 },
-        guardarTarjeta: this.guardarTarjeta(),
+        guardarTarjeta: this.guardarTarjeta() && this.emailVerificado(),
         ultimosCuatroDigitos: datos.ultimosCuatroDigitos,
         paqueteId: this.paqueteSeleccionadoId() || undefined,
         cicloFacturacion: this.ciclo(),
@@ -162,6 +169,8 @@ export class SelectorPlanPago {
         next: () => this.esperarPago(),
         error: (err) => {
           this.pagando.set(false);
+          // El correo pudo quedar sin confirmar aunque la sesión diga lo contrario: se apaga "Guardar" para que el reintento pase.
+          if (err.status === 403) this.guardarTarjeta.set(false);
           this.toast.error(err.error?.message ?? 'No se pudo procesar el pago con la tarjeta');
         },
       });

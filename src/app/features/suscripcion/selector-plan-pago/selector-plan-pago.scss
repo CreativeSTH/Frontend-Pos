@@ -106,3 +106,11 @@
     text-decoration: line-through;
   }
 }
+
+.selector-plan-pago__nota-tarjeta {
+  margin: 0;
+  max-width: 480px;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  text-align: center;
+}

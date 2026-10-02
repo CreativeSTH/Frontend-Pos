@@ -52,9 +52,16 @@
       <app-tarjeta-form (tokenizada)="pagarConTarjeta($event)" />
       <ds-switch
         [label]="'Guardar esta tarjeta y cobrarla automáticamente cada ' + (ciclo() === 'ANUAL' ? 'año' : 'mes') + ' hasta que la quite desde Configuración'"
-        [ngModel]="guardarTarjeta()"
+        [ngModel]="guardarTarjeta() && emailVerificado()"
         (ngModelChange)="guardarTarjeta.set($event)"
+        [disabled]="!emailVerificado()"
       />
+      @if (!emailVerificado()) {
+        <p class="selector-plan-pago__nota-tarjeta">
+          Para guardar la tarjeta y cobrarla automáticamente, primero confirma tu correo (usa «Reenviar correo» en el aviso de arriba).
+          Puedes pagar ahora sin guardarla.
+        </p>
+      }
     }
   }
 </div>
