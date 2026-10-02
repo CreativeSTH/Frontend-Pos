@@ -58,6 +58,11 @@ export class FacturacionElectronicaService {
     return this.api.get<DetalleFactura>(`/facturacion-electronica/facturas/${id}`);
   }
 
+  /** Fase 7: envía (o reenvía) la factura aceptada; `correo` reemplaza el del cliente solo para este envío. */
+  enviarCorreoFactura(id: string, correo?: string) {
+    return this.api.post<DocumentoElectronico>(`/facturacion-electronica/facturas/${id}/enviar-correo`, correo ? { correo } : {});
+  }
+
   reintentarFactura(id: string) {
     return this.api.post<DocumentoElectronico>(`/facturacion-electronica/facturas/${id}/reintentar`, {});
   }

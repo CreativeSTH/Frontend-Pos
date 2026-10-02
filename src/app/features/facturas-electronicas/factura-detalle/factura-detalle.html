@@ -90,6 +90,51 @@
         }
       </div>
     }
+
+    @if (d.tipo === 'FACTURA') {
+      <div class="factura-detalle__correo">
+        <span class="factura-detalle__etiqueta">Correo al cliente</span>
+        @switch (d.correoEstado) {
+          @case ('ENVIADO') {
+            <p>Enviada a <strong>{{ d.correoDestinatario }}</strong> el {{ d.correoEnviadoEn | date: 'medium' }}</p>
+          }
+          @case ('FALLIDO') {
+            <p class="factura-detalle__correo-error">
+              No se pudo enviar a {{ d.correoDestinatario }} ({{ d.correoEnviadoEn | date: 'medium' }}): {{ d.correoError }}
+            </p>
+          }
+          @case ('ENVIANDO') {
+            <p class="factura-detalle__vacio">Enviando…</p>
+          }
+          @default {
+            <p class="factura-detalle__vacio">
+              Todavía no se ha enviado por correo.
+              @if (det.venta && !det.venta.cliente?.email) {
+                El cliente no tiene correo registrado.
+              }
+            </p>
+          }
+        }
+        @if (formCorreoAbierto()) {
+          <div class="factura-detalle__correo-form">
+            <ds-form-field label="Enviar a">
+              <ds-input type="email" icon="mail" placeholder="correo@cliente.com" [ngModel]="correoDestino()" (ngModelChange)="correoDestino.set($event)" />
+            </ds-form-field>
+            <div class="factura-detalle__correo-acciones">
+              <ds-button variant="ghost" size="sm" (click)="formCorreoAbierto.set(false)">Cancelar</ds-button>
+              <ds-button
+                variant="primary"
+                size="sm"
+                icon="mail"
+                [loading]="enviandoCorreo()"
+                [disabled]="!correoDestino().trim()"
+                (click)="enviarCorreo()"
+              >Enviar</ds-button>
+            </div>
+          </div>
+        }
+      </div>
+    }
   }
 
   <div modal-footer>
@@ -97,6 +142,11 @@
     @if (documento()) {
       <ds-button variant="ghost" icon="receipt" (click)="verVenta()">Ver venta</ds-button>
       <ds-button variant="glass" icon="printer" [loading]="imprimiendoTirilla()" (click)="imprimirTirilla()">Imprimir tirilla</ds-button>
+      @if (puedeEnviarCorreo() && !formCorreoAbierto()) {
+        <ds-button variant="glass" icon="mail" (click)="abrirFormCorreo()">
+          {{ documento()?.correoEstado === 'ENVIADO' ? 'Reenviar por correo' : 'Enviar por correo' }}
+        </ds-button>
+      }
       @if (puedeReintentar()) {
         <ds-button variant="glass" icon="history" [loading]="reintentando()" (click)="reintentar()">Reintentar</ds-button>
       }

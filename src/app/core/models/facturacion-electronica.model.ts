@@ -78,6 +78,11 @@ export interface DocumentoElectronico {
   periodoContingenciaId?: string | null;
   /** true = factura de talonario escrita a mano y registrada después. */
   transcritaDeTalonario?: boolean;
+  /** Fase 7: último envío al correo del cliente. null = nunca se envió. */
+  correoEstado?: 'ENVIANDO' | 'ENVIADO' | 'FALLIDO' | null;
+  correoDestinatario?: string | null;
+  correoEnviadoEn?: string | null;
+  correoError?: string | null;
   /** `numeric` de Postgres — llega como string por JSON, pasar siempre por `Number(...)`. */
   total?: number | string;
   createdAt: string;
@@ -116,7 +121,7 @@ export interface VentaFactura {
   descuentoTotal: number | string;
   impuestoTotal: number | string;
   total: number | string;
-  cliente?: { nombre: string; documentoIdentidad?: string; tipoDocumentoIdentidad?: string } | null;
+  cliente?: { nombre: string; documentoIdentidad?: string; tipoDocumentoIdentidad?: string; email?: string | null } | null;
   items: {
     id: string;
     nombreProducto: string;

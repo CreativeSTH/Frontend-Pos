@@ -110,6 +110,35 @@
   font-weight: var(--fw-bold);
 }
 
+.factura-detalle__correo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+  font-size: var(--fs-sm);
+
+  p {
+    margin: 0;
+  }
+}
+
+.factura-detalle__correo-error {
+  color: var(--accent-danger);
+}
+
+.factura-detalle__correo-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.factura-detalle__correo-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
 // Mismo criterio que el QR: el PDF es papel blanco, no se tiñe con el tema.
 .factura-detalle__visor {
   width: 100%;

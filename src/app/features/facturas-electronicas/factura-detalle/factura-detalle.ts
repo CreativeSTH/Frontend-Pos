@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ImpresionComprobanteService } from '../../../core/services/impresion-comprobante.service';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -8,6 +9,8 @@ import { Button } from '../../../shared/ui/atoms/button/button';
 import { Badge } from '../../../shared/ui/atoms/badge/badge';
 import { Icon } from '../../../shared/ui/atoms/icon/icon';
 import { Table } from '../../../shared/ui/organisms/data-table/table';
+import { Input } from '../../../shared/ui/atoms/input/input';
+import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { FacturacionElectronicaService } from '../../../core/services/facturacion-electronica.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -21,7 +24,7 @@ import { etiquetaEstadoDocumento, tonoEstadoDocumento } from '../estado-document
 @Component({
   selector: 'app-factura-detalle',
   standalone: true,
-  imports: [Modal, Button, Badge, Icon, Table, DatePipe],
+  imports: [Modal, Button, Badge, Icon, Table, Input, FormField, FormsModule, DatePipe],
   templateUrl: './factura-detalle.html',
   styleUrl: './factura-detalle.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -59,6 +62,17 @@ export class FacturaDetalle {
     const d = this.documento();
     if (!d || !this.auth.tienePermiso('FACTURACION_ELECTRONICA_DIAN', 'EDITAR')) return false;
     return d.estado === 'RECHAZADO' || d.estado === 'ERROR' || (d.estado === 'PENDIENTE' && !d.trackingReference);
+  });
+
+  // ── Fase 7: correo al cliente ──
+  protected readonly formCorreoAbierto = signal(false);
+  protected readonly correoDestino = signal('');
+  protected readonly enviandoCorreo = signal(false);
+  /** Mismo criterio que el backend (`enviarCorreoFactura`): solo una factura aceptada por la DIAN. */
+  protected readonly puedeEnviarCorreo = computed(() => {
+    const d = this.documento();
+    if (!d || !this.auth.tienePermiso('FACTURACION_ELECTRONICA_DIAN', 'EDITAR')) return false;
+    return d.tipo === 'FACTURA' && (d.estado === 'ACEPTADO' || d.estado === 'ACEPTADO_CON_OBSERVACIONES');
   });
 
   constructor() {
@@ -115,6 +129,33 @@ export class FacturaDetalle {
       error: (err) => {
         this.reintentando.set(false);
         this.toast.error(err.error?.message ?? 'No se pudo reintentar la factura');
+      },
+    });
+  }
+
+  protected abrirFormCorreo(): void {
+    const det = this.detalle();
+    this.correoDestino.set(det?.venta?.cliente?.email ?? det?.documento.correoDestinatario ?? '');
+    this.formCorreoAbierto.set(true);
+  }
+
+  protected enviarCorreo(): void {
+    const d = this.documento();
+    const correo = this.correoDestino().trim();
+    if (!d || !correo) return;
+    this.enviandoCorreo.set(true);
+    this.facturacion.enviarCorreoFactura(d.id, correo).subscribe({
+      next: (actualizado) => {
+        this.enviandoCorreo.set(false);
+        this.formCorreoAbierto.set(false);
+        if (actualizado.correoEstado === 'ENVIADO') this.toast.success(`Factura enviada a ${correo}`);
+        else this.toast.error(actualizado.correoError ?? 'No se pudo enviar el correo');
+        this.cambio.emit(actualizado);
+        this.cargar(d.id);
+      },
+      error: (err) => {
+        this.enviandoCorreo.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo enviar el correo');
       },
     });
   }
