@@ -48,6 +48,7 @@ const ETIQUETAS_MODULO: Record<ModuloPermiso, string> = {
   TIENDA_ONLINE: 'Tienda online',
   PAQUETES: 'Paquetes',
   FACTURACION_ELECTRONICA_DIAN: 'Facturación electrónica DIAN',
+  DEVOLUCIONES: 'Devoluciones',
 };
 
 const ETIQUETAS_ACCION: Record<AccionPermiso, string> = {

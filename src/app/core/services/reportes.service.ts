@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
-import { ReporteVentas, ReporteMargenes, ReporteCierresCaja } from '../models/reporte.model';
+import { ReporteVentas, ReporteMargenes, ReporteCierresCaja, ReporteDevoluciones } from '../models/reporte.model';
 
 export interface ReportesFiltro {
   desde?: string;
@@ -19,6 +19,10 @@ export class ReportesService {
 
   margenes(filtros: ReportesFiltro) {
     return this.api.get<ReporteMargenes>('/reportes/margenes', filtros);
+  }
+
+  devoluciones(filtros: ReportesFiltro) {
+    return this.api.get<ReporteDevoluciones>('/reportes/devoluciones', filtros);
   }
 
   cierresCaja(filtros: ReportesFiltro) {

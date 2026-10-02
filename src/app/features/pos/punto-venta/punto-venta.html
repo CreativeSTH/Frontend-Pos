@@ -300,8 +300,10 @@
                   [ngModel]="pago.metodoPago"
                   (ngModelChange)="actualizarMetodoPago(pagoIndex, $event)"
                 >
-                  @for (m of metodosPago(); track m.id) {
-                    <option [value]="m.nombre">{{ m.nombre }}</option>
+                  @for (nombre of opcionesPago(); track nombre) {
+                    <option [value]="nombre">
+                      {{ nombre === metodoSaldoAFavor ? nombre + ' (disponible ' + formatMoney(saldoDisponible()) + ')' : nombre }}
+                    </option>
                   }
                 </ds-select>
                 @if (pagos().length > 1) {
@@ -337,8 +339,10 @@
                 [ngModel]="pago.metodoPago"
                 (ngModelChange)="actualizarMetodoPago(pagoIndex, $event)"
               >
-                @for (m of metodosPago(); track m.id) {
-                  <option [value]="m.nombre">{{ m.nombre }}</option>
+                @for (nombre of opcionesPago(); track nombre) {
+                  <option [value]="nombre">
+                    {{ nombre === metodoSaldoAFavor ? nombre + ' (disponible ' + formatMoney(saldoDisponible()) + ')' : nombre }}
+                  </option>
                 }
               </ds-select>
               <ds-input

@@ -73,6 +73,13 @@
             <td>
               @if (f.tipo === 'RECIBO_CAJA') {
                 <ds-button variant="glass" size="sm" icon="printer" (click)="imprimirReciboCaja(f)">Imprimir</ds-button>
+              } @else if (f.tipo === 'DEVOLUCION') {
+                <span class="comprobantes-acciones">
+                  @if (f.documentoId) {
+                    <ds-button variant="glass" size="sm" icon="eye" (click)="verFila.set(f)">Nota crédito</ds-button>
+                  }
+                  <ds-button variant="glass" size="sm" icon="printer" (click)="imprimirDevolucion(f)">Imprimir</ds-button>
+                </span>
               } @else {
                 <ds-button variant="glass" size="sm" icon="eye" (click)="verFila.set(f)">Ver</ds-button>
               }

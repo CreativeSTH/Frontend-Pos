@@ -52,3 +52,28 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--space-4);
 }
+
+.clientes-saldo {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent-success);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted;
+}
+
+.clientes-saldo__total {
+  margin: 0 0 var(--space-1);
+  color: var(--text-secondary);
+
+  strong {
+    color: var(--text-primary);
+  }
+}
+
+.clientes-saldo__ayuda {
+  margin: 0 0 var(--space-4);
+  color: var(--text-tertiary);
+  font-size: var(--fs-sm);
+}

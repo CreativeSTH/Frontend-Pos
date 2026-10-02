@@ -1,0 +1,117 @@
+.devolucion__cargando {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-tertiary);
+  padding: var(--space-8) 0;
+}
+
+.devolucion__intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.devolucion__texto {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+}
+
+.devolucion__aviso {
+  margin: var(--space-2) 0;
+  color: var(--accent-warning);
+  font-size: var(--fs-sm);
+
+  &--bloqueo {
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+  }
+}
+
+.devolucion__lineas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.devolucion__linea {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  transition: border-color var(--duration-fast) var(--ease-standard);
+
+  &--activa {
+    border-color: var(--glass-border-strong);
+  }
+}
+
+.devolucion__producto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.devolucion__nombre {
+  color: var(--text-primary);
+  font-weight: var(--fw-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.devolucion__pista {
+  color: var(--text-tertiary);
+  font-size: var(--fs-xs);
+}
+
+.devolucion__baja {
+  grid-column: 1 / -1;
+}
+
+.devolucion__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: var(--space-4) 0;
+  color: var(--text-secondary);
+
+  strong {
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: var(--fs-lg);
+  }
+}
+
+.devolucion__reembolsos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.devolucion__subtitulo {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+@media (max-width: 600px) {
+  .devolucion__intro {
+    flex-direction: column;
+  }
+
+  .devolucion__linea {
+    grid-template-columns: 1fr;
+  }
+}

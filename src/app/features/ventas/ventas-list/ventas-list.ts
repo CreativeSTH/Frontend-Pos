@@ -23,6 +23,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Venta } from '../../../core/models/venta.model';
 import { VerComprobante } from '../../comprobantes/ver-comprobante/ver-comprobante';
+import { ModalDevolucion } from '../../devoluciones/modal-devolucion/modal-devolucion';
 import { etiquetaEstadoDocumento, tonoEstadoDocumento } from '../../facturas-electronicas/estado-documento.util';
 
 // `Partial<Record<...>>` a propósito: `Venta.estado` es `string` (no un union acotado), así que
@@ -64,6 +65,7 @@ const TONOS_ESTADO: Partial<Record<string, BadgeTone>> = {
     EmptyState,
     Paginator,
     VerComprobante,
+    ModalDevolucion,
     FormsModule,
     DatePipe,
   ],
@@ -98,6 +100,10 @@ export class VentasList {
   protected readonly devolverStock = signal(true);
   protected readonly pinAutorizacion = signal('');
   protected readonly cancelando = signal(false);
+
+  /** Venta cuya devolución se está registrando. */
+  protected readonly ventaDevolucion = signal<string | null>(null);
+  protected readonly puedeVerDevoluciones = computed(() => this.auth.tienePermiso('DEVOLUCIONES', 'VER'));
 
   /** Solo quien tiene VENTAS:ELIMINAR cancela directo — cualquier otro rol necesita el PIN de alguien que lo tenga (ver backend). */
   protected readonly requierePin = computed(() => !this.auth.tienePermiso('VENTAS', 'ELIMINAR'));
@@ -167,6 +173,31 @@ export class VentasList {
   protected verComprobante(venta: Venta): void {
     this.showDetalle.set(false);
     this.comprobanteAbierto.set({ ventaId: venta.id, documentoId: venta.documentoElectronico?.id ?? null });
+  }
+
+  /** Cancelar es para errores del momento: con devoluciones o factura aceptada se usa Devolver (spec 3.7). */
+  protected puedeCancelar(venta: Venta): boolean {
+    const dian = venta.documentoElectronico?.estado;
+    return (
+      venta.estado !== 'CANCELADA' &&
+      (venta.estadoDevolucion ?? 'NINGUNA') === 'NINGUNA' &&
+      dian !== 'ACEPTADO' &&
+      dian !== 'ACEPTADO_CON_OBSERVACIONES'
+    );
+  }
+
+  protected puedeDevolver(venta: Venta): boolean {
+    return this.puedeVerDevoluciones() && venta.estado !== 'CANCELADA' && venta.estadoDevolucion !== 'TOTAL';
+  }
+
+  protected abrirDevolucion(venta: Venta): void {
+    this.showDetalle.set(false);
+    this.ventaDevolucion.set(venta.id);
+  }
+
+  protected alDevolver(): void {
+    this.ventaDevolucion.set(null);
+    this.load();
   }
 
   protected abrirCancelar(venta: Venta): void {

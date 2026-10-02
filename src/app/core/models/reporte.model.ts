@@ -11,6 +11,19 @@ export interface ReporteVentas {
   totalCredito: number;
   porDia: { fecha: string; cantidad: number; total: number }[];
   porMetodoPago: { metodoPago: string; total: number }[];
+  /** Devoluciones del período (por fecha de la devolución) — no reescriben las ventas. */
+  totalDevoluciones: number;
+  ingresosNetos: number;
+}
+
+export interface ReporteDevoluciones {
+  desde: string;
+  hasta: string;
+  cantidad: number;
+  total: number;
+  porForma: { forma: 'EFECTIVO' | 'DESCUENTO_DEUDA' | 'SALDO_A_FAVOR'; total: number }[];
+  porMotivo: { motivo: string; cantidad: number; total: number }[];
+  topProductos: { nombreProducto: string; cantidad: number; total: number }[];
 }
 
 export interface ProductoPorMargen {

@@ -31,6 +31,7 @@ const TIPOS: { valor: TipoComprobanteListado; etiqueta: string; tono: BadgeTone 
   { valor: 'RECIBO', etiqueta: 'Recibo', tono: 'neutral' },
   { valor: 'RECIBO_CAJA', etiqueta: 'Recibo de caja', tono: 'success' },
   { valor: 'FACTURA', etiqueta: 'Histórico', tono: 'warning' },
+  { valor: 'DEVOLUCION', etiqueta: 'Devolución', tono: 'danger' },
 ];
 
 /** Listado único de comprobantes (spec 6.3) — absorbe el viejo `/facturas-electronicas`. */
@@ -168,6 +169,11 @@ export class ComprobantesTab {
   protected imprimirReciboCaja(fila: FilaComprobante): void {
     // Reimpresión: nunca abre el cajón (el dinero ya entró cuando se registró el abono).
     if (fila.abonoId) this.impresion.imprimirAbono(fila.abonoId, { abrirCajon: false }).subscribe();
+  }
+
+  /** Devolución sin nota crédito (venta con recibo): su comprobante DEV-n se imprime directo. */
+  protected imprimirDevolucion(fila: FilaComprobante): void {
+    if (fila.devolucionId) this.impresion.imprimirDevolucion(fila.devolucionId).subscribe();
   }
 
   protected cerrarVer(): void {

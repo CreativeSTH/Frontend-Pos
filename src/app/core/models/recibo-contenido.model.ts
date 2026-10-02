@@ -59,8 +59,21 @@ export interface AbonoComprobante {
   referenciaPago: string | null;
 }
 
-/** Lo que se puede imprimir: el comprobante de una venta o el recibo de caja de un abono. */
-export type TipoContenidoImpresion = TipoComprobanteVenta | 'RECIBO_CAJA';
+/** Lo que se puede imprimir: el comprobante de una venta, el recibo de caja de un abono o una devolución. */
+export type TipoContenidoImpresion = TipoComprobanteVenta | 'RECIBO_CAJA' | 'DEVOLUCION';
+
+/** Comprobante de una devolución — espejo de `DevolucionComprobante` del backend. */
+export interface DevolucionComprobante {
+  ventaAfectada: string;
+  tipoComprobanteVenta: 'Factura electrónica' | 'Recibo' | 'Factura';
+  motivo: string;
+  notaCredito: {
+    numero: string | null;
+    cude: string | null;
+    estado: EstadoDocumentoElectronico;
+    encabezado: string | null;
+  } | null;
+}
 
 export interface ReciboContenido {
   tipo: TipoContenidoImpresion;
@@ -82,4 +95,6 @@ export interface ReciboContenido {
   leyenda?: string;
   /** Solo en el recibo de caja de un abono a crédito. */
   abono?: AbonoComprobante;
+  /** Solo en el comprobante de una devolución. */
+  devolucion?: DevolucionComprobante;
 }

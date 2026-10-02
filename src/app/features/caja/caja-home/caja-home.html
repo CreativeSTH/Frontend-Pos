@@ -57,7 +57,10 @@
                   <td class="caja-fila-acciones">
                     @if (fila.ventaId) {
                       <ds-button variant="glass" size="sm" (click)="verComprobante(fila)">Ver comprobante</ds-button>
-                      @if (!ventaCancelada(fila)) {
+                      @if (puedeDevolverFila(fila)) {
+                        <ds-button variant="glass" size="sm" icon="rotate-ccw" (click)="abrirDevolucion(fila)">Devolver</ds-button>
+                      }
+                      @if (puedeCancelarFila(fila)) {
                         <ds-button variant="ghost" size="sm" (click)="abrirCancelarVenta(fila)">Cancelar</ds-button>
                       }
                     }
@@ -326,4 +329,8 @@
       </ds-button>
     </div>
   </ds-modal>
+}
+
+@if (ventaDevolucion(); as ventaId) {
+  <app-modal-devolucion [ventaId]="ventaId" (close)="ventaDevolucion.set(null)" (devuelta)="alDevolver()" />
 }

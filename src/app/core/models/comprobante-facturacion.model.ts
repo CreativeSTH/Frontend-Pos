@@ -1,7 +1,7 @@
 import type { EstadoDocumentoElectronico } from './facturacion-electronica.model';
 
 /** Espejo de `TipoComprobanteListado` del backend (`GET /facturacion/comprobantes`). */
-export type TipoComprobanteListado = 'FACTURA_ELECTRONICA' | 'RECIBO' | 'FACTURA' | 'RECIBO_CAJA';
+export type TipoComprobanteListado = 'FACTURA_ELECTRONICA' | 'RECIBO' | 'FACTURA' | 'RECIBO_CAJA' | 'DEVOLUCION';
 
 export interface FilaComprobante {
   tipo: TipoComprobanteListado;
@@ -15,6 +15,8 @@ export interface FilaComprobante {
   ventaId: string;
   documentoId: string | null;
   abonoId: string | null;
+  /** Solo filas DEVOLUCION; `documentoId` es entonces la nota crédito (si la venta tenía factura electrónica). */
+  devolucionId: string | null;
 }
 
 export interface ResumenComprobantes {

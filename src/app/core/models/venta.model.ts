@@ -27,6 +27,8 @@ export interface Venta {
   items: VentaItem[];
   pagos: VentaPago[];
   createdAt: string;
+  /** Cuánto se devolvió de la venta (spec de devoluciones 2026-10-02). */
+  estadoDevolucion?: 'NINGUNA' | 'PARCIAL' | 'TOTAL';
   /** Factura electrónica de la venta (o null si no generó una) — la adjunta `GET /ventas`. */
   documentoElectronico?: { id: string; estado: EstadoDocumentoElectronico } | null;
 }

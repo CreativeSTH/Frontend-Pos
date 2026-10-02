@@ -1,4 +1,4 @@
-<ds-modal [title]="documento()?.numeroCompleto ? 'Factura ' + documento()!.numeroCompleto : 'Factura electrónica'" size="lg" (close)="close.emit()">
+<ds-modal [title]="tituloDocumento()" size="lg" (close)="close.emit()">
   @if (cargando()) {
     <div class="factura-detalle__cargando"><ds-icon name="file-text" [size]="24" /><span>Cargando factura...</span></div>
   } @else if (detalle(); as det) {
@@ -13,7 +13,7 @@
 
     @if (d.estado === 'RECHAZADO' || d.estado === 'ACEPTADO_CON_OBSERVACIONES') {
       <div class="factura-detalle__dian" [class.factura-detalle__dian--rechazo]="d.estado === 'RECHAZADO'">
-        <strong>{{ d.estado === 'RECHAZADO' ? 'La DIAN rechazó esta factura' : 'La DIAN la aceptó con observaciones' }}</strong>
+        <strong>{{ d.estado === 'RECHAZADO' ? (esNotaCredito() ? 'La DIAN rechazó esta nota crédito' : 'La DIAN rechazó esta factura') : 'La DIAN la aceptó con observaciones' }}</strong>
         @if (d.estado === 'RECHAZADO') {
           <ds-enlace-ayuda slug="factura-rechazada-por-la-dian">¿Qué hago?</ds-enlace-ayuda>
         }
@@ -35,11 +35,11 @@
         <img class="factura-detalle__qr" [src]="det.qrDataUrl" alt="Código QR de la factura" />
       }
       <div class="factura-detalle__cufe-texto">
-        <span class="factura-detalle__etiqueta">CUFE</span>
-        @if (d.cufe) {
-          <code>{{ d.cufe }}</code>
+        <span class="factura-detalle__etiqueta">{{ etiquetaCodigo() }}</span>
+        @if (d.cufe || d.cude) {
+          <code>{{ d.cufe || d.cude }}</code>
           <div>
-            <ds-button variant="glass" size="sm" icon="clipboard" (click)="copiarCufe()">Copiar CUFE</ds-button>
+            <ds-button variant="glass" size="sm" icon="clipboard" (click)="copiarCufe()">Copiar {{ etiquetaCodigo() }}</ds-button>
           </div>
         } @else {
           <span class="factura-detalle__vacio">Esperando respuesta de la DIAN</span>
@@ -48,7 +48,12 @@
       </div>
     </div>
 
-    @if (det.venta; as v) {
+    @if (esNotaCredito()) {
+      <p class="factura-detalle__cliente">
+        Nota crédito de una devolución de la venta de {{ det.venta?.cliente?.nombre ?? det.venta?.nombreCliente ?? 'el cliente' }}.
+        Total devuelto: <strong>{{ formatMoney(numero(d.total ?? 0)) }}</strong>. El detalle de lo devuelto está en el PDF.
+      </p>
+    } @else if (det.venta; as v) {
       <p class="factura-detalle__cliente">
         {{ v.cliente?.nombre ?? v.nombreCliente }}
         @if (v.cliente?.documentoIdentidad) {
@@ -146,7 +151,10 @@
     <ds-button variant="ghost" (click)="close.emit()">Cerrar</ds-button>
     @if (documento()) {
       <ds-button variant="ghost" icon="receipt" (click)="verVenta()">Ver venta</ds-button>
-      <ds-button variant="glass" icon="printer" [loading]="imprimiendoTirilla()" (click)="imprimirTirilla()">Imprimir tirilla</ds-button>
+      @if (!esNotaCredito()) {
+        <!-- La tirilla de una nota crédito es la de su devolución (se imprime desde el listado). -->
+        <ds-button variant="glass" icon="printer" [loading]="imprimiendoTirilla()" (click)="imprimirTirilla()">Imprimir tirilla</ds-button>
+      }
       @if (puedeEnviarCorreo() && !formCorreoAbierto()) {
         <ds-button variant="glass" icon="mail" (click)="abrirFormCorreo()">
           {{ documento()?.correoEstado === 'ENVIADO' ? 'Reenviar por correo' : 'Enviar por correo' }}

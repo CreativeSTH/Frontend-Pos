@@ -20,7 +20,7 @@ import { SucursalesService } from '../../../core/services/sucursales.service';
 import { GraficosService } from '../../../core/services/graficos.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { ReporteVentas, ReporteMargenes, ReporteCierresCaja } from '../../../core/models/reporte.model';
+import { ReporteVentas, ReporteMargenes, ReporteCierresCaja, ReporteDevoluciones } from '../../../core/models/reporte.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { GraficoConfigurado, SerieResultado, WidgetLayoutGrafico } from '../../../core/models/grafico.model';
 
@@ -70,6 +70,12 @@ export class ReportesHome {
   protected readonly sucursalId = signal<string>('');
 
   protected readonly reporteVentas = signal<ReporteVentas | null>(null);
+  protected readonly reporteDevoluciones = signal<ReporteDevoluciones | null>(null);
+  protected readonly etiquetasForma: Record<string, string> = {
+    EFECTIVO: 'Efectivo',
+    DESCUENTO_DEUDA: 'Descuento a la deuda',
+    SALDO_A_FAVOR: 'Saldo a favor',
+  };
   protected readonly reporteMargenes = signal<ReporteMargenes | null>(null);
   protected readonly reporteCierres = signal<ReporteCierresCaja | null>(null);
 
@@ -113,9 +119,11 @@ export class ReportesHome {
       ventas: this.reportesService.ventas(filtros),
       margenes: this.reportesService.margenes(filtros),
       cierres: this.reportesService.cierresCaja(filtros),
+      devoluciones: this.reportesService.devoluciones(filtros),
     }).subscribe({
-      next: ({ ventas, margenes, cierres }) => {
+      next: ({ ventas, margenes, cierres, devoluciones }) => {
         this.reporteVentas.set(ventas);
+        this.reporteDevoluciones.set(devoluciones);
         this.reporteMargenes.set(margenes);
         this.reporteCierres.set(cierres);
         this.loading.set(false);

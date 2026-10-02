@@ -105,12 +105,21 @@ export class FacturaDetalle {
     );
   }
 
+  protected readonly esNotaCredito = computed(() => this.documento()?.tipo === 'NOTA_CREDITO');
+  /** La nota crédito se identifica con CUDE (no CUFE). */
+  protected readonly etiquetaCodigo = computed(() => (this.esNotaCredito() ? 'CUDE' : 'CUFE'));
+  protected readonly tituloDocumento = computed(() => {
+    const d = this.documento();
+    const nombre = this.esNotaCredito() ? 'Nota crédito' : 'Factura';
+    return d?.numeroCompleto ? `${nombre} ${d.numeroCompleto}` : this.esNotaCredito() ? 'Nota crédito electrónica' : 'Factura electrónica';
+  });
+
   protected async copiarCufe(): Promise<void> {
-    const cufe = this.documento()?.cufe;
+    const cufe = this.documento()?.cufe ?? this.documento()?.cude;
     if (!cufe) return;
     try {
       await navigator.clipboard.writeText(cufe);
-      this.toast.success('CUFE copiado');
+      this.toast.success(`${this.etiquetaCodigo()} copiado`);
     } catch {
       this.toast.error('No se pudo copiar — seleccioná el texto a mano');
     }

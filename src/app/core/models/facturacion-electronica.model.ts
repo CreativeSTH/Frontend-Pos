@@ -58,8 +58,10 @@ export type EstadoDocumentoElectronico = 'PENDIENTE' | 'ACEPTADO' | 'ACEPTADO_CO
 export interface DocumentoElectronico {
   id: string;
   ventaId: string;
-  tipo: 'DEE_POS' | 'FACTURA';
+  tipo: 'DEE_POS' | 'FACTURA' | 'NOTA_CREDITO';
   estado: EstadoDocumentoElectronico;
+  /** Solo notas crédito: la devolución que las originó. */
+  devolucionId?: string | null;
   cufe?: string;
   cude?: string;
   errorMensaje?: string;

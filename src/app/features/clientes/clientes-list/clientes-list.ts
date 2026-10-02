@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
@@ -15,7 +16,7 @@ import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { ClientesService } from '../../../core/services/clientes.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { Cliente, TIPOS_DOCUMENTO_IDENTIDAD } from '../../../core/models/cliente.model';
+import { Cliente, SaldoAFavorCliente, TIPOS_DOCUMENTO_IDENTIDAD } from '../../../core/models/cliente.model';
 import { Select } from '../../../shared/ui/atoms/select/select';
 
 @Component({
@@ -28,6 +29,7 @@ import { Select } from '../../../shared/ui/atoms/select/select';
     Avatar,
     Icon,
     Table,
+    DatePipe,
     Modal,
     FormField,
     Input,
@@ -172,6 +174,25 @@ export class ClientesList {
         this.load();
       },
       error: () => this.toast.error('No se pudo bloquear el cliente'),
+    });
+  }
+
+  /** Cliente cuyo saldo a favor (devoluciones) se está viendo. */
+  protected readonly saldoAbierto = signal<{ cliente: Cliente; detalle: SaldoAFavorCliente | null } | null>(null);
+  protected readonly etiquetasMovimientoSaldo: Record<string, string> = {
+    ABONO_DEVOLUCION: 'Devolución',
+    USO_EN_VENTA: 'Usado en una venta',
+    AJUSTE: 'Ajuste',
+  };
+
+  protected verSaldo(cliente: Cliente): void {
+    this.saldoAbierto.set({ cliente, detalle: null });
+    this.clientesService.saldoAFavor(cliente.id).subscribe({
+      next: (detalle) => this.saldoAbierto.set({ cliente, detalle }),
+      error: () => {
+        this.saldoAbierto.set(null);
+        this.toast.error('No se pudo cargar el saldo a favor');
+      },
     });
   }
 

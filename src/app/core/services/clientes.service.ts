@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
-import { Cliente, CreateClientePayload, VerificarCreditoResponse } from '../models/cliente.model';
+import { Cliente, CreateClientePayload, VerificarCreditoResponse, SaldoAFavorCliente } from '../models/cliente.model';
 import { CreateDireccionClientePayload, DireccionCliente } from '../models/direccion-cliente.model';
 
 @Injectable({ providedIn: 'root' })
@@ -21,6 +21,11 @@ export class ClientesService {
 
   update(id: string, payload: Partial<CreateClientePayload>) {
     return this.api.patch<Cliente>(`/clientes/${id}`, payload);
+  }
+
+  /** Saldo a favor por devoluciones y sus últimos movimientos. */
+  saldoAFavor(id: string) {
+    return this.api.get<SaldoAFavorCliente>(`/clientes/${id}/saldo-a-favor`);
   }
 
   verificarCredito(id: string, monto: number) {

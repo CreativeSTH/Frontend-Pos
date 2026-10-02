@@ -59,7 +59,7 @@
             <td>{{ formatMoney(venta.total) }}</td>
             <td class="ventas-actions">
               <ds-button variant="glass" size="sm" (click)="verDetalle(venta)">Ver</ds-button>
-              @if (venta.estado !== 'CANCELADA') {
+              @if (puedeCancelar(venta)) {
                 <ds-button variant="ghost" size="sm" (click)="abrirCancelar(venta)">Cancelar</ds-button>
               }
             </td>
@@ -87,6 +87,11 @@
       </div>
       <p class="factura-cliente">{{ venta.nombreCliente }}</p>
 
+      @if (venta.estadoDevolucion === 'PARCIAL' || venta.estadoDevolucion === 'TOTAL') {
+        <div class="ventas-cancelada-aviso">
+          <span>{{ venta.estadoDevolucion === 'TOTAL' ? 'Devuelta completa' : 'Con devolución parcial' }}</span>
+        </div>
+      }
       @if (venta.estado === 'CANCELADA') {
         <div class="ventas-cancelada-aviso">
           <span>Cancelada {{ venta.fechaCancelacion | date: 'medium' }}</span>
@@ -139,8 +144,11 @@
     <div modal-footer>
       <ds-button variant="ghost" (click)="showDetalle.set(false)">Cerrar</ds-button>
       @if (ventaDetalle(); as venta) {
-        @if (venta.estado !== 'CANCELADA') {
+        @if (puedeCancelar(venta)) {
           <ds-button variant="ghost" (click)="abrirCancelar(venta)">Cancelar venta</ds-button>
+        }
+        @if (puedeDevolver(venta)) {
+          <ds-button variant="glass" icon="rotate-ccw" (click)="abrirDevolucion(venta)">Devolver</ds-button>
         }
         <ds-button variant="glass" icon="file-text" (click)="verComprobante(venta)">Ver comprobante</ds-button>
         <ds-button variant="primary" icon="printer" (click)="reimprimir(venta)">
@@ -179,6 +187,10 @@
       <ds-button variant="primary" [loading]="cancelando()" (click)="confirmarCancelar()">Confirmar cancelación</ds-button>
     </div>
   </ds-modal>
+}
+
+@if (ventaDevolucion(); as ventaId) {
+  <app-modal-devolucion [ventaId]="ventaId" (close)="ventaDevolucion.set(null)" (devuelta)="alDevolver()" />
 }
 
 @if (comprobanteAbierto(); as abierto) {

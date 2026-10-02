@@ -13,6 +13,8 @@
       FACTURA DE VENTA
     } @else if (c.tipo === 'RECIBO_CAJA') {
       RECIBO DE CAJA
+    } @else if (c.tipo === 'DEVOLUCION') {
+      DEVOLUCIÓN
     } @else {
       RECIBO DE VENTA
     }
@@ -29,6 +31,10 @@
     <div>Forma de pago: {{ fe.formaPago }}</div>
   } @else {
     <div>{{ c.cliente }}</div>
+  }
+  @if (c.devolucion; as dv) {
+    <div>Venta: {{ dv.tipoComprobanteVenta }} {{ dv.ventaAfectada }}</div>
+    <div>Motivo: {{ dv.motivo }}</div>
   }
   <hr />
   @for (item of c.items; track $index) {

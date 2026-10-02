@@ -9,6 +9,8 @@ export interface Cliente {
   tipoDocumentoIdentidad?: string;
   limiteCredito: number;
   deudaActual: number;
+  /** Crédito en tienda por devoluciones; se usa en el POS como medio de pago "Saldo a favor". */
+  saldoAFavor?: number;
   score: number;
   bloqueadoPorMora: boolean;
   fechaBloqueo?: string;
@@ -40,6 +42,19 @@ export const TIPOS_DOCUMENTO_IDENTIDAD = [
 
 export function siglaDocumento(tipo?: string): string {
   return TIPOS_DOCUMENTO_IDENTIDAD.find((t) => t.valor === tipo)?.sigla ?? 'Doc.';
+}
+
+/** `GET /clientes/:id/saldo-a-favor` */
+export interface SaldoAFavorCliente {
+  saldoAFavor: number;
+  movimientos: {
+    id: string;
+    tipo: 'ABONO_DEVOLUCION' | 'USO_EN_VENTA' | 'AJUSTE';
+    monto: number;
+    devolucionId: string | null;
+    ventaId: string | null;
+    createdAt: string;
+  }[];
 }
 
 export interface VerificarCreditoResponse {

@@ -1,0 +1,90 @@
+<ds-modal title="Devolver productos" size="lg" (close)="close.emit()">
+  @if (cargando()) {
+    <div class="devolucion__cargando"><ds-spinner /> Cargando la venta…</div>
+  } @else if (datos(); as d) {
+    @if (d.bloqueo) {
+      <p class="devolucion__aviso devolucion__aviso--bloqueo">{{ d.bloqueo }}</p>
+    } @else if (!conexion.enLinea()) {
+      <p class="devolucion__aviso devolucion__aviso--bloqueo">Las devoluciones están disponibles cuando vuelva la conexión.</p>
+    } @else if (lineas().length === 0) {
+      <p class="devolucion__aviso">No quedan productos por devolver en esta venta.</p>
+    } @else {
+      <div class="devolucion__intro">
+        <p class="devolucion__texto">
+          Venta {{ d.numeroVenta ?? '' }}: elige qué se devuelve. Si la venta tiene factura electrónica, AURA emite la nota
+          crédito automáticamente.
+        </p>
+        <ds-button variant="ghost" size="sm" (click)="devolverTodo()">Devolver todo</ds-button>
+      </div>
+
+      <div class="devolucion__lineas">
+        @for (l of lineas(); track l.ventaItemId; let i = $index) {
+          <div class="devolucion__linea" [class.devolucion__linea--activa]="l.cantidad > 0">
+            <div class="devolucion__producto">
+              <span class="devolucion__nombre">{{ l.nombre }}</span>
+              <span class="devolucion__pista">Quedan {{ l.disponible }} · {{ money(l.netoPorUnidad) }} c/u</span>
+            </div>
+            <ds-input type="number" [ngModel]="l.cantidad" (ngModelChange)="actualizarCantidad(i, $event)" />
+            <ds-switch
+              label="Vuelve al inventario"
+              [ngModel]="l.vuelve"
+              (ngModelChange)="actualizarLinea(i, { vuelve: $event })"
+            />
+            @if (!l.vuelve && l.cantidad > 0) {
+              <div class="devolucion__baja">
+                <ds-input
+                  [ngModel]="l.motivoBaja"
+                  (ngModelChange)="actualizarLinea(i, { motivoBaja: $event })"
+                  placeholder="¿Por qué no vuelve? (dañado, vencido…)"
+                />
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <ds-form-field label="Motivo de la devolución">
+        <ds-input [ngModel]="motivo()" (ngModelChange)="motivo.set($event)" placeholder="Ej. Producto defectuoso" />
+      </ds-form-field>
+
+      <div class="devolucion__total">
+        <span>Total a devolver</span>
+        <strong>{{ money(total()) }}</strong>
+      </div>
+
+      @if (total() > 0) {
+        <div class="devolucion__reembolsos">
+          <span class="devolucion__subtitulo">¿Cómo se le devuelve?</span>
+          @for (forma of formasHabilitadas(); track forma) {
+            <ds-form-field [label]="etiquetas[forma]" [hint]="pistaForma(forma)">
+              <ds-input
+                type="number"
+                icon="banknote"
+                [ngModel]="montos()[forma]"
+                (ngModelChange)="actualizarMonto(forma, $event)"
+              />
+            </ds-form-field>
+          }
+          @if (!reembolsoCuadra()) {
+            <p class="devolucion__aviso">
+              El reembolso suma {{ money(sumaReembolsos()) }}; debe sumar {{ money(total()) }}.
+            </p>
+          }
+        </div>
+      }
+
+      @if (requierePin()) {
+        <ds-form-field label="PIN de un administrador" hint="Tu usuario no tiene permiso para hacer devoluciones directamente">
+          <ds-input type="password" icon="lock" [ngModel]="pin()" (ngModelChange)="pin.set($event)" placeholder="••••" />
+        </ds-form-field>
+      }
+    }
+  }
+
+  <div modal-footer>
+    <ds-button variant="ghost" (click)="close.emit()">Volver</ds-button>
+    @if (puedeConfirmar()) {
+      <ds-button variant="primary" [loading]="enviando()" (click)="confirmar()">Confirmar devolución</ds-button>
+    }
+  </div>
+</ds-modal>

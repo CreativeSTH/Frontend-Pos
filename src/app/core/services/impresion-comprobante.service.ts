@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, of, switchMap } from 'rxjs';
 import { VentasService } from './ventas.service';
+import { DevolucionesService } from './devoluciones.service';
 import { PrintAgentService, OpcionesImpresion } from './print-agent.service';
 import { ToastService } from './toast.service';
 import { ReciboContenido } from '../models/recibo-contenido.model';
@@ -15,6 +16,7 @@ export type ResultadoImpresion = 'AGENTE' | 'NAVEGADOR' | 'FALLIDO';
 @Injectable({ providedIn: 'root' })
 export class ImpresionComprobanteService {
   private readonly ventasService = inject(VentasService);
+  private readonly devoluciones = inject(DevolucionesService);
   private readonly printAgent = inject(PrintAgentService);
   private readonly toast = inject(ToastService);
 
@@ -32,6 +34,15 @@ export class ImpresionComprobanteService {
       this.ventasService.obtenerComprobanteAbono(abonoId),
       opciones,
       'No se pudo obtener el recibo de caja de este abono',
+    );
+  }
+
+  /** Comprobante de una devolución (DEV-n y, si la hay, su nota crédito). */
+  imprimirDevolucion(devolucionId: string, opciones: OpcionesImpresion = {}): Observable<ResultadoImpresion> {
+    return this.imprimirContenido(
+      this.devoluciones.comprobante(devolucionId),
+      opciones,
+      'No se pudo obtener el comprobante de esta devolución',
     );
   }
 

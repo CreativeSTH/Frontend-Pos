@@ -50,6 +50,8 @@
       <ds-stat-card icon="shopping-bag" label="Ventas" [value]="r.totalVentas.toString()" accent="cyan" />
       <ds-stat-card icon="wallet" label="Ticket promedio" [value]="formatMoney(r.ticketPromedio)" accent="secondary" />
       <ds-stat-card icon="alert-triangle" label="Descuentos" [value]="formatMoney(r.totalDescuentos)" accent="warning" />
+      <ds-stat-card icon="rotate-ccw" label="Devoluciones" [value]="formatMoney(r.totalDevoluciones)" accent="danger" />
+      <ds-stat-card icon="banknote" label="Ingresos netos" [value]="formatMoney(r.ingresosNetos)" accent="success" />
     </div>
 
     <div class="reportes-grid">
@@ -102,6 +104,48 @@
         </ds-table>
       }
     </div>
+
+    @if (reporteDevoluciones(); as dev) {
+      <div class="reportes-panel">
+        <h3 class="reportes-panel__title">Devoluciones ({{ dev.cantidad }} · {{ formatMoney(dev.total) }})</h3>
+        @if (dev.cantidad === 0) {
+          <ds-empty-state icon="rotate-ccw" title="Sin devoluciones" description="No hay devoluciones en este rango." />
+        } @else {
+          <div class="reportes-grid">
+            <ds-table>
+              <thead>
+                <tr><th>Cómo se devolvió</th><th>Total</th></tr>
+              </thead>
+              <tbody>
+                @for (f of dev.porForma; track f.forma) {
+                  <tr><td>{{ etiquetasForma[f.forma] }}</td><td>{{ formatMoney(f.total) }}</td></tr>
+                }
+              </tbody>
+            </ds-table>
+            <ds-table>
+              <thead>
+                <tr><th>Motivo</th><th>Cantidad</th><th>Total</th></tr>
+              </thead>
+              <tbody>
+                @for (m of dev.porMotivo; track m.motivo) {
+                  <tr><td>{{ m.motivo }}</td><td>{{ m.cantidad }}</td><td>{{ formatMoney(m.total) }}</td></tr>
+                }
+              </tbody>
+            </ds-table>
+          </div>
+          <ds-table>
+            <thead>
+              <tr><th>Producto más devuelto</th><th>Unidades</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+              @for (p of dev.topProductos; track p.nombreProducto) {
+                <tr><td>{{ p.nombreProducto }}</td><td>{{ p.cantidad }}</td><td>{{ formatMoney(p.total) }}</td></tr>
+              }
+            </tbody>
+          </ds-table>
+        }
+      </div>
+    }
   }
 
   @if (tab() === 'margenes' && reporteMargenes(); as r) {

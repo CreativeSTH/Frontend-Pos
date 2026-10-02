@@ -24,6 +24,7 @@
         <th>Cupo de crédito</th>
         <th>Deuda actual</th>
         <th>Disponible</th>
+        <th>Saldo a favor</th>
         <th>Score</th>
         <th>Estado</th>
         <th></th>
@@ -40,6 +41,15 @@
           <td>{{ formatMoney(cliente.limiteCredito) }}</td>
           <td>{{ formatMoney(cliente.deudaActual) }}</td>
           <td>{{ formatMoney(creditoDisponible(cliente)) }}</td>
+          <td>
+            @if ((cliente.saldoAFavor ?? 0) > 0) {
+              <button type="button" class="clientes-saldo" (click)="verSaldo(cliente)" title="Ver movimientos del saldo">
+                {{ formatMoney(cliente.saldoAFavor ?? 0) }}
+              </button>
+            } @else {
+              —
+            }
+          </td>
           <td>{{ cliente.score }}</td>
           <td>
             @if (cliente.bloqueadoPorMora) {
@@ -111,6 +121,38 @@
     <div modal-footer>
       <ds-button variant="ghost" (click)="showForm.set(false)">Cancelar</ds-button>
       <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (saldoAbierto(); as abierto) {
+  <ds-modal [title]="'Saldo a favor — ' + abierto.cliente.nombre" size="md" (close)="saldoAbierto.set(null)">
+    @if (abierto.detalle; as d) {
+      <p class="clientes-saldo__total">Disponible: <strong>{{ formatMoney(d.saldoAFavor) }}</strong></p>
+      <p class="clientes-saldo__ayuda">Se usa en el punto de venta como medio de pago "Saldo a favor".</p>
+      <ds-table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Movimiento</th>
+            <th>Monto</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of d.movimientos; track m.id) {
+            <tr>
+              <td>{{ m.createdAt | date: 'short' }}</td>
+              <td>{{ etiquetasMovimientoSaldo[m.tipo] }}</td>
+              <td>{{ formatMoney(m.monto) }}</td>
+            </tr>
+          }
+        </tbody>
+      </ds-table>
+    } @else {
+      <p class="clientes-saldo__ayuda">Cargando…</p>
+    }
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="saldoAbierto.set(null)">Cerrar</ds-button>
     </div>
   </ds-modal>
 }

@@ -33,6 +33,7 @@ export interface OpcionesImpresion {
 const VERSION_MINIMA_AGENTE: Partial<Record<TipoContenidoImpresion, string>> = {
   FACTURA_ELECTRONICA: '1.1.0', // bloque fiscal: CUFE, QR…
   RECIBO_CAJA: '1.2.0', // título "RECIBO DE CAJA" y saldos
+  DEVOLUCION: '1.5.0', // título "DEVOLUCIÓN", venta afectada y nota crédito
 };
 /** Fase 6a: un agente anterior imprimiría la factura de papel con el título de factura electrónica. */
 const VERSION_MINIMA_CONTINGENCIA = '1.3.0';
@@ -284,6 +285,14 @@ export class PrintAgentService {
 
     const e = contenido.tipo === 'FACTURA_ELECTRONICA' ? contenido.electronica : undefined;
     const a = contenido.tipo === 'RECIBO_CAJA' ? contenido.abono : undefined;
+    const dv = contenido.tipo === 'DEVOLUCION' ? contenido.devolucion : undefined;
+    const encabezadoEstado = e?.encabezado || dv?.notaCredito?.encabezado;
+    const notaCreditoHtml = dv?.notaCredito
+      ? `<hr /><div class="fiscal">
+          <div>Nota crédito: ${this.escapar(dv.notaCredito.numero || 'en proceso')}</div>
+          ${dv.notaCredito.cude ? `<div class="cufe">CUDE: ${this.escapar(dv.notaCredito.cude)}</div>` : ''}
+        </div>`
+      : '';
     const abonoHtml = a
       ? `<table class="totales">
           ${a.moraPagada > 0 ? `<tr><td class="label">Intereses de mora</td><td class="num">${money(a.moraPagada)}</td></tr>` : ''}
@@ -305,7 +314,9 @@ export class PrintAgentService {
       ? `Factura No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(e.adquirente.nombre)} — ${this.escapar(e.adquirente.identificacion)}<br />Forma de pago: ${e.formaPago}`
       : a
         ? `Recibo de caja No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(contenido.cliente)}<br />Abono a: ${this.escapar(a.tipoComprobanteVenta)} ${this.escapar(a.comprobanteVenta)} · Cuota ${a.numeroCuota} de ${a.totalCuotas}`
-        : `No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(contenido.cliente)}`;
+        : dv
+          ? `Devolución No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(contenido.cliente)}<br />Venta: ${this.escapar(dv.tipoComprobanteVenta)} ${this.escapar(dv.ventaAfectada)}<br />Motivo: ${this.escapar(dv.motivo)}`
+          : `No. ${this.escapar(contenido.numero)} · ${fecha}<br />${this.escapar(contenido.cliente)}`;
     const nombreEmisor = e?.emisor?.razonSocial || contenido.negocio.nombre;
     const nitEmisor = e?.emisor?.nitConDv || contenido.negocio.nit;
     const direccionEmisor = e?.emisor?.direccion || contenido.emisor.direccion;
@@ -314,7 +325,7 @@ export class PrintAgentService {
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<title>${contenido.tipo === 'RECIBO_CAJA' ? 'Recibo de caja' : contenido.tipo === 'RECIBO' ? 'Recibo' : 'Factura'} ${this.escapar(contenido.numero)}</title>
+<title>${contenido.tipo === 'RECIBO_CAJA' ? 'Recibo de caja' : contenido.tipo === 'DEVOLUCION' ? 'Devolución' : contenido.tipo === 'RECIBO' ? 'Recibo' : 'Factura'} ${this.escapar(contenido.numero)}</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -348,7 +359,7 @@ export class PrintAgentService {
 </head>
 <body>
   ${contenido.negocio.logoUrl ? `<img class="logo" src="${environment.assetsUrl}${contenido.negocio.logoUrl}" alt="Logo" />` : ''}
-  ${e?.encabezado ? `<div class="encabezado-estado">${this.escapar(e.encabezado)}</div>` : ''}
+  ${encabezadoEstado ? `<div class="encabezado-estado">${this.escapar(encabezadoEstado)}</div>` : ''}
   <h1>${this.escapar(
     contenido.tipo === 'FACTURA_ELECTRONICA'
       ? e?.titulo || 'FACTURA ELECTRÓNICA DE VENTA'
@@ -356,7 +367,9 @@ export class PrintAgentService {
         ? 'FACTURA DE VENTA'
         : contenido.tipo === 'RECIBO_CAJA'
           ? 'RECIBO DE CAJA'
-          : contenido.negocio.nombre || 'Recibo de venta',
+          : contenido.tipo === 'DEVOLUCION'
+            ? 'DEVOLUCIÓN'
+            : contenido.negocio.nombre || 'Recibo de venta',
   )}</h1>
   ${contenido.tipo !== 'RECIBO' ? `<div class="meta">${this.escapar(nombreEmisor)}</div>` : ''}
   ${nitEmisor ? `<div class="meta">NIT: ${this.escapar(nitEmisor)}</div>` : ''}
@@ -375,14 +388,15 @@ export class PrintAgentService {
     <tr><td class="label">Subtotal</td><td class="num">${money(contenido.subtotal)}</td></tr>
     ${contenido.descuento > 0 ? `<tr><td class="label">Descuento</td><td class="num">-${money(contenido.descuento)}</td></tr>` : ''}
     ${esReciboCaja ? '' : `<tr><td class="label">IVA</td><td class="num">${money(contenido.impuesto)}</td></tr>`}
-    <tr class="total-final"><td>Total</td><td class="num">${money(contenido.total)}</td></tr>
+    <tr class="total-final"><td>${dv ? 'Total devuelto' : 'Total'}</td><td class="num">${money(contenido.total)}</td></tr>
   </table>
   ${filasPagos ? `<hr /><table>${filasPagos}</table>` : ''}
   ${abonoHtml}
   ${opciones.cambio ? `<div class="meta">Cambio: ${money(opciones.cambio)}</div>` : ''}
-  <div class="footer">${this.escapar(contenido.mensajeCierre || 'Gracias por su compra')}</div>
+  ${dv ? '' : `<div class="footer">${this.escapar(contenido.mensajeCierre || 'Gracias por su compra')}</div>`}
   ${contenido.terminos ? `<div class="terminos">${this.escapar(contenido.terminos)}</div>` : ''}
   ${fiscalHtml}
+  ${notaCreditoHtml}
   ${contenido.leyenda ? `<div class="leyenda">${this.escapar(contenido.leyenda)}</div>` : ''}
 </body>
 </html>`;

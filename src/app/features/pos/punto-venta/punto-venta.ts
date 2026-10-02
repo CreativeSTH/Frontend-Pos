@@ -42,6 +42,7 @@ import { FacturacionElectronicaService } from '../../../core/services/facturacio
 import { RealtimeService } from '../../../core/services/realtime.service';
 import { ContingenciaService } from '../../../core/services/contingencia.service';
 import { ConexionService, esErrorDeConexion } from '../../../core/services/conexion.service';
+import { METODO_SALDO_A_FAVOR } from '../../../core/models/devolucion.model';
 import { SinConexionService } from '../../../core/services/sin-conexion.service';
 import { AgenteSinConexionService } from '../../../core/services/agente-sin-conexion.service';
 import { PrintAgentService } from '../../../core/services/print-agent.service';
@@ -284,6 +285,7 @@ export class PuntoVenta {
   protected readonly metodosPago = signal<MetodoPago[]>([]);
   /** Nombre del método marcado esEfectivo en el catálogo del negocio — puede no haber ninguno. */
   protected readonly nombreEfectivo = computed(() => this.metodosPago().find((m) => m.esEfectivo)?.nombre);
+  protected readonly metodoSaldoAFavor = METODO_SALDO_A_FAVOR;
 
   protected readonly tipoVenta = signal<'CONTADO' | 'CREDITO'>('CONTADO');
   protected readonly clientes = signal<Cliente[]>([]);
@@ -326,6 +328,23 @@ export class PuntoVenta {
   );
   protected readonly clienteFacturaConDocumento = computed(
     () => !!this.clienteFactura()?.documentoIdentidad && !!this.clienteFactura()?.tipoDocumentoIdentidad,
+  );
+  /**
+   * Saldo a favor (devoluciones) del cliente de contado elegido. Sin conexión no se ofrece: el saldo
+   * vive en el backend y la caja no podría validarlo.
+   */
+  protected readonly saldoDisponible = computed(() =>
+    this.tipoVenta() === 'CONTADO' && !this.sinConexion() ? Number(this.clienteVentaSeleccionado()?.saldoAFavor ?? 0) : 0,
+  );
+  /** Métodos del catálogo + "Saldo a favor" (medio reservado del backend) cuando el cliente tiene saldo. */
+  protected readonly opcionesPago = computed(() => {
+    const nombres = this.metodosPago().map((m) => m.nombre);
+    return this.saldoDisponible() > 0 ? [...nombres, METODO_SALDO_A_FAVOR] : nombres;
+  });
+  protected readonly usoSaldoAFavor = computed(() =>
+    this.pagos()
+      .filter((p) => p.metodoPago === METODO_SALDO_A_FAVOR)
+      .reduce((sum, p) => sum + Number(p.monto), 0),
   );
   protected readonly domicilioActivo = signal(false);
   protected readonly showDireccionModal = signal(false);
@@ -938,6 +957,15 @@ export class PuntoVenta {
     this.clienteVentaTelefono.set('');
     this.clienteVentaSeleccionado.set(null);
     this.nuevoClienteNombre.set('');
+    this.quitarPagosConSaldo();
+  }
+
+  /** Sin cliente no hay saldo a favor: esas líneas pasan al método por defecto. */
+  private quitarPagosConSaldo(): void {
+    const porDefecto = this.nombreEfectivo() ?? this.metodosPago()[0]?.nombre ?? '';
+    this.pagos.update((lineas) =>
+      lineas.map((l) => (l.metodoPago === METODO_SALDO_A_FAVOR ? { ...l, metodoPago: porDefecto } : l)),
+    );
   }
 
   /** Busca en los clientes ya cargados (sin llamada al backend) si el teléfono ya está registrado. */
@@ -1458,6 +1486,10 @@ export class PuntoVenta {
         this.toast.error(`Falta ${this.formatMoney(this.faltante())} por pagar`);
         return;
       }
+      if (this.usoSaldoAFavor() - this.saldoDisponible() > 0.009) {
+        this.toast.error(`El saldo a favor disponible del cliente es ${this.formatMoney(this.saldoDisponible())}`);
+        return;
+      }
     } else {
       if (!this.clienteId()) {
         this.toast.error('Selecciona un cliente para la venta a crédito');
@@ -1569,6 +1601,7 @@ export class PuntoVenta {
           this.showCobro.set(false);
           this.cambioVentaCompletada.set(cambioVenta);
           this.ventaCompletada.set(venta);
+          this.descontarSaldoAFavorUsado(payload);
           if (venta.tipoComprobanteEmitido === 'FACTURA_ELECTRONICA') this.esperarValidacionDian(venta.id);
           this.descontarStockVendido(this.carrito());
           this.carrito.set([]);
@@ -1587,6 +1620,19 @@ export class PuntoVenta {
           this.toast.error(err.error?.message ?? 'No se pudo registrar la venta');
         },
       });
+  }
+
+  /** El backend ya descontó el saldo: se refleja en la lista local para que la próxima venta lo vea. */
+  private descontarSaldoAFavorUsado(payload: CreateVentaPayload): void {
+    const usado = (payload.pagos ?? [])
+      .filter((p) => p.metodoPago === METODO_SALDO_A_FAVOR)
+      .reduce((s, p) => s + Number(p.monto), 0);
+    if (usado <= 0 || !payload.clienteId) return;
+    const restar = (c: Cliente): Cliente =>
+      c.id === payload.clienteId ? { ...c, saldoAFavor: Math.max(0, Number(c.saldoAFavor ?? 0) - usado) } : c;
+    this.clientes.update((lista) => lista.map(restar));
+    const seleccionado = this.clienteVentaSeleccionado();
+    if (seleccionado) this.clienteVentaSeleccionado.set(restar(seleccionado));
   }
 
   /** Fase 6b: la venta se guarda en el pos-agent, se imprime desde acá y se sincroniza al volver la conexión. */

@@ -84,3 +84,8 @@
   flex-wrap: wrap;
   gap: var(--space-1);
 }
+
+.comprobantes-acciones {
+  display: inline-flex;
+  gap: var(--space-2);
+}

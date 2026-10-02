@@ -18,6 +18,7 @@ import { usePaginacion } from '../../../shared/utils/paginacion.util';
 import { CajaService } from '../../../core/services/caja.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { VerComprobante } from '../../comprobantes/ver-comprobante/ver-comprobante';
+import { ModalDevolucion } from '../../devoluciones/modal-devolucion/modal-devolucion';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { TurnoCaja } from '../../../core/models/caja.model';
@@ -61,6 +62,7 @@ interface FilaCaja {
     FormsModule,
     DatePipe,
     VerComprobante,
+    ModalDevolucion,
   ],
   templateUrl: './caja-home.html',
   styleUrl: './caja-home.scss',
@@ -234,6 +236,42 @@ export class CajaHome {
     if (!fila.ventaId) return;
     const venta = this.ventasPorId().get(fila.ventaId);
     this.comprobanteAbierto.set({ ventaId: fila.ventaId, documentoId: venta?.documentoElectronico?.id ?? null });
+  }
+
+  /** Venta cuya devolución se está registrando desde la caja. */
+  protected readonly ventaDevolucion = signal<string | null>(null);
+  protected readonly puedeVerDevoluciones = computed(() => this.auth.tienePermiso('DEVOLUCIONES', 'VER'));
+
+  /** El egreso de una devolución también lleva ventaId: los botones de venta solo van en filas VENTA. */
+  protected puedeDevolverFila(fila: FilaCaja): boolean {
+    const venta = fila.ventaId ? this.ventasPorId().get(fila.ventaId) : undefined;
+    return (
+      this.puedeVerDevoluciones() && fila.tipo === 'VENTA' && !!venta && venta.estado !== 'CANCELADA' && venta.estadoDevolucion !== 'TOTAL'
+    );
+  }
+
+  /** Igual que en Ventas: con devoluciones o con factura electrónica aceptada se usa Devolver. */
+  protected puedeCancelarFila(fila: FilaCaja): boolean {
+    const venta = fila.ventaId ? this.ventasPorId().get(fila.ventaId) : undefined;
+    const dian = venta?.documentoElectronico?.estado;
+    return (
+      fila.tipo === 'VENTA' &&
+      !this.ventaCancelada(fila) &&
+      (venta?.estadoDevolucion ?? 'NINGUNA') === 'NINGUNA' &&
+      dian !== 'ACEPTADO' &&
+      dian !== 'ACEPTADO_CON_OBSERVACIONES'
+    );
+  }
+
+  protected abrirDevolucion(fila: FilaCaja): void {
+    if (fila.ventaId) this.ventaDevolucion.set(fila.ventaId);
+  }
+
+  /** La devolución en efectivo es un EGRESO del turno: se recargan movimientos y ventas. */
+  protected alDevolver(): void {
+    this.ventaDevolucion.set(null);
+    const turno = this.turnoAbierto();
+    if (turno) this.cargarMovimientos(turno.id);
   }
 
   protected abrirCancelarVenta(fila: FilaCaja): void {
