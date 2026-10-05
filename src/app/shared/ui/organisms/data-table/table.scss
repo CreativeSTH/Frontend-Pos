@@ -3,7 +3,8 @@
 .ds-table-shell {
   border-radius: var(--radius-lg);
   @include mix.glass-panel;
-  overflow: hidden;
+  // auto y no hidden: recorta igual las esquinas, pero una tabla más ancha que la pantalla se puede desplazar.
+  overflow-x: auto;
 }
 
 .ds-table {
