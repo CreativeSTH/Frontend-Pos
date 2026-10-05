@@ -211,7 +211,7 @@
           @for (t of r.turnos; track t.id) {
             <tr>
               <td>{{ t.sucursalNombre }}</td>
-              <td>{{ t.fechaCierre | date: 'medium' }}</td>
+              <td>{{ t.fechaCierre | date: 'd MMM y, h:mm:ss a' }}</td>
               <td>{{ t.usuarioAperturaNombre }}</td>
               <td>{{ t.usuarioCierreNombre }}</td>
               <td>{{ t.montoEsperadoCierre != null ? formatMoney(t.montoEsperadoCierre) : '—' }}</td>

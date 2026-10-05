@@ -97,7 +97,7 @@
           </td>
           <td>{{ t.bodegaOrigen?.nombre }} → {{ t.bodegaDestino?.nombre }}</td>
           <td>{{ t.items.length }} ({{ totalUnidades(t) | number: '1.0-2' }} und.)</td>
-          <td>{{ t.enviadoEn | date: 'medium' }}</td>
+          <td>{{ t.enviadoEn | date: 'd MMM y, h:mm:ss a' }}</td>
           <td><ds-badge [tone]="tonoEstado(t.estado)">{{ etiquetaEstado[t.estado] }}</ds-badge></td>
           <td>
             <div class="traslados-acciones">
@@ -139,14 +139,14 @@
       <dt>Estado</dt>
       <dd><ds-badge [tone]="tonoEstado(t.estado)">{{ etiquetaEstado[t.estado] }}</ds-badge></dd>
       <dt>Enviado</dt>
-      <dd>{{ t.enviadoEn | date: 'medium' }} · {{ t.enviadoPorNombre ?? '—' }}</dd>
+      <dd>{{ t.enviadoEn | date: 'd MMM y, h:mm:ss a' }} · {{ t.enviadoPorNombre ?? '—' }}</dd>
       @if (t.recibidoEn) {
         <dt>Recibido</dt>
-        <dd>{{ t.recibidoEn | date: 'medium' }} · {{ t.recibidoPorNombre ?? '—' }}</dd>
+        <dd>{{ t.recibidoEn | date: 'd MMM y, h:mm:ss a' }} · {{ t.recibidoPorNombre ?? '—' }}</dd>
       }
       @if (t.canceladoEn) {
         <dt>Cancelado</dt>
-        <dd>{{ t.canceladoEn | date: 'medium' }} · {{ t.canceladoPorNombre ?? '—' }}</dd>
+        <dd>{{ t.canceladoEn | date: 'd MMM y, h:mm:ss a' }} · {{ t.canceladoPorNombre ?? '—' }}</dd>
       }
       @if (t.nota) {
         <dt>Nota</dt>

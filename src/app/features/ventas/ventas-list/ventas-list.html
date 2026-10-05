@@ -83,7 +83,7 @@
     @if (ventaDetalle(); as venta) {
       <div class="factura-header">
         <span class="factura-header__id">Venta #{{ venta.id.slice(0, 8) }}</span>
-        <span class="factura-header__fecha">{{ venta.createdAt | date: 'medium' }}</span>
+        <span class="factura-header__fecha">{{ venta.createdAt | date: 'd MMM y, h:mm:ss a' }}</span>
       </div>
       <p class="factura-cliente">{{ venta.nombreCliente }}</p>
 
@@ -94,7 +94,7 @@
       }
       @if (venta.estado === 'CANCELADA') {
         <div class="ventas-cancelada-aviso">
-          <span>Cancelada {{ venta.fechaCancelacion | date: 'medium' }}</span>
+          <span>Cancelada {{ venta.fechaCancelacion | date: 'd MMM y, h:mm:ss a' }}</span>
           @if (venta.motivoCancelacion) {
             <span>Motivo: {{ venta.motivoCancelacion }}</span>
           }

@@ -15,7 +15,7 @@
       <div class="caja-section__header">
         <ds-badge tone="success">Turno abierto</ds-badge>
         <span class="caja-section__meta">
-          Desde {{ turno.fechaApertura | date: 'medium' }} · Fondo inicial {{ formatMoney(turno.montoInicial) }}
+          Desde {{ turno.fechaApertura | date: 'd MMM y, h:mm:ss a' }} · Fondo inicial {{ formatMoney(turno.montoInicial) }}
         </span>
       </div>
 
@@ -201,7 +201,7 @@
   <ds-modal title="Detalle del turno" size="md" (close)="showDetalleTurno.set(false)">
     @if (turnoDetalle(); as turno) {
       <p class="detalle-turno__meta">
-        {{ turno.fechaApertura | date: 'medium' }} — {{ turno.fechaCierre | date: 'medium' }}
+        {{ turno.fechaApertura | date: 'd MMM y, h:mm:ss a' }} — {{ turno.fechaCierre | date: 'd MMM y, h:mm:ss a' }}
       </p>
 
       @if (turno.arqueoMetodos && turno.arqueoMetodos.length > 0) {

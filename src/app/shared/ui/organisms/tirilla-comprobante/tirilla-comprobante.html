@@ -25,7 +25,7 @@
   }
   <hr />
   <div>{{ c.tipo === 'FACTURA_ELECTRONICA' ? 'Factura' : 'No.' }} {{ c.numero }}</div>
-  <div>{{ e()?.fechaEmision || c.fecha | date: 'medium' }}</div>
+  <div>{{ e()?.fechaEmision || c.fecha | date: 'd MMM y, h:mm:ss a' }}</div>
   @if (e(); as fe) {
     <div>Cliente: {{ fe.adquirente.nombre }} — {{ fe.adquirente.identificacion }}</div>
     <div>Forma de pago: {{ fe.formaPago }}</div>

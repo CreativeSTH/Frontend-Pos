@@ -175,7 +175,7 @@
         <tbody>
           @for (mov of kardexMovimientos(); track mov.id) {
             <tr>
-              <td>{{ mov.createdAt | date: 'medium' }}</td>
+              <td>{{ mov.createdAt | date: 'd MMM y, h:mm:ss a' }}</td>
               <td><ds-badge [tone]="kardexTono(mov.tipo)">{{ etiquetaMovimiento[mov.tipo] }}</ds-badge></td>
               <td>{{ mov.cantidad }}</td>
               <td>

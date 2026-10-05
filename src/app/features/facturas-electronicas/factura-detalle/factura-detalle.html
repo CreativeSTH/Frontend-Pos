@@ -8,7 +8,7 @@
       @if (d.ambiente === 'SANDBOX') {
         <ds-badge tone="neutral">Prueba</ds-badge>
       }
-      <span class="factura-detalle__fecha">{{ (d.fechaEmision ?? d.createdAt) | date: 'medium' }}</span>
+      <span class="factura-detalle__fecha">{{ (d.fechaEmision ?? d.createdAt) | date: 'd MMM y, h:mm:ss a' }}</span>
     </div>
 
     @if (d.estado === 'RECHAZADO' || d.estado === 'ACEPTADO_CON_OBSERVACIONES') {
@@ -106,11 +106,11 @@
         <ds-enlace-ayuda slug="factura-por-correo">¿Cómo funciona?</ds-enlace-ayuda>
         @switch (d.correoEstado) {
           @case ('ENVIADO') {
-            <p>Enviada a <strong>{{ d.correoDestinatario }}</strong> el {{ d.correoEnviadoEn | date: 'medium' }}</p>
+            <p>Enviada a <strong>{{ d.correoDestinatario }}</strong> el {{ d.correoEnviadoEn | date: 'd MMM y, h:mm:ss a' }}</p>
           }
           @case ('FALLIDO') {
             <p class="factura-detalle__correo-error">
-              No se pudo enviar a {{ d.correoDestinatario }} ({{ d.correoEnviadoEn | date: 'medium' }}): {{ d.correoError }}
+              No se pudo enviar a {{ d.correoDestinatario }} ({{ d.correoEnviadoEn | date: 'd MMM y, h:mm:ss a' }}): {{ d.correoError }}
             </p>
           }
           @case ('ENVIANDO') {

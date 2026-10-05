@@ -51,7 +51,7 @@
         <div>
           <p class="caja-panel__title">Turno de caja en curso</p>
           <p class="caja-panel__meta">
-            Abierto {{ turno.fechaApertura | date: 'medium' }} · Fondo inicial {{ formatMoney(turno.montoInicial) }}
+            Abierto {{ turno.fechaApertura | date: 'd MMM y, h:mm:ss a' }} · Fondo inicial {{ formatMoney(turno.montoInicial) }}
           </p>
         </div>
       </div>
