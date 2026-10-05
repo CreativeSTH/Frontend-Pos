@@ -62,3 +62,47 @@ $bp-mobile: 560px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/** Input nativo `type="date"` con el look de los demás campos (mismo valor que los filtros de auditoría). */
+@mixin campo-fecha {
+  min-width: 0;
+  height: 46px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+
+  &:focus {
+    outline: none;
+    border-color: rgba(var(--accent-primary-rgb), 0.55);
+  }
+}
+
+/** Pestaña tipo píldora (mismo look que las pestañas de Facturación). `$activa`: selector del estado activo. */
+@mixin pastilla-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-bg-hover);
+  }
+}
+
+@mixin pastilla-tab-activa {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  color: var(--text-on-accent);
+}

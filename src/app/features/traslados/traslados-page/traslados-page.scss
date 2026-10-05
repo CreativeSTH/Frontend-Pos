@@ -1,0 +1,93 @@
+@use 'mixins' as mix;
+
+.traslados-ayuda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.traslados-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.traslados-tab {
+  @include mix.pastilla-tab;
+
+  &--active {
+    @include mix.pastilla-tab-activa;
+  }
+}
+
+.traslados-tab__contador {
+  min-width: 20px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg-hover);
+  text-align: center;
+}
+
+.traslados-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+
+  ds-select {
+    min-width: 200px;
+  }
+}
+
+.traslados-fecha {
+  @include mix.campo-fecha;
+}
+
+.traslados-cargando {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+}
+
+.traslados-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-primary);
+  font-family: var(--font-body);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+
+.traslados-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.traslado-detalle {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-4);
+
+  dt {
+    color: var(--text-secondary);
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+@include mix.mobile-down {
+  .traslados-filtros {
+    ds-select,
+    .traslados-fecha {
+      flex: 1 1 100%;
+    }
+  }
+}

@@ -181,3 +181,14 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.asistente-compartir {
+  margin-bottom: var(--space-4);
+}
+
+.asistente-compartir__ayuda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: var(--space-2) 0 var(--space-4);
+}

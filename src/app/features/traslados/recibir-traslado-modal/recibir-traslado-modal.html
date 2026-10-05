@@ -1,0 +1,48 @@
+<ds-modal [title]="titulo()" size="md" (close)="cerrar.emit()">
+  <p class="recibir__ruta">{{ traslado().bodegaOrigen?.nombre }} → {{ traslado().bodegaDestino?.nombre }}</p>
+  <p class="recibir__hint">Ajusta solo lo que llegó distinto. Lo que falte quedará registrado como faltante del traslado.</p>
+
+  <div class="recibir__lineas">
+    @for (l of lineas(); track l.productoId) {
+      <div class="recibir__linea">
+        <span class="recibir__nombre">{{ l.nombre }}</span>
+        <span class="recibir__enviada">Enviado: {{ l.enviada | number: '1.0-2' }}</span>
+        <ds-input
+          type="number"
+          [ngModel]="l.recibida"
+          (ngModelChange)="cambiar(l.productoId, $event)"
+          [invalid]="l.recibida < 0 || l.recibida > l.enviada"
+        />
+      </div>
+    }
+  </div>
+
+  @if (!valido()) {
+    <p class="recibir__error">No puedes recibir más de lo enviado. Si llegó de más, regístralo con un ajuste de inventario.</p>
+  }
+
+  @if (confirmando()) {
+    <div class="recibir__resumen">
+      <strong>Faltantes</strong>
+      <ul>
+        @for (l of faltantes(); track l.productoId) {
+          <li>{{ l.nombre }}: faltan {{ l.enviada - l.recibida | number: '1.0-2' }}</li>
+        }
+      </ul>
+      <p>Se registrarán como pérdida y el traslado quedará cerrado.</p>
+    </div>
+  }
+
+  @if (error(); as e) {
+    <p class="recibir__error">{{ e }}</p>
+  }
+
+  <ds-enlace-ayuda slug="recibir-un-traslado">¿Qué pasa si llegó incompleto?</ds-enlace-ayuda>
+
+  <div modal-footer>
+    <ds-button variant="ghost" (click)="cerrar.emit()">Cancelar</ds-button>
+    <ds-button variant="primary" [disabled]="!valido()" [loading]="enviando()" (click)="confirmar()">
+      {{ confirmando() ? 'Confirmar recepción con faltantes' : 'Confirmar recepción' }}
+    </ds-button>
+  </div>
+</ds-modal>

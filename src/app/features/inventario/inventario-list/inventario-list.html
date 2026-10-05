@@ -176,9 +176,14 @@
           @for (mov of kardexMovimientos(); track mov.id) {
             <tr>
               <td>{{ mov.createdAt | date: 'medium' }}</td>
-              <td><ds-badge [tone]="kardexTono(mov.tipo)">{{ mov.tipo }}</ds-badge></td>
+              <td><ds-badge [tone]="kardexTono(mov.tipo)">{{ etiquetaMovimiento[mov.tipo] }}</ds-badge></td>
               <td>{{ mov.cantidad }}</td>
-              <td>{{ mov.motivo || '—' }}</td>
+              <td>
+                {{ mov.motivo || '—' }}
+                @if (mov.trasladoId) {
+                  <a class="kardex-traslado" [routerLink]="['/traslados']" [queryParams]="{ ver: mov.trasladoId }">Ver traslado</a>
+                }
+              </td>
             </tr>
           }
         </tbody>

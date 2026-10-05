@@ -121,6 +121,11 @@ export const routes: Routes = [
           import('./features/bodegas/bodegas-list/bodegas-list').then((m) => m.BodegasList),
       },
       {
+        path: 'traslados',
+        canActivate: [permisoGuard('TRASLADOS')],
+        loadComponent: () => import('./features/traslados/traslados-page/traslados-page').then((m) => m.TrasladosPage),
+      },
+      {
         path: 'lista-pedidos',
         canActivate: [permisoGuard('INVENTARIO')],
         loadComponent: () =>

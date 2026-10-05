@@ -1,16 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Topbar } from '../../../layout/topbar/topbar';
 import { Button } from '../../../shared/ui/atoms/button/button';
 import { Icon } from '../../../shared/ui/atoms/icon/icon';
+import { Badge, BadgeTone } from '../../../shared/ui/atoms/badge/badge';
 import { Table } from '../../../shared/ui/organisms/data-table/table';
 import { Modal } from '../../../shared/ui/organisms/modal/modal';
 import { FormField } from '../../../shared/ui/molecules/form-field/form-field';
 import { Input } from '../../../shared/ui/atoms/input/input';
-import { Select } from '../../../shared/ui/atoms/select/select';
 import { EmptyState } from '../../../shared/ui/molecules/empty-state/empty-state';
+import { EnlaceAyuda } from '../../../shared/ui/molecules/enlace-ayuda/enlace-ayuda';
 import { Paginator } from '../../../shared/ui/molecules/paginator/paginator';
 import { usePaginacion } from '../../../shared/utils/paginacion.util';
+import { esCedi } from '../../../shared/utils/bodegas.util';
 import { BodegasService } from '../../../core/services/bodegas.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { InventarioService, InventarioItem } from '../../../core/services/inventario.service';
@@ -22,7 +24,7 @@ import { Sucursal } from '../../../core/models/sucursal.model';
 @Component({
   selector: 'app-bodegas-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Select, EmptyState, Paginator, ReactiveFormsModule],
+  imports: [Topbar, Button, Icon, Badge, Table, Modal, FormField, Input, EmptyState, EnlaceAyuda, Paginator, ReactiveFormsModule],
   templateUrl: './bodegas-list.html',
   styleUrl: './bodegas-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,9 +49,13 @@ export class BodegasList {
   protected readonly itemsInventarioBodega = signal<InventarioItem[]>([]);
   protected readonly cargandoInventarioBodega = signal(false);
 
+  /** Sucursales marcadas en el formulario. Ninguna = bodega central (CEDI). */
+  protected readonly sucursalesSeleccionadas = signal<ReadonlySet<string>>(new Set());
+  /** Mensaje del backend cuando no se puede desactivar (409) — se muestra con el enlace de ayuda. */
+  protected readonly bloqueoDesactivar = signal<string | null>(null);
+
   protected readonly form = this.fb.nonNullable.group({
     nombre: ['', Validators.required],
-    sucursalId: ['', Validators.required],
   });
 
   protected readonly pag = usePaginacion(this.bodegas);
@@ -71,27 +77,45 @@ export class BodegasList {
         this.toast.error('No se pudieron cargar las bodegas');
       },
     });
-    this.sucursalesService.findAll().subscribe((data) => {
-      this.sucursales.set(data);
-      if (data.length > 0) {
-        this.form.patchValue({ sucursalId: data[0].id });
-      }
-    });
+    this.sucursalesService.findAll().subscribe((data) => this.sucursales.set(data));
   }
 
   protected nombreSucursal(id: string): string {
     return this.sucursales().find((s) => s.id === id)?.nombre ?? '—';
   }
 
+  protected etiquetaSucursales(bodega: Bodega): string {
+    if (esCedi(bodega)) return 'Bodega central (CEDI)';
+    if (bodega.sucursalIds.length === 1) return this.nombreSucursal(bodega.sucursalIds[0]);
+    return `Compartida · ${bodega.sucursalIds.length} sucursales`;
+  }
+
+  protected tonoSucursales(bodega: Bodega): BadgeTone {
+    if (esCedi(bodega)) return 'info';
+    return bodega.sucursalIds.length > 1 ? 'warning' : 'neutral';
+  }
+
+  protected alternarSucursal(id: string, marcada: boolean): void {
+    this.sucursalesSeleccionadas.update((actual) => {
+      const nueva = new Set(actual);
+      if (marcada) nueva.add(id);
+      else nueva.delete(id);
+      return nueva;
+    });
+  }
+
   protected openCreate(): void {
     this.editingId.set(null);
-    this.form.reset({ nombre: '', sucursalId: this.sucursales()[0]?.id ?? '' });
+    this.form.reset({ nombre: '' });
+    const primera = this.sucursales()[0];
+    this.sucursalesSeleccionadas.set(new Set(primera ? [primera.id] : []));
     this.showForm.set(true);
   }
 
   protected openEdit(bodega: Bodega): void {
     this.editingId.set(bodega.id);
-    this.form.reset({ nombre: bodega.nombre, sucursalId: bodega.sucursalId });
+    this.form.reset({ nombre: bodega.nombre });
+    this.sucursalesSeleccionadas.set(new Set(bodega.sucursalIds));
     this.showForm.set(true);
   }
 
@@ -101,11 +125,11 @@ export class BodegasList {
       return;
     }
     this.saving.set(true);
-    const raw = this.form.getRawValue();
+    const payload = { nombre: this.form.getRawValue().nombre, sucursalIds: [...this.sucursalesSeleccionadas()] };
     const editingId = this.editingId();
     const request$ = editingId
-      ? this.bodegasService.update(editingId, raw)
-      : this.bodegasService.create(raw);
+      ? this.bodegasService.update(editingId, payload)
+      : this.bodegasService.create(payload);
 
     request$.subscribe({
       next: () => {
@@ -145,7 +169,13 @@ export class BodegasList {
         this.toast.success('Bodega eliminada');
         this.load();
       },
-      error: (err) => this.toast.error(err.error?.message ?? 'No se pudo eliminar la bodega'),
+      error: (err) => {
+        if (err.status === 409) {
+          this.bloqueoDesactivar.set(err.error?.message ?? 'No se puede desactivar esta bodega');
+          return;
+        }
+        this.toast.error(err.error?.message ?? 'No se pudo eliminar la bodega');
+      },
     });
   }
 }

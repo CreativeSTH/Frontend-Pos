@@ -1,0 +1,70 @@
+<ds-modal title="Nuevo traslado" size="lg" (close)="cerrar.emit()">
+  <div class="nuevo-traslado">
+    <div class="nuevo-traslado__ruta">
+      <ds-form-field label="Desde (origen)">
+        <ds-select [ngModel]="origenId()" (ngModelChange)="elegirOrigen($event)">
+          <option value="">Elige la bodega de origen</option>
+          @for (b of bodegas(); track b.id) {
+            <option [value]="b.id">{{ b.nombre }}</option>
+          }
+        </ds-select>
+      </ds-form-field>
+      <ds-icon class="nuevo-traslado__flecha" name="chevron-right" [size]="20" />
+      <ds-form-field label="Hacia (destino)">
+        <ds-select [ngModel]="destinoId()" (ngModelChange)="destinoId.set($event)" [disabled]="!origenId()">
+          <option value="">Elige la bodega de destino</option>
+          @for (b of destinos(); track b.id) {
+            <option [value]="b.id">{{ b.nombre }}</option>
+          }
+        </ds-select>
+      </ds-form-field>
+    </div>
+
+    @if (origenId()) {
+      <ds-form-field label="Agregar producto">
+        <ds-combobox
+          [options]="opcionesProducto()"
+          [ngModel]="productoElegido()"
+          (ngModelChange)="agregarProducto($event)"
+          placeholder="Busca un producto con stock en el origen..."
+          icon="search"
+        />
+      </ds-form-field>
+    }
+
+    @if (lineas().length > 0) {
+      <div class="nuevo-traslado__lineas">
+        @for (l of lineas(); track l.productoId) {
+          <div class="nuevo-traslado__linea">
+            <span class="nuevo-traslado__nombre">{{ l.nombre }}</span>
+            <span class="nuevo-traslado__disponible">Disponible: {{ l.disponible }}</span>
+            <ds-input
+              type="number"
+              [ngModel]="l.cantidad"
+              (ngModelChange)="cambiarCantidad(l.productoId, $event)"
+              [invalid]="l.cantidad <= 0 || l.cantidad > l.disponible"
+            />
+            <button type="button" class="nuevo-traslado__quitar" (click)="quitar(l.productoId)" title="Quitar">
+              <ds-icon name="trash" [size]="16" />
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <ds-form-field label="Nota (opcional)">
+      <ds-input [ngModel]="nota()" (ngModelChange)="nota.set($event)" placeholder="Ej. Reposición semanal" />
+    </ds-form-field>
+
+    @if (error(); as e) {
+      <p class="nuevo-traslado__error">{{ e }}</p>
+    }
+  </div>
+
+  <div modal-footer>
+    <ds-button variant="ghost" (click)="cerrar.emit()">Cancelar</ds-button>
+    <ds-button variant="primary" [disabled]="!puedeEnviar()" [loading]="enviando()" (click)="enviar()">
+      Enviar traslado
+    </ds-button>
+  </div>
+</ds-modal>

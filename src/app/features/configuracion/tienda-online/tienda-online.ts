@@ -114,7 +114,7 @@ export class TiendaOnlineConfig {
         return;
       }
       this.guardandoBodega.set(true);
-      this.bodegasService.create({ sucursalId, nombre }).subscribe({
+      this.bodegasService.create({ sucursalIds: [sucursalId], nombre }).subscribe({
         next: (bodegaCreada) => this.asignarBodega(bodegaCreada.id),
         error: (err) => {
           this.guardandoBodega.set(false);

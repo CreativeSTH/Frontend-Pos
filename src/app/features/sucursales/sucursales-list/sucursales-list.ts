@@ -18,6 +18,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { Bodega } from '../../../core/models/bodega.model';
+import { bodegaEnSucursal } from '../../../shared/utils/bodegas.util';
 
 @Component({
   selector: 'app-sucursales-list',
@@ -90,7 +91,7 @@ export class SucursalesList {
     });
     this.showForm.set(true);
     this.bodegasService.findAll().subscribe((todas) => {
-      this.bodegasDeSucursal.set(todas.filter((b) => b.sucursalId === sucursal.id));
+      this.bodegasDeSucursal.set(todas.filter((b) => bodegaEnSucursal(b, sucursal.id)));
     });
   }
 

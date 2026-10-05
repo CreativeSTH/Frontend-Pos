@@ -20,6 +20,8 @@ import { ToastService } from '../../core/services/toast.service';
 import { Sucursal } from '../../core/models/sucursal.model';
 import { Bodega } from '../../core/models/bodega.model';
 import { Producto } from '../../core/models/producto.model';
+import { EnlaceAyuda } from '../../shared/ui/molecules/enlace-ayuda/enlace-ayuda';
+import { bodegaEnSucursal, esCedi } from '../../shared/utils/bodegas.util';
 
 type PasoAsistente = 1 | 2 | 3;
 /**
@@ -40,7 +42,7 @@ type VistaAsistente = 'paso' | 'resumen';
 @Component({
   selector: 'app-asistente',
   standalone: true,
-  imports: [Topbar, Button, Icon, FormField, Input, SearchBar, Switch, Stepper, ProductoForm, ReactiveFormsModule, FormsModule],
+  imports: [Topbar, Button, Icon, FormField, Input, SearchBar, Switch, Stepper, ProductoForm, EnlaceAyuda, ReactiveFormsModule, FormsModule],
   templateUrl: './asistente.html',
   styleUrl: './asistente.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -76,6 +78,15 @@ export class Asistente {
 
   protected readonly bodegas = signal<Bodega[]>([]);
   protected readonly bodegaActiva = signal<Bodega | null>(null);
+  /** Todas las bodegas activas del negocio — para ofrecer compartir una que ya existe (spec 2026-10-04 §4). */
+  private readonly todasLasBodegas = signal<Bodega[]>([]);
+  /**
+   * Bodegas de otras sucursales que esta puede compartir. Sin los CEDI: elegir uno acá lo asociaría a la
+   * sucursal y dejaría de ser bodega central sin que el usuario lo note (decisión del usuario 2026-10-04).
+   */
+  protected readonly bodegasParaCompartir = computed(() =>
+    this.todasLasBodegas().filter((b) => !esCedi(b) && !bodegaEnSucursal(b, this.sucursalActiva()?.id)),
+  );
   /** Stock de la bodega activa — decide si se muestra el resumen (ver `verificarBodegaConfigurada`) y cuántos productos mostrar ahí. */
   protected readonly inventarioBodegaActiva = signal<InventarioItem[]>([]);
   /** Para el `ds-stepper`: en el resumen los 3 pasos se ven completos, aunque `paso` internamente siga en 3. */
@@ -155,7 +166,8 @@ export class Asistente {
     }
     this.bodegasService.findAll().subscribe({
       next: (todas) => {
-        const bodegasDeLaSucursal = todas.filter((b) => b.sucursalId === sucursal.id);
+        this.todasLasBodegas.set(todas);
+        const bodegasDeLaSucursal = todas.filter((b) => bodegaEnSucursal(b, sucursal.id));
         this.bodegas.set(bodegasDeLaSucursal);
         if (bodegasDeLaSucursal.length > 0) {
           const bodega =
@@ -333,11 +345,12 @@ export class Asistente {
     }
 
     const eraLaPrimera = !sucursal.bodegaOperativaId;
-    this.bodegasService.create({ nombre, sucursalId: sucursal.id }).subscribe({
+    this.bodegasService.create({ nombre, sucursalIds: [sucursal.id] }).subscribe({
       next: (bodega) => {
         this.guardandoBodega.set(false);
         this.formBodega.reset({ nombre: '' });
         this.bodegas.update((lista) => [...lista, bodega]);
+        this.todasLasBodegas.update((lista) => [...lista, bodega]);
         this.toast.success('Bodega creada');
 
         if (eraLaPrimera) {
@@ -389,6 +402,32 @@ export class Asistente {
     this.bodegaActiva.set(bodega);
     this.paso.set(3);
     this.verificarBodegaConfigurada(bodega.id);
+  }
+
+  protected descripcionBodegaCompartible(bodega: Bodega): string {
+    return bodega.sucursalIds.length === 1 ? 'De otra sucursal' : `Compartida con ${bodega.sucursalIds.length} sucursales`;
+  }
+
+  /** Asocia una bodega ya creada a esta sucursal y la deja como su operativa — así nace una bodega compartida. */
+  protected usarBodegaExistente(bodega: Bodega): void {
+    const sucursal = this.sucursalActiva();
+    if (!sucursal) return;
+    this.guardandoBodega.set(true);
+    this.bodegasService.update(bodega.id, { sucursalIds: [...bodega.sucursalIds, sucursal.id] }).subscribe({
+      next: (actualizada) => {
+        this.guardandoBodega.set(false);
+        this.todasLasBodegas.update((lista) => lista.map((b) => (b.id === actualizada.id ? actualizada : b)));
+        this.bodegas.update((lista) => [...lista, actualizada]);
+        // Si la sucursal no tenía operativa, el backend ya la asignó; si tenía, elegirBodega la cambia.
+        this.sucursalActiva.update((s) => (s && !s.bodegaOperativaId ? { ...s, bodegaOperativaId: actualizada.id } : s));
+        this.toast.success(`${sucursal.nombre} ahora vende de ${actualizada.nombre}`);
+        this.elegirBodega(actualizada);
+      },
+      error: (err) => {
+        this.guardandoBodega.set(false);
+        this.toast.error(err.error?.message ?? 'No se pudo usar esa bodega');
+      },
+    });
   }
 
   // ---------- Paso 3: Productos y stock ----------

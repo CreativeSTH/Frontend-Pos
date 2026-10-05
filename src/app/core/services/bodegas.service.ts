@@ -3,16 +3,18 @@ import { ApiService } from './api.service';
 import { Bodega } from '../models/bodega.model';
 
 export interface BodegaPayload {
-  sucursalId: string;
   nombre: string;
+  /** Vacío = bodega central (CEDI). */
+  sucursalIds: string[];
 }
 
 @Injectable({ providedIn: 'root' })
 export class BodegasService {
   private readonly api = inject(ApiService);
 
-  findAll() {
-    return this.api.get<Bodega[]>('/bodegas');
+  /** Con `sucursalId`, solo las bodegas asociadas a esa sucursal. */
+  findAll(sucursalId?: string) {
+    return this.api.get<Bodega[]>('/bodegas', sucursalId ? { sucursalId } : undefined);
   }
 
   create(payload: BodegaPayload) {

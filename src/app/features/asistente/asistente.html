@@ -117,6 +117,31 @@
           <p class="asistente-hint">Ya tenés {{ bodegas().length === 1 ? 'esta bodega' : 'estas bodegas' }} — elegí una para continuar, o creá otra.</p>
         }
 
+        @if (bodegasParaCompartir().length > 0 && !editando()) {
+          <div class="asistente-compartir">
+            <p class="asistente-hint">¿Esta sucursal va a vender del stock de una bodega que ya existe? Usala en vez de crear otra:</p>
+            <div class="asistente-lista-sucursales">
+              @for (bodega of bodegasParaCompartir(); track bodega.id) {
+                <button
+                  type="button"
+                  class="asistente-item-sucursal"
+                  [disabled]="guardandoBodega()"
+                  (click)="usarBodegaExistente(bodega)"
+                >
+                  <ds-icon name="archive" [size]="18" />
+                  {{ bodega.nombre }}
+                  <span class="asistente-item-sucursal__badge">{{ descripcionBodegaCompartible(bodega) }}</span>
+                </button>
+              }
+            </div>
+            <div class="asistente-compartir__ayuda">
+              <ds-enlace-ayuda slug="compartir-bodega-entre-sucursales">¿Puede una sucursal compartir bodega con otra?</ds-enlace-ayuda>
+              <ds-enlace-ayuda slug="bodega-operativa-de-la-sucursal">¿Qué es la bodega operativa?</ds-enlace-ayuda>
+            </div>
+            <p class="asistente-hint">O creá una bodega nueva solo para esta sucursal:</p>
+          </div>
+        }
+
         <form [formGroup]="formBodega" class="asistente-form" (ngSubmit)="guardarBodega()">
           <ds-form-field label="Nombre">
             <ds-input formControlName="nombre" placeholder="Bodega principal" />

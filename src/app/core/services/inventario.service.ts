@@ -13,7 +13,17 @@ export interface InventarioItem {
 
 export type TipoAjusteInventario = 'ENTRADA' | 'SALIDA' | 'AJUSTE';
 
-export type TipoMovimientoInventario = 'ENTRADA' | 'SALIDA' | 'AJUSTE' | 'VENTA' | 'DEVOLUCION';
+export type TipoMovimientoInventario =
+  | 'ENTRADA'
+  | 'SALIDA'
+  | 'AJUSTE'
+  | 'VENTA'
+  | 'DEVOLUCION'
+  | 'BAJA_DEVOLUCION'
+  | 'TRASLADO_SALIDA'
+  | 'TRASLADO_ENTRADA'
+  | 'TRASLADO_CANCELADO'
+  | 'FALTANTE_TRASLADO';
 
 export interface MovimientoInventario {
   id: string;
@@ -23,6 +33,7 @@ export interface MovimientoInventario {
   cantidad: number;
   motivo?: string;
   ventaId?: string;
+  trasladoId?: string | null;
   createdAt: string;
   producto?: { nombre: string };
   bodega?: { nombre: string };

@@ -29,6 +29,7 @@ import { Bodega } from '../../../core/models/bodega.model';
 import { environment } from '../../../../environments/environment';
 import { HistorialAuditoriaModal } from '../../auditoria/historial-auditoria-modal/historial-auditoria-modal';
 import { AuthService } from '../../../core/services/auth.service';
+import { bodegaEnSucursal } from '../../../shared/utils/bodegas.util';
 
 @Component({
   selector: 'app-productos-list',
@@ -83,7 +84,7 @@ export class ProductosList {
 
   /** Bodegas de la sucursal elegida en el filtro — vacío si "todas las sucursales". */
   protected readonly bodegasDelFiltro = computed(() =>
-    this.bodegas().filter((b) => b.sucursalId === this.sucursalFiltroId()),
+    this.bodegas().filter((b) => bodegaEnSucursal(b, this.sucursalFiltroId())),
   );
 
 /** Ids de bodega que el filtro actual habilita — una sola si hay bodega elegida, todas las de la sucursal si no. */
@@ -91,7 +92,7 @@ export class ProductosList {
     const bodegaId = this.bodegaFiltroId();
     if (bodegaId) return new Set([bodegaId]);
     const sucursalId = this.sucursalFiltroId();
-    const bodegasDeLaSucursal = sucursalId ? this.bodegas().filter((b) => b.sucursalId === sucursalId) : this.bodegas();
+    const bodegasDeLaSucursal = sucursalId ? this.bodegas().filter((b) => bodegaEnSucursal(b, sucursalId)) : this.bodegas();
     return new Set(bodegasDeLaSucursal.map((b) => b.id));
   });
 
@@ -168,7 +169,7 @@ export class ProductosList {
     const activa = sucursales.find((s) => s.id === this.sucursalContext.sucursalId()) ?? sucursales[0];
     if (!activa) return;
     this.sucursalFiltroId.set(activa.id);
-    const operativa = bodegas.find((b) => b.id === activa.bodegaOperativaId && b.sucursalId === activa.id);
+    const operativa = bodegas.find((b) => b.id === activa.bodegaOperativaId && bodegaEnSucursal(b, activa.id));
     this.bodegaFiltroId.set(operativa?.id ?? '');
   }
 
@@ -176,7 +177,7 @@ export class ProductosList {
   protected cambiarSucursalFiltro(sucursalId: string): void {
     this.sucursalFiltroId.set(sucursalId);
     const sucursal = this.sucursales().find((s) => s.id === sucursalId);
-    const operativa = this.bodegas().find((b) => b.id === sucursal?.bodegaOperativaId && b.sucursalId === sucursalId);
+    const operativa = this.bodegas().find((b) => b.id === sucursal?.bodegaOperativaId && bodegaEnSucursal(b, sucursalId));
     this.bodegaFiltroId.set(operativa?.id ?? '');
   }
 

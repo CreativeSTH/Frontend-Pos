@@ -75,6 +75,7 @@ import { VentasSuspendidasPos } from './ventas-suspendidas-pos/ventas-suspendida
 import { CatalogoGridPos } from './catalogo-grid-pos/catalogo-grid-pos';
 import { calcularImpuesto, calcularSubtotal, formatMoney, imageUrl } from './pos-shared.util';
 import { EnlaceAyuda } from '../../../shared/ui/molecules/enlace-ayuda/enlace-ayuda';
+import { bodegaEnSucursal } from '../../../shared/utils/bodegas.util';
 
 /** Sentinel para "cargar una dirección nueva" en el selector — nunca colisiona con un UUID real. */
 const NUEVA_DIRECCION = '__nueva__';
@@ -258,7 +259,7 @@ export class PuntoVenta {
     const operativa = sucursal.bodegaOperativaId
       ? this.bodegas().find((b) => b.id === sucursal.bodegaOperativaId)
       : undefined;
-    return operativa ?? this.bodegas().find((b) => b.sucursalId === sucursal.id) ?? null;
+    return operativa ?? this.bodegas().find((b) => bodegaEnSucursal(b, sucursal.id)) ?? null;
   });
 
   protected readonly showAbrirTurno = signal(false);

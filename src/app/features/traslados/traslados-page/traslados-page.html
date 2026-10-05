@@ -1,0 +1,180 @@
+<app-topbar title="Traslados" subtitle="Mueve mercancía entre tus bodegas" backTo="/configuracion">
+  @if (puedeEnviar) {
+    <ds-button variant="primary" icon="plus" (click)="mostrarNuevo.set(true)">Nuevo traslado</ds-button>
+  }
+</app-topbar>
+
+<div class="traslados-ayuda">
+  <ds-enlace-ayuda slug="trasladar-productos-entre-bodegas">¿Cómo traslado productos entre bodegas?</ds-enlace-ayuda>
+  <ds-enlace-ayuda slug="recibir-un-traslado">¿Cómo recibo un traslado y qué pasa si llegó incompleto?</ds-enlace-ayuda>
+</div>
+
+<nav class="traslados-tabs" aria-label="Traslados">
+  <button
+    type="button"
+    class="traslados-tab"
+    [class.traslados-tab--active]="pestana() === 'transito'"
+    (click)="cambiarPestana('transito')"
+  >
+    En tránsito
+    @if (enTransito().length > 0) {
+      <span class="traslados-tab__contador">{{ enTransito().length }}</span>
+    }
+  </button>
+  <button
+    type="button"
+    class="traslados-tab"
+    [class.traslados-tab--active]="pestana() === 'historial'"
+    (click)="cambiarPestana('historial')"
+  >
+    Historial
+  </button>
+</nav>
+
+@if (pestana() === 'historial') {
+  <div class="traslados-filtros">
+    <ds-select [ngModel]="filtros().estado ?? ''" (ngModelChange)="actualizarFiltro('estado', $event)">
+      <option value="">Todos los estados</option>
+      <option value="EN_TRANSITO">En tránsito</option>
+      <option value="RECIBIDO">Recibidos</option>
+      <option value="CANCELADO">Cancelados</option>
+    </ds-select>
+    <ds-select [ngModel]="filtros().bodegaId ?? ''" (ngModelChange)="actualizarFiltro('bodegaId', $event)">
+      <option value="">Todas las bodegas</option>
+      @for (b of bodegas(); track b.id) {
+        <option [value]="b.id">{{ b.nombre }}</option>
+      }
+    </ds-select>
+    <input
+      class="traslados-fecha"
+      type="date"
+      [ngModel]="filtros().desde ?? ''"
+      (ngModelChange)="actualizarFiltro('desde', $event)"
+      aria-label="Desde"
+    />
+    <input
+      class="traslados-fecha"
+      type="date"
+      [ngModel]="filtros().hasta ?? ''"
+      (ngModelChange)="actualizarFiltro('hasta', $event)"
+      aria-label="Hasta"
+    />
+  </div>
+}
+
+@if (cargando()) {
+  <div class="traslados-cargando">
+    <ds-icon name="truck" [size]="24" />
+    <span>Cargando traslados...</span>
+  </div>
+} @else if (lista().length === 0) {
+  <ds-empty-state
+    icon="truck"
+    [title]="pestana() === 'transito' ? 'No hay traslados en camino' : 'Sin traslados para estos filtros'"
+    [description]="
+      pestana() === 'transito'
+        ? 'Cuando envíes mercancía de una bodega a otra, aparecerá aquí hasta que la reciban.'
+        : 'Prueba con otro estado, bodega o rango de fechas.'
+    "
+  />
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Traslado</th>
+        <th>Origen → destino</th>
+        <th>Productos</th>
+        <th>Enviado</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (t of pag.itemsPaginados(); track t.id) {
+        <tr>
+          <td>
+            <button type="button" class="traslados-link" (click)="verDetalle(t.id)">{{ etiqueta(t.consecutivo) }}</button>
+          </td>
+          <td>{{ t.bodegaOrigen?.nombre }} → {{ t.bodegaDestino?.nombre }}</td>
+          <td>{{ t.items.length }} ({{ totalUnidades(t) | number: '1.0-2' }} und.)</td>
+          <td>{{ t.enviadoEn | date: 'medium' }}</td>
+          <td><ds-badge [tone]="tonoEstado(t.estado)">{{ etiquetaEstado[t.estado] }}</ds-badge></td>
+          <td>
+            <div class="traslados-acciones">
+              @if (t.estado === 'EN_TRANSITO' && puedeRecibir) {
+                <ds-button variant="primary" size="sm" (click)="aRecibir.set(t)">Recibir</ds-button>
+              }
+              @if (t.estado === 'EN_TRANSITO' && puedeCancelar) {
+                <ds-button variant="ghost" size="sm" (click)="cancelar(t)">Cancelar</ds-button>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+  <ds-paginator
+    [page]="pag.paginaActual()"
+    [totalPages]="pag.totalPaginas()"
+    [pageSize]="pag.pageSize()"
+    [totalItems]="lista().length"
+    (pageChange)="pag.pagina.set($event)"
+    (pageSizeChange)="pag.cambiarPageSize($event)"
+  />
+}
+
+@if (mostrarNuevo()) {
+  <app-nuevo-traslado-modal [bodegas]="bodegas()" (enviado)="alEnviar($event)" (cerrar)="mostrarNuevo.set(false)" />
+}
+
+@if (aRecibir(); as t) {
+  <app-recibir-traslado-modal [traslado]="t" (recibido)="alRecibir($event)" (cerrar)="aRecibir.set(null)" />
+}
+
+@if (enDetalle(); as t) {
+  <ds-modal [title]="'Traslado ' + etiqueta(t.consecutivo)" size="md" (close)="enDetalle.set(null)">
+    <dl class="traslado-detalle">
+      <dt>Ruta</dt>
+      <dd>{{ t.bodegaOrigen?.nombre }} → {{ t.bodegaDestino?.nombre }}</dd>
+      <dt>Estado</dt>
+      <dd><ds-badge [tone]="tonoEstado(t.estado)">{{ etiquetaEstado[t.estado] }}</ds-badge></dd>
+      <dt>Enviado</dt>
+      <dd>{{ t.enviadoEn | date: 'medium' }} · {{ t.enviadoPorNombre ?? '—' }}</dd>
+      @if (t.recibidoEn) {
+        <dt>Recibido</dt>
+        <dd>{{ t.recibidoEn | date: 'medium' }} · {{ t.recibidoPorNombre ?? '—' }}</dd>
+      }
+      @if (t.canceladoEn) {
+        <dt>Cancelado</dt>
+        <dd>{{ t.canceladoEn | date: 'medium' }} · {{ t.canceladoPorNombre ?? '—' }}</dd>
+      }
+      @if (t.nota) {
+        <dt>Nota</dt>
+        <dd>{{ t.nota }}</dd>
+      }
+    </dl>
+    <ds-table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Enviado</th>
+          <th>Recibido</th>
+          <th>Faltante</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (i of t.items; track i.id) {
+          <tr>
+            <td>{{ i.producto?.nombre }}</td>
+            <td>{{ i.cantidadEnviada | number: '1.0-2' }}</td>
+            <td>{{ i.cantidadRecibida === null ? '—' : (i.cantidadRecibida | number: '1.0-2') }}</td>
+            <td>{{ faltante(i) > 0 ? (faltante(i) | number: '1.0-2') : '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </ds-table>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="enDetalle.set(null)">Cerrar</ds-button>
+    </div>
+  </ds-modal>
+}

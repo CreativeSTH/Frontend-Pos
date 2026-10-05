@@ -1,6 +1,12 @@
-<app-topbar title="Bodegas" subtitle="Almacenes donde guardas tu inventario" backTo="/configuracion">
+<app-topbar title="Bodegas" subtitle="Almacenes donde guardas tu inventario: propios, compartidos o centrales" backTo="/configuracion">
   <ds-button variant="primary" icon="plus" (click)="openCreate()">Nueva bodega</ds-button>
 </app-topbar>
+
+<div class="bodegas-ayuda">
+  <ds-enlace-ayuda slug="compartir-bodega-entre-sucursales">¿Puede una sucursal compartir bodega con otra?</ds-enlace-ayuda>
+  <ds-enlace-ayuda slug="bodega-principal-cedi">¿Cómo funciona la bodega principal (CEDI)?</ds-enlace-ayuda>
+  <ds-enlace-ayuda slug="bodega-operativa-de-la-sucursal">¿Qué es la bodega operativa?</ds-enlace-ayuda>
+</div>
 
 @if (loading()) {
   <div class="bodegas-loading">
@@ -16,7 +22,7 @@
     <thead>
       <tr>
         <th>Nombre</th>
-        <th>Sucursal</th>
+        <th>Sucursales</th>
         <th></th>
       </tr>
     </thead>
@@ -24,7 +30,7 @@
       @for (bodega of bodegasPaginadas(); track bodega.id) {
         <tr>
           <td>{{ bodega.nombre }}</td>
-          <td>{{ nombreSucursal(bodega.sucursalId) }}</td>
+          <td><ds-badge [tone]="tonoSucursales(bodega)">{{ etiquetaSucursales(bodega) }}</ds-badge></td>
           <td class="bodegas-actions">
             <button type="button" class="bodegas-actions__btn" (click)="verInventario(bodega)" title="Ver inventario">
               <ds-icon name="eye" [size]="16" />
@@ -56,13 +62,27 @@
       <ds-form-field label="Nombre">
         <ds-input formControlName="nombre" placeholder="Bodega Principal" />
       </ds-form-field>
-      <ds-form-field label="Sucursal">
-        <ds-select formControlName="sucursalId">
+      <ds-form-field label="Sucursales que venden de esta bodega">
+        <div class="bodega-form__sucursales">
           @for (sucursal of sucursales(); track sucursal.id) {
-            <option [value]="sucursal.id">{{ sucursal.nombre }}</option>
+            <label class="bodega-form__check">
+              <input
+                type="checkbox"
+                [checked]="sucursalesSeleccionadas().has(sucursal.id)"
+                (change)="alternarSucursal(sucursal.id, $any($event.target).checked)"
+              />
+              {{ sucursal.nombre }}
+            </label>
           }
-        </ds-select>
+        </div>
       </ds-form-field>
+      @if (sucursalesSeleccionadas().size === 0) {
+        <p class="bodega-form__hint">
+          Sin sucursales será tu bodega central (CEDI): guarda stock y despacha traslados, pero ningún punto de venta vende de ella.
+        </p>
+      } @else if (sucursalesSeleccionadas().size > 1) {
+        <p class="bodega-form__hint">Las sucursales marcadas venderán del mismo stock.</p>
+      }
     </form>
 
     <div modal-footer>
@@ -104,6 +124,16 @@
 
     <div modal-footer>
       <ds-button variant="ghost" (click)="showInventario.set(false)">Cerrar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (bloqueoDesactivar(); as mensaje) {
+  <ds-modal title="No se puede desactivar la bodega" size="sm" (close)="bloqueoDesactivar.set(null)">
+    <p class="bodegas-bloqueo">{{ mensaje }}</p>
+    <ds-enlace-ayuda slug="no-puedo-desactivar-una-bodega">¿Por qué no puedo desactivar una bodega?</ds-enlace-ayuda>
+    <div modal-footer>
+      <ds-button variant="primary" (click)="bloqueoDesactivar.set(null)">Entendido</ds-button>
     </div>
   </ds-modal>
 }

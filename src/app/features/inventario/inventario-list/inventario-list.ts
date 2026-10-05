@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { Topbar } from '../../../layout/topbar/topbar';
@@ -38,6 +39,7 @@ import { environment } from '../../../../environments/environment';
   selector: 'app-inventario-list',
   standalone: true,
   imports: [
+    RouterLink,
     Topbar,
     Button,
     Badge,
@@ -148,9 +150,23 @@ export class InventarioList {
     });
   }
 
-  protected kardexTono(tipo: MovimientoInventario['tipo']): 'success' | 'danger' | 'info' {
-    if (tipo === 'ENTRADA' || tipo === 'DEVOLUCION') return 'success';
-    if (tipo === 'SALIDA' || tipo === 'VENTA') return 'danger';
+  protected readonly etiquetaMovimiento: Record<MovimientoInventario['tipo'], string> = {
+    ENTRADA: 'Entrada',
+    SALIDA: 'Salida',
+    AJUSTE: 'Ajuste',
+    VENTA: 'Venta',
+    DEVOLUCION: 'Devolución',
+    BAJA_DEVOLUCION: 'Devolución sin reingreso',
+    TRASLADO_SALIDA: 'Traslado enviado',
+    TRASLADO_ENTRADA: 'Traslado recibido',
+    TRASLADO_CANCELADO: 'Traslado cancelado',
+    FALTANTE_TRASLADO: 'Faltante de traslado',
+  };
+
+  protected kardexTono(tipo: MovimientoInventario['tipo']): 'success' | 'danger' | 'warning' | 'info' {
+    if (tipo === 'ENTRADA' || tipo === 'DEVOLUCION' || tipo === 'TRASLADO_ENTRADA' || tipo === 'TRASLADO_CANCELADO') return 'success';
+    if (tipo === 'SALIDA' || tipo === 'VENTA' || tipo === 'TRASLADO_SALIDA') return 'danger';
+    if (tipo === 'FALTANTE_TRASLADO' || tipo === 'BAJA_DEVOLUCION') return 'warning';
     return 'info';
   }
 
