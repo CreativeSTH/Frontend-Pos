@@ -28,7 +28,8 @@ export type ModuloPermiso =
   | 'FACTURACION_ELECTRONICA_DIAN'
   | 'DEVOLUCIONES'
   | 'AUDITORIA'
-  | 'TRASLADOS';
+  | 'TRASLADOS'
+  | 'EMPLEADOS';
 
 export type AccionPermiso = 'VER' | 'CREAR' | 'EDITAR' | 'ELIMINAR';
 

@@ -756,3 +756,16 @@ app-catalogo-grid-pos {
   font-family: var(--font-body);
   color-scheme: dark;
 }
+
+/* Marcar asistencia (turnos de empleados): mismo estilo que el botón de Domicilios, encima de él. */
+.pos-asistencia-btn {
+  @include mix.pastilla-flotante;
+  position: absolute;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-dropdown);
+
+  &--sobre-domicilios {
+    bottom: calc(var(--space-4) + 56px);
+  }
+}

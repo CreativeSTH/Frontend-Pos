@@ -70,6 +70,7 @@ import { CreateDireccionClientePayload, DireccionCliente } from '../../../core/m
 import { PrecioVigente } from '../../../core/models/promocion.model';
 import { ConfiguracionWompi, MetodoPagoWompi } from '../../../core/models/pago-wompi.model';
 import { PanelDomiciliosPos } from './panel-domicilios-pos/panel-domicilios-pos';
+import { MarcarAsistencia } from '../../empleados/marcar-asistencia/marcar-asistencia';
 import { TurnoCajaPos } from './turno-caja-pos/turno-caja-pos';
 import { VentasSuspendidasPos } from './ventas-suspendidas-pos/ventas-suspendidas-pos';
 import { CatalogoGridPos } from './catalogo-grid-pos/catalogo-grid-pos';
@@ -117,6 +118,7 @@ interface LineaCarrito {
     Modal,
     FormsModule,
     PanelDomiciliosPos,
+    MarcarAsistencia,
     TurnoCajaPos,
     VentasSuspendidasPos,
     CatalogoGridPos,
@@ -232,6 +234,9 @@ export class PuntoVenta {
   protected readonly cargandoStock = signal(false);
   /** Promociones automáticas vigentes por producto en la bodega activa — ver efecto de carga en el constructor. */
   protected readonly preciosVigentes = signal<Map<string, PrecioVigente>>(new Map());
+
+  /** Modal "Marcar asistencia" (turnos de empleados): cualquier sesión puede abrirlo, el PIN identifica al empleado. */
+  protected readonly mostrarMarcarAsistencia = signal(false);
 
   /** Sucursal activa: la fija del usuario (cajero) o la elegida por un admin — ver `SucursalContextService`. */
   protected readonly sucursal = computed<Sucursal | null>(

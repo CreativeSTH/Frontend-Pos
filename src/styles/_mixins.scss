@@ -106,3 +106,24 @@ $bp-mobile: 560px;
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   color: var(--text-on-accent);
 }
+
+/* Botón flotante en forma de pastilla sobre el catálogo del POS (Domicilios, Marcar asistencia). */
+@mixin pastilla-flotante {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg-hover);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  box-shadow: var(--glass-shadow);
+  cursor: pointer;
+  transition: background var(--duration-base) var(--ease-standard);
+
+  &:hover {
+    background: var(--glass-bg-active);
+  }
+}

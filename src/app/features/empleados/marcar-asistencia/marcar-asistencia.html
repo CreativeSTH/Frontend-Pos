@@ -1,0 +1,68 @@
+@if (enModal()) {
+  <ds-modal title="Marcar asistencia" size="sm" (close)="cerrar.emit()">
+    <ng-container [ngTemplateOutlet]="contenido" />
+  </ds-modal>
+} @else {
+  <div class="marcar marcar--embebido">
+    <h2 class="marcar__titulo">Marcar asistencia</h2>
+    <ng-container [ngTemplateOutlet]="contenido" />
+    <ds-button variant="ghost" [fullWidth]="true" (click)="cerrar.emit()">Volver</ds-button>
+  </div>
+}
+
+<ng-template #contenido>
+  <div class="marcar">
+    @if (!enLinea()) {
+      <p class="marcar__aviso">Marcar asistencia necesita internet. Hazlo cuando vuelva la conexión.</p>
+    } @else if (!sucursalId()) {
+      <p class="marcar__aviso">Elige primero la sucursal de esta caja.</p>
+    }
+
+    @if (estado() === 'resultado' && resultado(); as r) {
+      <div class="marcar__resultado" role="status">
+        <span class="marcar__check"><ds-icon name="check" [size]="28" /></span>
+        <strong>{{ r.tipo === 'ENTRADA' ? 'Entrada registrada' : 'Salida registrada' }}</strong>
+        <span class="marcar__nombre">{{ r.empleado.nombre }}</span>
+        <span class="marcar__hora">
+          {{ hora(r.momento) }}
+          @if (r.tipo === 'SALIDA' && r.duracionMinutos !== undefined) {
+            · {{ duracion(r.duracionMinutos) }} trabajadas
+          }
+        </span>
+      </div>
+    } @else {
+      <p class="marcar__hint">Escribe tu PIN de marcación. AURA sabe si estás entrando o saliendo.</p>
+
+      <ds-input
+        type="password"
+        placeholder="PIN"
+        [ngModel]="pin()"
+        (ngModelChange)="escribir($event)"
+        (keydown.enter)="marcar()"
+      />
+
+      <div class="marcar__teclado" aria-label="Teclado numérico">
+        @for (t of teclas; track t) {
+          <button type="button" class="marcar__tecla" (click)="tecla(t)">{{ t }}</button>
+        }
+        <button type="button" class="marcar__tecla marcar__tecla--secundaria" title="Borrar" (click)="borrar()">
+          <ds-icon name="arrow-left" [size]="18" />
+        </button>
+        <button type="button" class="marcar__tecla" (click)="tecla('0')">0</button>
+        <button type="button" class="marcar__tecla marcar__tecla--secundaria" title="Limpiar" (click)="pin.set('')">
+          <ds-icon name="x" [size]="18" />
+        </button>
+      </div>
+
+      @if (estado() === 'error') {
+        <p class="marcar__error" role="alert">{{ error() }}</p>
+      }
+
+      <ds-button variant="primary" icon="clock" [fullWidth]="true" [loading]="estado() === 'marcando'" [disabled]="!puedeMarcar()" (click)="marcar()">
+        Marcar
+      </ds-button>
+    }
+
+    <ds-enlace-ayuda slug="marcar-entrada-y-salida">¿Cómo marcan entrada y salida mis empleados?</ds-enlace-ayuda>
+  </div>
+</ng-template>

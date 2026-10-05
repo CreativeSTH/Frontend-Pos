@@ -1,4 +1,9 @@
 <div class="lock-screen">
+  @if (marcando()) {
+    <div class="lock-screen__panel">
+      <app-marcar-asistencia [sucursalId]="sucursalContext.sucursalId()" [enModal]="false" (cerrar)="marcando.set(false)" />
+    </div>
+  } @else {
   <div class="lock-screen__panel">
     <ds-icon name="lock" [size]="28" />
     <ds-avatar [name]="auth.usuario()?.nombre ?? ''" />
@@ -18,5 +23,11 @@
     <ds-button variant="primary" [fullWidth]="true" [loading]="desbloqueando()" (click)="desbloquear()">
       Reanudar
     </ds-button>
+
+    <button type="button" class="lock-screen__secundario" (click)="marcando.set(true)">
+      <ds-icon name="clock" [size]="16" />
+      Marcar asistencia
+    </button>
   </div>
+  }
 </div>

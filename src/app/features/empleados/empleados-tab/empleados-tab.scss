@@ -1,0 +1,75 @@
+@use 'mixins' as mix;
+
+.empleados-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-4);
+}
+
+.empleados-cargando {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+}
+
+.empleado-nombre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.empleados-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.empleados-acciones__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+  }
+}
+
+.empleado-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.empleado-form__fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.empleado-form__switch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.empleado-form__ayuda {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--fs-sm);
+}
+
+@include mix.mobile-down {
+  .empleado-form__fila {
+    grid-template-columns: 1fr;
+  }
+}

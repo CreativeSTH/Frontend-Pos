@@ -101,6 +101,16 @@
       />
 
       <app-panel-domicilios-pos />
+
+      <button
+        type="button"
+        class="pos-asistencia-btn"
+        [class.pos-asistencia-btn--sobre-domicilios]="auth.tienePermiso('DOMICILIOS', 'VER')"
+        (click)="mostrarMarcarAsistencia.set(true)"
+      >
+        <ds-icon name="clock" [size]="20" />
+        <span>Marcar asistencia</span>
+      </button>
     </section>
 
     <aside class="pos-cart">
@@ -801,4 +811,8 @@
       </div>
     }
   </ds-modal>
+}
+
+@if (mostrarMarcarAsistencia()) {
+  <app-marcar-asistencia [sucursalId]="sucursal()?.id" (cerrar)="mostrarMarcarAsistencia.set(false)" />
 }

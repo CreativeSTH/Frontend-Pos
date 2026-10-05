@@ -1,0 +1,30 @@
+<app-topbar title="Empleados y turnos" subtitle="Tu equipo, su horario y su asistencia" backTo="/configuracion" />
+
+<div class="empleados-ayuda">
+  <ds-enlace-ayuda slug="registrar-empleados-y-pin">¿Cómo registro a mis empleados y su PIN de marcación?</ds-enlace-ayuda>
+  <ds-enlace-ayuda slug="armar-horario-semanal">¿Cómo armo el horario semanal?</ds-enlace-ayuda>
+</div>
+
+<nav class="empleados-tabs" aria-label="Empleados y turnos">
+  <button type="button" class="empleados-tab" [class.empleados-tab--active]="pestana() === 'empleados'" (click)="pestana.set('empleados')">
+    Empleados
+  </button>
+  <button type="button" class="empleados-tab" [class.empleados-tab--active]="pestana() === 'horario'" (click)="pestana.set('horario')">
+    Horario
+  </button>
+  <button type="button" class="empleados-tab" [class.empleados-tab--active]="pestana() === 'asistencia'" (click)="pestana.set('asistencia')">
+    Asistencia
+  </button>
+</nav>
+
+@switch (pestana()) {
+  @case ('empleados') {
+    <app-empleados-tab [empleados]="empleados()" [sucursales]="sucursales()" [cargando]="cargando()" (cambio)="recargarEmpleados()" />
+  }
+  @case ('horario') {
+    <app-horario-tab [empleados]="empleados()" [sucursales]="sucursales()" />
+  }
+  @case ('asistencia') {
+    <app-asistencia-tab [empleados]="empleados()" [sucursales]="sucursales()" />
+  }
+}

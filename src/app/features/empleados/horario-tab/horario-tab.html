@@ -1,0 +1,132 @@
+<div class="horario-barra">
+  <div class="horario-semana">
+    <button type="button" class="horario-nav" title="Semana anterior" (click)="moverSemana(-1)">
+      <ds-icon name="arrow-left" [size]="16" />
+    </button>
+    <span class="horario-semana__rango">
+      {{ fecha(dias()[0], { day: 'numeric', month: 'short' }) }} – {{ fecha(dias()[6], { day: 'numeric', month: 'short', year: 'numeric' }) }}
+    </span>
+    <button type="button" class="horario-nav" title="Semana siguiente" (click)="moverSemana(1)">
+      <ds-icon name="chevron-right" [size]="16" />
+    </button>
+    <ds-button variant="ghost" size="sm" (click)="irAHoy()">Esta semana</ds-button>
+  </div>
+
+  <div class="horario-filtros">
+    <ds-select [ngModel]="sucursalId()" (ngModelChange)="sucursalId.set($event)">
+      <option value="">Todas las sucursales</option>
+      @for (s of sucursales(); track s.id) {
+        <option [value]="s.id">{{ s.nombre }}</option>
+      }
+    </ds-select>
+    @if (puedeCrear) {
+      <ds-button variant="glass" icon="rotate-ccw" [loading]="copiando()" (click)="copiarSemanaAnterior()">Copiar semana anterior</ds-button>
+    }
+  </div>
+</div>
+
+@if (empleados().length === 0) {
+  <ds-empty-state icon="clock" title="Primero registra a tus empleados" description="El horario se arma por empleado: crea tu equipo en la pestaña Empleados." />
+} @else {
+  <div class="horario-scroll" [class.horario-scroll--cargando]="cargando()">
+    <div class="horario-grilla" role="table" aria-label="Horario semanal">
+      <div class="horario-celda horario-celda--cabecera horario-celda--empleado" role="columnheader">Empleado</div>
+      @for (d of dias(); track d) {
+        <div
+          class="horario-celda horario-celda--cabecera"
+          role="columnheader"
+          [class.horario-celda--domingo]="esDomingo(d) || esFestivo(d)"
+          [class.horario-celda--hoy]="d === hoy"
+        >
+          <span class="horario-dia">{{ fecha(d, { weekday: 'short' }) }}</span>
+          <span class="horario-fecha">{{ fecha(d, { day: 'numeric' }) }}</span>
+          @if (esFestivo(d)) {
+            <span class="horario-festivo">Festivo</span>
+          }
+        </div>
+      }
+
+      @for (e of filas(); track e.id) {
+        <div class="horario-celda horario-celda--empleado" role="rowheader">
+          <span class="horario-empleado__nombre">{{ e.nombre }}</span>
+          <span class="horario-empleado__total">
+            {{ duracion(totalSemana(e.id)) }}
+            @if (totalSemana(e.id) > jornadaMaxima() * 60) {
+              <ds-badge tone="warning">Más de {{ jornadaMaxima() }} h</ds-badge>
+            }
+          </span>
+        </div>
+        @for (d of dias(); track d) {
+          <div
+            class="horario-celda"
+            role="cell"
+            [class.horario-celda--domingo]="esDomingo(d) || esFestivo(d)"
+            [class.horario-celda--editable]="puedeCrear"
+            [attr.title]="puedeCrear ? 'Agregar turno' : null"
+            (click)="nuevo(e, d)"
+          >
+            @for (t of turnosDe(e.id, d); track t.id) {
+              <button type="button" class="horario-turno" [attr.title]="t.nota ?? sucursalDe(t.sucursalId)" (click)="editar(t, $event)">
+                {{ hora(t.horaInicio) }}–{{ hora(t.horaFin) }}
+              </button>
+            }
+            @if (puedeCrear && turnosDe(e.id, d).length === 0) {
+              <span class="horario-mas"><ds-icon name="plus" [size]="14" /></span>
+            }
+          </div>
+        }
+      }
+    </div>
+  </div>
+  <p class="horario-nota">Los domingos y festivos van resaltados. Un turno cuya hora de fin es menor que la de inicio cruza la medianoche.</p>
+}
+
+@if (form(); as f) {
+  <ds-modal [title]="f.id ? 'Editar turno' : 'Nuevo turno'" size="sm" (close)="form.set(null)">
+    <form class="turno-form" (ngSubmit)="guardar()">
+      <ds-form-field label="Empleado">
+        <ds-select name="empleadoId" [ngModel]="f.empleadoId" (ngModelChange)="actualizarForm('empleadoId', $event)">
+          @for (e of empleados(); track e.id) {
+            <option [value]="e.id">{{ e.nombre }}</option>
+          }
+        </ds-select>
+      </ds-form-field>
+      <ds-form-field label="Sucursal">
+        <ds-select name="sucursalId" [ngModel]="f.sucursalId" (ngModelChange)="actualizarForm('sucursalId', $event)">
+          @for (s of sucursales(); track s.id) {
+            <option [value]="s.id">{{ s.nombre }}</option>
+          }
+        </ds-select>
+      </ds-form-field>
+      <ds-form-field label="Fecha">
+        <input class="turno-campo" type="date" name="fecha" [ngModel]="f.fecha" (ngModelChange)="actualizarForm('fecha', $event)" />
+      </ds-form-field>
+      <div class="turno-form__horas">
+        <ds-form-field label="Desde">
+          <input class="turno-campo" type="time" name="horaInicio" [ngModel]="f.horaInicio" (ngModelChange)="actualizarForm('horaInicio', $event)" />
+        </ds-form-field>
+        <ds-form-field label="Hasta">
+          <input class="turno-campo" type="time" name="horaFin" [ngModel]="f.horaFin" (ngModelChange)="actualizarForm('horaFin', $event)" />
+        </ds-form-field>
+      </div>
+      @if (cruzaMedianoche(f)) {
+        <p class="turno-form__aviso">Este turno termina al día siguiente.</p>
+      }
+      <ds-form-field label="Nota (opcional)">
+        <ds-input name="nota" [ngModel]="f.nota" (ngModelChange)="actualizarForm('nota', $event)" placeholder="Ej. Inventario" />
+      </ds-form-field>
+      @if (errorForm()) {
+        <p class="turno-form__error">{{ errorForm() }}</p>
+      }
+    </form>
+    <div modal-footer>
+      @if (f.id && puedeEliminar) {
+        <ds-button variant="ghost" icon="trash" (click)="eliminar()">Eliminar</ds-button>
+      }
+      <ds-button variant="ghost" (click)="form.set(null)">Cancelar</ds-button>
+      @if (f.id ? puedeEditar : puedeCrear) {
+        <ds-button variant="primary" [loading]="guardando()" (click)="guardar()">Guardar</ds-button>
+      }
+    </div>
+  </ds-modal>
+}

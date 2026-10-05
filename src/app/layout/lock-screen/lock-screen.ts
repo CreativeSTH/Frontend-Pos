@@ -6,6 +6,8 @@ import { Input } from '../../shared/ui/atoms/input/input';
 import { Button } from '../../shared/ui/atoms/button/button';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
+import { SucursalContextService } from '../../core/services/sucursal-context.service';
+import { MarcarAsistencia } from '../../features/empleados/marcar-asistencia/marcar-asistencia';
 
 /**
  * Overlay de "caja en pausa" — bloquea toda la app (se monta en DashboardLayout,
@@ -17,7 +19,7 @@ import { ToastService } from '../../core/services/toast.service';
 @Component({
   selector: 'app-lock-screen',
   standalone: true,
-  imports: [Avatar, Icon, Input, Button, FormsModule],
+  imports: [Avatar, Icon, Input, Button, FormsModule, MarcarAsistencia],
   templateUrl: './lock-screen.html',
   styleUrl: './lock-screen.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,6 +27,10 @@ import { ToastService } from '../../core/services/toast.service';
 export class LockScreen {
   protected readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
+  protected readonly sucursalContext = inject(SucursalContextService);
+
+  /** Muestra el teclado de marcación de asistencia en lugar del de reanudar. */
+  protected readonly marcando = signal(false);
 
   protected readonly pin = signal('');
   protected readonly desbloqueando = signal(false);

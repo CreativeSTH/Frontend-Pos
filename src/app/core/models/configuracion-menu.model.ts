@@ -41,6 +41,13 @@ export const CONFIG_GROUPS: ConfiguracionGroup[] = [
     ],
   },
   {
+    titulo: 'Equipo',
+    items: [
+      { label: 'Empleados y turnos', description: 'Personal, horario semanal y asistencia', icon: 'users', route: '/empleados', modulo: 'EMPLEADOS' },
+      { label: 'Reporte de recargos', description: 'Horas extra, nocturnas y dominicales en pesos', icon: 'bar-chart', route: '/reportes/recargos', modulo: 'EMPLEADOS' },
+    ],
+  },
+  {
     titulo: 'Ventas y reportes',
     items: [
       { label: 'Ventas', description: 'Historial completo de ventas', icon: 'receipt', route: '/ventas', modulo: 'VENTAS' },

@@ -35,6 +35,11 @@ export class ApiService {
     return this.wrap(this.http.delete<T>(`${this.baseUrl}${path}`));
   }
 
+  /** DELETE con cuerpo JSON (p. ej. el motivo de una corrección que queda en la auditoría). */
+  deleteConCuerpo<T>(path: string, body: unknown): Observable<T> {
+    return this.wrap(this.http.delete<T>(`${this.baseUrl}${path}`, { body }));
+  }
+
   private buildParams(params?: Record<string, string | number | boolean | undefined>): HttpParams {
     let httpParams = new HttpParams();
     for (const [key, value] of Object.entries(params ?? {})) {

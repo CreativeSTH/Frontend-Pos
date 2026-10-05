@@ -48,3 +48,26 @@
   color: var(--text-tertiary);
   margin-bottom: var(--space-2);
 }
+
+.lock-screen__secundario {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+app-marcar-asistencia {
+  width: 100%;
+  color: var(--text-primary);
+}

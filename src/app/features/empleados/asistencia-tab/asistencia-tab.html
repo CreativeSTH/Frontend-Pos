@@ -1,0 +1,193 @@
+<div class="asistencia-barra">
+  <div class="asistencia-filtros">
+    <input class="asistencia-fecha" type="date" aria-label="Desde" [ngModel]="desde()" (ngModelChange)="filtrar('desde', $event)" />
+    <input class="asistencia-fecha" type="date" aria-label="Hasta" [ngModel]="hasta()" (ngModelChange)="filtrar('hasta', $event)" />
+    <ds-select [ngModel]="empleadoId()" (ngModelChange)="filtrar('empleadoId', $event)">
+      <option value="">Todos los empleados</option>
+      @for (e of empleados(); track e.id) {
+        <option [value]="e.id">{{ e.nombre }}</option>
+      }
+    </ds-select>
+    <ds-select [ngModel]="sucursalId()" (ngModelChange)="filtrar('sucursalId', $event)">
+      <option value="">Todas las sucursales</option>
+      @for (s of sucursales(); track s.id) {
+        <option [value]="s.id">{{ s.nombre }}</option>
+      }
+    </ds-select>
+  </div>
+  @if (puedeEditar && empleados().length > 0) {
+    <ds-button variant="primary" icon="plus" (click)="agregar()">Agregar jornada</ds-button>
+  }
+</div>
+
+<div class="asistencia-ayuda">
+  <ds-enlace-ayuda slug="corregir-asistencia">¿Qué hago si alguien olvidó marcar o marcó mal?</ds-enlace-ayuda>
+</div>
+
+@if (cargando()) {
+  <div class="asistencia-cargando">
+    <ds-icon name="clock" [size]="24" />
+    <span>Cargando asistencia...</span>
+  </div>
+} @else {
+  @if (jornadas().length === 0) {
+    <ds-empty-state
+      icon="clock"
+      title="Sin jornadas en este periodo"
+      description="Cuando tus empleados marquen entrada y salida con su PIN en la caja, aparecerán aquí."
+    />
+  } @else {
+    <ds-table>
+      <thead>
+        <tr>
+          <th>Empleado</th>
+          <th>Fecha</th>
+          <th>Entrada</th>
+          <th>Salida</th>
+          <th>Duración</th>
+          <th>Sucursal</th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (j of jornadas(); track j.id) {
+          <tr>
+            <td>{{ j.empleado?.nombre ?? empleadoNombre(j.empleadoId) }}</td>
+            <td>{{ diaLegible(fechaDe(j.entrada)) }}</td>
+            <td>{{ hora(j.entrada) }}</td>
+            <td>
+              @if (j.salida) {
+                {{ hora(j.salida) }}
+                @if (fechaDe(j.salida) !== fechaDe(j.entrada)) {
+                  <span class="asistencia-dia-siguiente">+1 día</span>
+                }
+              } @else if (j.sinSalida) {
+                <ds-badge tone="danger">Sin salida</ds-badge>
+              } @else {
+                <ds-badge tone="success">Adentro</ds-badge>
+              }
+            </td>
+            <td>{{ duracion(j) }}</td>
+            <td>{{ j.sucursal?.nombre ?? sucursal(j.sucursalId) }}</td>
+            <td>
+              <div class="asistencia-etiquetas">
+                @if (tarde(j); as min) {
+                  <ds-badge tone="warning">Tarde {{ min }} min</ds-badge>
+                }
+                @if (j.motivoCorreccion) {
+                  <span [attr.title]="'Motivo: ' + j.motivoCorreccion"><ds-badge tone="neutral">Corregida</ds-badge></span>
+                }
+              </div>
+            </td>
+            <td>
+              @if (puedeEditar) {
+                <div class="asistencia-acciones">
+                  <ds-button variant="ghost" size="sm" (click)="corregir(j)">Corregir</ds-button>
+                  <ds-button variant="ghost" size="sm" (click)="pedirEliminar(j)">Eliminar</ds-button>
+                </div>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </ds-table>
+  }
+
+  @if (ausencias().length > 0) {
+    <h3 class="asistencia-subtitulo">Ausencias</h3>
+    <p class="asistencia-explica">Turnos programados en los que el empleado no marcó entrada.</p>
+    <ds-table>
+      <thead>
+        <tr>
+          <th>Empleado</th>
+          <th>Fecha</th>
+          <th>Turno</th>
+          <th>Sucursal</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (t of ausencias(); track t.id) {
+          <tr>
+            <td>{{ t.empleado?.nombre ?? empleadoNombre(t.empleadoId) }}</td>
+            <td>{{ diaLegible(t.fecha) }}</td>
+            <td>{{ t.horaInicio.slice(0, 5) }}–{{ t.horaFin.slice(0, 5) }}</td>
+            <td>{{ sucursal(t.sucursalId) }}</td>
+          </tr>
+        }
+      </tbody>
+    </ds-table>
+  }
+}
+
+@if (form(); as f) {
+  <ds-modal [title]="f.jornada ? 'Corregir jornada' : 'Agregar jornada'" size="sm" (close)="form.set(null)">
+    <form class="jornada-form" (ngSubmit)="guardar()">
+      @if (!f.jornada) {
+        <ds-form-field label="Empleado">
+          <ds-select name="empleadoId" [ngModel]="f.empleadoId" (ngModelChange)="actualizarForm('empleadoId', $event)">
+            @for (e of empleados(); track e.id) {
+              <option [value]="e.id">{{ e.nombre }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+        <ds-form-field label="Sucursal">
+          <ds-select name="sucursalId" [ngModel]="f.sucursalId" (ngModelChange)="actualizarForm('sucursalId', $event)">
+            @for (s of sucursales(); track s.id) {
+              <option [value]="s.id">{{ s.nombre }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+      } @else {
+        <p class="jornada-form__quien">{{ f.jornada.empleado?.nombre ?? empleadoNombre(f.jornada.empleadoId) }}</p>
+      }
+      <div class="jornada-form__par">
+        <ds-form-field label="Fecha de entrada">
+          <input class="asistencia-fecha" type="date" name="fechaEntrada" [ngModel]="f.fechaEntrada" (ngModelChange)="actualizarForm('fechaEntrada', $event)" />
+        </ds-form-field>
+        <ds-form-field label="Hora de entrada">
+          <input class="asistencia-fecha" type="time" name="horaEntrada" [ngModel]="f.horaEntrada" (ngModelChange)="actualizarForm('horaEntrada', $event)" />
+        </ds-form-field>
+      </div>
+      <div class="jornada-form__par">
+        <ds-form-field label="Fecha de salida">
+          <input class="asistencia-fecha" type="date" name="fechaSalida" [ngModel]="f.fechaSalida" (ngModelChange)="actualizarForm('fechaSalida', $event)" />
+        </ds-form-field>
+        <ds-form-field label="Hora de salida" [hint]="f.jornada ? 'Vacía = sin cambio' : 'Vacía = sigue adentro'">
+          <input class="asistencia-fecha" type="time" name="horaSalida" [ngModel]="f.horaSalida" (ngModelChange)="actualizarForm('horaSalida', $event)" />
+        </ds-form-field>
+      </div>
+      <ds-form-field label="Motivo" hint="Queda en el historial de auditoría">
+        <ds-input name="motivo" [ngModel]="f.motivo" (ngModelChange)="actualizarForm('motivo', $event)" placeholder="Ej. Olvidó marcar la salida" />
+      </ds-form-field>
+      @if (errorForm()) {
+        <p class="jornada-form__error">{{ errorForm() }}</p>
+      }
+    </form>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="form.set(null)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="guardando()" (click)="guardar()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (aEliminar(); as j) {
+  <ds-modal title="Eliminar jornada" size="sm" (close)="aEliminar.set(null)">
+    <form class="jornada-form" (ngSubmit)="eliminar()">
+      <p class="jornada-form__quien">
+        {{ j.empleado?.nombre ?? empleadoNombre(j.empleadoId) }} · {{ diaLegible(fechaDe(j.entrada)) }} ·
+        {{ hora(j.entrada) }}{{ j.salida ? '–' + hora(j.salida) : '' }}
+      </p>
+      <ds-form-field label="Motivo" hint="Queda en el historial de auditoría">
+        <ds-input name="motivo" [ngModel]="motivoEliminar()" (ngModelChange)="motivoEliminar.set($event)" placeholder="Ej. Marcó por otra persona" />
+      </ds-form-field>
+      @if (errorForm()) {
+        <p class="jornada-form__error">{{ errorForm() }}</p>
+      }
+    </form>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="aEliminar.set(null)">Cancelar</ds-button>
+      <ds-button variant="danger" [loading]="guardando()" (click)="eliminar()">Eliminar</ds-button>
+    </div>
+  </ds-modal>
+}

@@ -31,5 +31,6 @@ export const ETIQUETAS_MODULO: Record<ModuloPermiso, string> = {
   FACTURACION_ELECTRONICA_DIAN: 'Facturación electrónica DIAN',
   DEVOLUCIONES: 'Devoluciones',
   TRASLADOS: 'Traslados',
+  EMPLEADOS: 'Empleados y turnos',
   AUDITORIA: 'Auditoría',
 };

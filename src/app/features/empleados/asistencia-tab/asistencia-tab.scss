@@ -1,0 +1,100 @@
+@use 'mixins' as mix;
+
+.asistencia-barra {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.asistencia-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+
+  ds-select {
+    min-width: 200px;
+  }
+}
+
+.asistencia-fecha {
+  @include mix.campo-fecha;
+  width: 100%;
+}
+
+.asistencia-filtros .asistencia-fecha {
+  width: auto;
+}
+
+.asistencia-ayuda {
+  margin-bottom: var(--space-4);
+}
+
+.asistencia-cargando {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+}
+
+.asistencia-dia-siguiente {
+  margin-left: var(--space-1);
+  color: var(--text-tertiary);
+  font-size: var(--fs-xs);
+}
+
+.asistencia-etiquetas,
+.asistencia-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.asistencia-acciones {
+  justify-content: flex-end;
+}
+
+.asistencia-subtitulo {
+  margin: var(--space-6) 0 var(--space-1);
+  font-size: var(--fs-lg);
+}
+
+.asistencia-explica {
+  margin: 0 0 var(--space-3);
+  color: var(--text-tertiary);
+  font-size: var(--fs-sm);
+}
+
+.jornada-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.jornada-form__par {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.jornada-form__quien {
+  margin: 0;
+  font-weight: var(--fw-medium);
+}
+
+.jornada-form__error {
+  margin: 0;
+  color: var(--accent-danger);
+  font-size: var(--fs-sm);
+}
+
+@include mix.mobile-down {
+  .asistencia-filtros {
+    ds-select,
+    .asistencia-fecha {
+      flex: 1 1 100%;
+    }
+  }
+}

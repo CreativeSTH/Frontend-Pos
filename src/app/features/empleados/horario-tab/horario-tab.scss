@@ -1,0 +1,198 @@
+@use 'mixins' as mix;
+
+.horario-barra {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.horario-semana,
+.horario-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.horario-filtros ds-select {
+  min-width: 220px;
+}
+
+.horario-semana__rango {
+  min-width: 150px;
+  text-align: center;
+  font-weight: var(--fw-medium);
+}
+
+.horario-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+  }
+}
+
+.horario-scroll {
+  @include mix.scrollbar-thin;
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  transition: opacity var(--duration-base) var(--ease-standard);
+
+  &--cargando {
+    opacity: 0.6;
+  }
+}
+
+.horario-grilla {
+  display: grid;
+  grid-template-columns: 180px repeat(7, minmax(96px, 1fr));
+  min-width: 860px;
+}
+
+.horario-celda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-height: 56px;
+  padding: var(--space-2);
+  border-right: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+
+  &--cabecera {
+    min-height: 0;
+    align-items: center;
+    background: var(--glass-bg);
+    color: var(--text-secondary);
+    font-size: var(--fs-sm);
+  }
+
+  &--empleado {
+    align-items: flex-start;
+    justify-content: center;
+    background: var(--glass-bg);
+  }
+
+  &--domingo {
+    background: var(--glass-bg-hover);
+  }
+
+  &--hoy .horario-fecha {
+    color: var(--accent-primary);
+  }
+
+  &--editable {
+    cursor: pointer;
+
+    &:hover .horario-mas {
+      opacity: 1;
+    }
+  }
+}
+
+.horario-dia {
+  text-transform: capitalize;
+}
+
+.horario-fecha {
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+.horario-empleado__nombre {
+  font-weight: var(--fw-medium);
+}
+
+.horario-empleado__total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-tertiary);
+  font-size: var(--fs-sm);
+}
+
+.horario-turno {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid rgba(var(--accent-primary-rgb), 0.35);
+  border-radius: var(--radius-sm);
+  background: rgba(var(--accent-primary-rgb), 0.12);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(var(--accent-primary-rgb), 0.2);
+  }
+}
+
+.horario-mas {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+
+.horario-nota {
+  margin: var(--space-3) 0 0;
+  color: var(--text-tertiary);
+  font-size: var(--fs-sm);
+}
+
+.turno-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.turno-form__horas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.turno-campo {
+  @include mix.campo-fecha;
+  width: 100%;
+}
+
+.turno-form__aviso {
+  margin: 0;
+  color: var(--accent-warning);
+  font-size: var(--fs-sm);
+}
+
+.turno-form__error {
+  margin: 0;
+  color: var(--accent-danger);
+  font-size: var(--fs-sm);
+}
+
+@include mix.mobile-down {
+  .horario-filtros ds-select {
+    flex: 1 1 100%;
+  }
+}
+
+.horario-festivo {
+  color: var(--accent-warning);
+  font-size: var(--fs-xs);
+}

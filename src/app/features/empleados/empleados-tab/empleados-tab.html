@@ -1,0 +1,171 @@
+@if (puedeCrear) {
+  <div class="empleados-toolbar">
+    <ds-button variant="primary" icon="plus" (click)="abrirNuevo()">Nuevo empleado</ds-button>
+  </div>
+}
+
+@if (cargando()) {
+  <div class="empleados-cargando">
+    <ds-icon name="users" [size]="24" />
+    <span>Cargando empleados...</span>
+  </div>
+} @else if (empleados().length === 0) {
+  <ds-empty-state
+    icon="users"
+    title="Aún no tienes empleados registrados"
+    description="Registra a tu equipo —use o no AURA— para armar su horario y que marquen entrada y salida con su PIN."
+  >
+    @if (puedeCrear) {
+      <ds-button variant="glass" icon="plus" (click)="abrirNuevo()">Nuevo empleado</ds-button>
+    }
+  </ds-empty-state>
+} @else {
+  <ds-table>
+    <thead>
+      <tr>
+        <th>Empleado</th>
+        <th>Documento</th>
+        <th>Cargo</th>
+        <th>Sucursal habitual</th>
+        <th>Salario mensual</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (e of empleados(); track e.id) {
+        <tr>
+          <td>
+            <div class="empleado-nombre">
+              <span>{{ e.nombre }}</span>
+              @if (e.usuarioId) {
+                <ds-badge tone="info">Usuario de AURA</ds-badge>
+              }
+              @if (!e.aplicaHorasExtra) {
+                <ds-badge tone="neutral">Sin horas extra</ds-badge>
+              }
+            </div>
+          </td>
+          <td>{{ e.tipoDocumento }} {{ e.numeroDocumento }}</td>
+          <td>{{ e.cargo ?? '—' }}</td>
+          <td>{{ sucursal(e.sucursalId) }}</td>
+          <td>{{ formatMoney(e.salarioMensual) }}</td>
+          <td>
+            <div class="empleados-acciones">
+              @if (puedeVerAuditoria) {
+                <button type="button" class="empleados-acciones__btn" title="Historial de cambios" (click)="historial.set({ entidadId: e.id, titulo: e.nombre })">
+                  <ds-icon name="clock" [size]="16" />
+                </button>
+              }
+              @if (puedeEditar) {
+                <button type="button" class="empleados-acciones__btn" title="Cambiar PIN" (click)="abrirCambioPin(e)">
+                  <ds-icon name="lock" [size]="16" />
+                </button>
+                <button type="button" class="empleados-acciones__btn" title="Editar" (click)="abrirEditar(e)">
+                  <ds-icon name="pencil" [size]="16" />
+                </button>
+              }
+              @if (puedeEliminar) {
+                <button type="button" class="empleados-acciones__btn" title="Desactivar" (click)="desactivar(e)">
+                  <ds-icon name="trash" [size]="16" />
+                </button>
+              }
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </ds-table>
+}
+
+@if (mostrarForm()) {
+  <ds-modal [title]="editando() ? 'Editar empleado' : 'Nuevo empleado'" (close)="mostrarForm.set(false)">
+    <form [formGroup]="form" class="empleado-form" (ngSubmit)="guardar()">
+      <ds-form-field label="Nombre completo" [error]="form.controls.nombre.touched && form.controls.nombre.invalid ? 'Escribe el nombre' : null">
+        <ds-input formControlName="nombre" placeholder="Ej. Ana Gómez" />
+      </ds-form-field>
+
+      <div class="empleado-form__fila">
+        <ds-form-field label="Tipo de documento">
+          <ds-select formControlName="tipoDocumento">
+            @for (t of tiposDocumento; track t.valor) {
+              <option [value]="t.valor">{{ t.etiqueta }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+        <ds-form-field
+          label="Número de documento"
+          [error]="form.controls.numeroDocumento.touched && form.controls.numeroDocumento.invalid ? 'Escribe el documento' : null"
+        >
+          <ds-input formControlName="numeroDocumento" />
+        </ds-form-field>
+      </div>
+
+      <div class="empleado-form__fila">
+        <ds-form-field label="Cargo (opcional)">
+          <ds-input formControlName="cargo" placeholder="Ej. Cocinero" />
+        </ds-form-field>
+        <ds-form-field label="Sucursal habitual (opcional)">
+          <ds-select formControlName="sucursalId">
+            <option value="">Sin sucursal fija</option>
+            @for (s of sucursales(); track s.id) {
+              <option [value]="s.id">{{ s.nombre }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+      </div>
+
+      <ds-form-field
+        label="Salario mensual"
+        hint="Se usa para calcular el valor de las horas extra y los recargos"
+        [error]="form.controls.salarioMensual.touched && form.controls.salarioMensual.invalid ? 'Escribe el salario' : null"
+      >
+        <ds-input type="number" icon="banknote" formControlName="salarioMensual" />
+      </ds-form-field>
+
+      @if (puedeVerUsuarios) {
+        <ds-form-field label="Usuario de AURA (opcional)" hint="Si este empleado también inicia sesión en AURA">
+          <ds-select formControlName="usuarioId">
+            <option value="">No usa AURA</option>
+            @for (u of usuariosDisponibles(); track u.id) {
+              <option [value]="u.id">{{ u.nombre }} · {{ u.email }}</option>
+            }
+          </ds-select>
+        </ds-form-field>
+      }
+
+      <div class="empleado-form__switch">
+        <ds-switch formControlName="aplicaHorasExtra" label="Genera horas extra" />
+        <p class="empleado-form__ayuda">Apágalo para cargos de dirección, confianza y manejo: solo se les calculan recargos, nunca horas extra.</p>
+      </div>
+
+      @if (!editando()) {
+        <ds-form-field label="PIN de marcación" hint="4 a 6 dígitos. Es distinto al PIN de la caja y no puede repetirse." [error]="errorPinForm()">
+          <ds-input type="password" formControlName="pin" placeholder="••••" />
+        </ds-form-field>
+      }
+    </form>
+
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="mostrarForm.set(false)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="guardando()" (click)="guardar()">Guardar</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (cambiandoPin(); as e) {
+  <ds-modal [title]="'Cambiar PIN de ' + e.nombre" size="sm" (close)="cambiandoPin.set(null)">
+    <form class="empleado-form" (ngSubmit)="guardarPin()">
+      <ds-form-field label="PIN nuevo" hint="4 a 6 dígitos" [error]="errorPin()">
+        <ds-input type="password" name="pin" placeholder="••••" [ngModel]="nuevoPin()" (ngModelChange)="nuevoPin.set($event)" />
+      </ds-form-field>
+    </form>
+    <div modal-footer>
+      <ds-button variant="ghost" (click)="cambiandoPin.set(null)">Cancelar</ds-button>
+      <ds-button variant="primary" [loading]="guardando()" (click)="guardarPin()">Guardar PIN</ds-button>
+    </div>
+  </ds-modal>
+}
+
+@if (historial(); as h) {
+  <app-historial-auditoria-modal entidad="Empleado" [entidadId]="h.entidadId" [titulo]="h.titulo" (close)="historial.set(null)" />
+}

@@ -126,6 +126,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/traslados/traslados-page/traslados-page').then((m) => m.TrasladosPage),
       },
       {
+        path: 'empleados',
+        canActivate: [permisoGuard('EMPLEADOS')],
+        loadComponent: () => import('./features/empleados/empleados-page/empleados-page').then((m) => m.EmpleadosPage),
+      },
+      {
         path: 'lista-pedidos',
         canActivate: [permisoGuard('INVENTARIO')],
         loadComponent: () =>
@@ -175,6 +180,12 @@ export const routes: Routes = [
         canActivate: [permisoGuard('NEGOCIOS')],
         loadComponent: () =>
           import('./features/negocios/negocios-list/negocios-list').then((m) => m.NegociosList),
+      },
+      {
+        path: 'reportes/recargos',
+        canActivate: [permisoGuard('EMPLEADOS')],
+        loadComponent: () =>
+          import('./features/empleados/reporte-recargos/reporte-recargos').then((m) => m.ReporteRecargosPage),
       },
       {
         path: 'reportes',

@@ -1,0 +1,168 @@
+<app-topbar title="Reporte de recargos" subtitle="Horas extra, nocturnas y dominicales de tu equipo, en pesos" backTo="/configuracion">
+  @if (reporte()?.empleados?.length) {
+    <ds-button variant="glass" icon="file-text" (click)="exportar()">Exportar CSV</ds-button>
+  }
+</app-topbar>
+
+<div class="recargos-ayuda">
+  <ds-enlace-ayuda slug="como-calcula-aura-recargos">¿Cómo calcula AURA las horas extra y los recargos?</ds-enlace-ayuda>
+</div>
+
+<div class="recargos-filtros">
+  <input class="recargos-fecha" type="date" aria-label="Desde" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+  <input class="recargos-fecha" type="date" aria-label="Hasta" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+  <ds-select [ngModel]="sucursalId()" (ngModelChange)="sucursalId.set($event)">
+    <option value="">Todas las sucursales</option>
+    @for (s of sucursales(); track s.id) {
+      <option [value]="s.id">{{ s.nombre }}</option>
+    }
+  </ds-select>
+  <ds-select [ngModel]="empleadoId()" (ngModelChange)="empleadoId.set($event)">
+    <option value="">Todos los empleados</option>
+    @for (e of empleados(); track e.id) {
+      <option [value]="e.id">{{ e.nombre }}</option>
+    }
+  </ds-select>
+  <ds-button variant="primary" icon="bar-chart" [loading]="cargando()" (click)="calcular()">Calcular</ds-button>
+</div>
+
+<p class="recargos-nota">
+  <ds-icon name="alert-triangle" [size]="16" />
+  {{ reporte()?.nota ?? 'Valores de recargos y horas extra según la ley vigente en cada fecha. No incluye salario, seguridad social ni prestaciones.' }}
+</p>
+
+@if (reporte(); as r) {
+  @if (r.empleados.length === 0) {
+    <ds-empty-state
+      icon="clock"
+      title="Sin jornadas en este período"
+      description="El reporte se calcula con las jornadas cerradas (con entrada y salida) de tus empleados."
+    />
+  } @else {
+    <ds-table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Empleado</th>
+          @for (c of columnas; track c.titulo) {
+            <th class="recargos-num">{{ c.titulo }}</th>
+          }
+          <th class="recargos-num">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (e of r.empleados; track e.empleado.id) {
+          <tr>
+            <td>
+              <button
+                type="button"
+                class="recargos-expandir"
+                [class.recargos-expandir--abierto]="abiertos().has(e.empleado.id)"
+                [attr.aria-expanded]="abiertos().has(e.empleado.id)"
+                title="Ver detalle"
+                (click)="alternar(e.empleado.id)"
+              >
+                <ds-icon name="chevron-right" [size]="16" />
+              </button>
+            </td>
+            <td>
+              <div class="recargos-empleado">
+                <span>{{ e.empleado.nombre }}</span>
+                @if (!e.empleado.aplicaHorasExtra) {
+                  <ds-badge tone="neutral">Sin horas extra</ds-badge>
+                }
+                @if (e.alertas.length > 0) {
+                  <ds-badge tone="warning">{{ e.alertas.length === 1 ? '1 alerta' : e.alertas.length + ' alertas' }}</ds-badge>
+                }
+              </div>
+            </td>
+            @for (c of columnas; track c.titulo) {
+              <td class="recargos-num">
+                @if (celda(e, c.tipos).minutos > 0) {
+                  <span class="recargos-valor">{{ dinero(celda(e, c.tipos).valor) }}</span>
+                  <span class="recargos-horas">{{ horas(celda(e, c.tipos).minutos) }} h</span>
+                } @else {
+                  <span class="recargos-vacio">—</span>
+                }
+              </td>
+            }
+            <td class="recargos-num"><strong>{{ dinero(e.total) }}</strong></td>
+          </tr>
+          @if (abiertos().has(e.empleado.id)) {
+            <tr class="recargos-detalle-fila">
+              <td [attr.colspan]="columnas.length + 3">
+                <div class="recargos-detalle">
+                  <p class="recargos-detalle__meta">
+                    Salario {{ dinero(e.empleado.salarioMensual) }} · {{ horas(e.porTipo.ORDINARIA_DIURNA.minutos) }} h ordinarias diurnas
+                    (incluidas en el salario)
+                  </p>
+                  @for (a of e.alertas; track a.tipo + a.fecha) {
+                    <p class="recargos-alerta"><ds-icon name="alert-triangle" [size]="14" /> {{ textoAlertaRecargo(a) }}</p>
+                  }
+                  @if (tramosConRecargo(e).length === 0) {
+                    <p class="recargos-detalle__meta">Sin horas con recargo en el período.</p>
+                  } @else {
+                    <ds-table>
+                      <thead>
+                        <tr>
+                          <th>Fecha</th>
+                          <th>Horario</th>
+                          <th class="recargos-num">Horas</th>
+                          <th>Tipo</th>
+                          <th class="recargos-num">%</th>
+                          <th class="recargos-num">Valor</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (t of tramosConRecargo(e); track t.inicio) {
+                          <tr>
+                            <td>{{ dia(t.fecha) }}</td>
+                            <td>{{ hora(t.inicio) }}–{{ hora(t.fin) }}</td>
+                            <td class="recargos-num">{{ horas(t.minutos) }}</td>
+                            <td>{{ etiquetaTipo[t.tipo] }}</td>
+                            <td class="recargos-num">{{ porcentaje(t.porcentaje) }} %</td>
+                            <td class="recargos-num">{{ dinero(t.valor) }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </ds-table>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+      <tfoot>
+        <tr class="recargos-totales">
+          <td></td>
+          <td>Total</td>
+          @for (c of columnas; track c.titulo) {
+            <td class="recargos-num">{{ dinero(totalColumna(c.tipos)) }}</td>
+          }
+          <td class="recargos-num"><strong>{{ dinero(r.totalGeneral) }}</strong></td>
+        </tr>
+      </tfoot>
+    </ds-table>
+  }
+
+  @if (resumenAsistencia().lista.length > 0) {
+    <section class="recargos-asistencia">
+      <h3>Alertas de asistencia</h3>
+      <p class="recargos-detalle__meta">
+        {{ resumenAsistencia().tarde }} llegadas tarde · {{ resumenAsistencia().ausente }} ausencias ·
+        {{ resumenAsistencia().sinSalida }} jornadas sin salida
+      </p>
+      <ul>
+        @for (a of resumenAsistencia().lista; track $index) {
+          <li>{{ textoAlertaAsistencia(a) }}</li>
+        }
+      </ul>
+    </section>
+  }
+} @else if (cargando()) {
+  <div class="recargos-cargando">
+    <ds-icon name="bar-chart" [size]="24" />
+    <span>Calculando...</span>
+  </div>
+}
