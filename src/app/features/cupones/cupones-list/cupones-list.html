@@ -37,6 +37,16 @@
               <td>{{ usos(promocion) }}</td>
               <td><ds-badge [tone]="tonoEstado[promocion.estado]">{{ etiquetaEstado[promocion.estado] }}</ds-badge></td>
               <td class="cupones-actions">
+                @if (puedeVerAuditoria) {
+                  <button
+                    type="button"
+                    class="cupones-actions__btn"
+                    title="Historial de cambios"
+                    (click)="historialAuditoria.set({ entidadId: promocion.id, titulo: promocion.nombre })"
+                  >
+                    <ds-icon name="clock" [size]="16" />
+                  </button>
+                }
                 <button type="button" class="cupones-actions__btn" (click)="editar(promocion)">
                   <ds-icon name="pencil" [size]="16" />
                 </button>
@@ -78,6 +88,16 @@
               <td>{{ usos(promocion) }}</td>
               <td><ds-badge [tone]="tonoEstado[promocion.estado]">{{ etiquetaEstado[promocion.estado] }}</ds-badge></td>
               <td class="cupones-actions">
+                @if (puedeVerAuditoria) {
+                  <button
+                    type="button"
+                    class="cupones-actions__btn"
+                    title="Historial de cambios"
+                    (click)="historialAuditoria.set({ entidadId: promocion.id, titulo: promocion.nombre })"
+                  >
+                    <ds-icon name="clock" [size]="16" />
+                  </button>
+                }
                 <button type="button" class="cupones-actions__btn" (click)="editar(promocion)">
                   <ds-icon name="pencil" [size]="16" />
                 </button>
@@ -91,4 +111,13 @@
       </ds-table>
     }
   </div>
+}
+
+@if (historialAuditoria(); as h) {
+  <app-historial-auditoria-modal
+    entidad="Promocion"
+    [entidadId]="h.entidadId"
+    [titulo]="h.titulo"
+    (close)="historialAuditoria.set(null)"
+  />
 }

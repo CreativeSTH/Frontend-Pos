@@ -1,0 +1,77 @@
+<app-topbar title="Auditoría" subtitle="Quién cambió qué y cuándo en tu negocio" backTo="/configuracion" />
+
+<div class="auditoria-toolbar">
+  <ds-search-bar placeholder="Buscar por registro o descripción..." [value]="busqueda()" (valueChange)="buscar($event)" />
+  <ds-select [ngModel]="usuarioId()" (ngModelChange)="filtrar('usuarioId', $event)">
+    <option value="">Todos los usuarios</option>
+    @for (u of usuarios(); track u.id) {
+      <option [value]="u.id">{{ u.nombre }}</option>
+    }
+  </ds-select>
+  <ds-select [ngModel]="modulo()" (ngModelChange)="filtrar('modulo', $event)">
+    <option value="">Todos los módulos</option>
+    @for (m of modulos; track m[0]) {
+      <option [value]="m[0]">{{ m[1] }}</option>
+    }
+  </ds-select>
+  <ds-select [ngModel]="accion()" (ngModelChange)="filtrar('accion', $event)">
+    <option value="">Todas las acciones</option>
+    @for (a of acciones; track a.valor) {
+      <option [value]="a.valor">{{ a.etiqueta }}</option>
+    }
+  </ds-select>
+  <input
+    type="date"
+    class="auditoria-fecha"
+    [ngModel]="desde()"
+    (ngModelChange)="filtrar('desde', $event)"
+    aria-label="Desde"
+  />
+  <input
+    type="date"
+    class="auditoria-fecha"
+    [ngModel]="hasta()"
+    (ngModelChange)="filtrar('hasta', $event)"
+    aria-label="Hasta"
+  />
+</div>
+
+<div class="auditoria-nota">
+  @if (!desde() && !hasta()) {
+    <span>Mostrando los últimos 7 días. Elige fechas para ver más atrás.</span>
+  }
+  @if (hayFiltros()) {
+    <button type="button" class="auditoria-nota__limpiar" (click)="limpiarFiltros()">Limpiar filtros</button>
+  }
+</div>
+
+@if (cargando() && !datos()) {
+  <div class="auditoria-cargando"><ds-icon name="clock" [size]="28" /><span>Cargando historial...</span></div>
+} @else if (error()) {
+  <ds-empty-state icon="alert-triangle" title="No se pudo cargar la auditoría" description="Revisa tu conexión e inténtalo de nuevo.">
+    <ds-button variant="glass" icon="rotate-ccw" (click)="cargar()">Reintentar</ds-button>
+  </ds-empty-state>
+} @else if (datos(); as d) {
+  @if (d.items.length === 0) {
+    <ds-empty-state
+      icon="clock"
+      title="Sin movimientos"
+      [description]="
+        hayFiltros() ? 'Ningún registro coincide con esos filtros.' : 'Todavía no hay cambios registrados en este período.'
+      "
+    />
+  } @else {
+    <div class="auditoria-lista" [class.is-recargando]="cargando()">
+      <app-linea-tiempo-auditoria [registros]="d.items" />
+    </div>
+    <ds-paginator
+      [page]="d.pagina"
+      [totalPages]="totalPaginas()"
+      [pageSize]="d.porPagina"
+      [totalItems]="d.total"
+      [pageSizeOptions]="[20, 50, 100]"
+      (pageChange)="irAPagina($event)"
+      (pageSizeChange)="cambiarPorPagina($event)"
+    />
+  }
+}

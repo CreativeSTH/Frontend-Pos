@@ -17,39 +17,11 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
 import { Permiso, Rol } from '../../../core/models/rol.model';
 import { AccionPermiso, ModuloPermiso } from '../../../core/models/auth.model';
+import { ETIQUETAS_MODULO } from '../../../core/models/etiquetas-modulo';
+import { HistorialAuditoriaModal } from '../../auditoria/historial-auditoria-modal/historial-auditoria-modal';
+import { AuthService } from '../../../core/services/auth.service';
 
 const ACCIONES: AccionPermiso[] = ['VER', 'CREAR', 'EDITAR', 'ELIMINAR'];
-
-const ETIQUETAS_MODULO: Record<ModuloPermiso, string> = {
-  NEGOCIOS: 'Negocios',
-  NEGOCIO: 'Datos del negocio',
-  SUCURSALES: 'Sucursales',
-  USUARIOS: 'Usuarios',
-  ROLES: 'Roles',
-  PRODUCTOS: 'Productos',
-  CATEGORIAS: 'Categorías',
-  MARCAS: 'Marcas',
-  LINEAS: 'Líneas',
-  PROVEEDORES: 'Proveedores',
-  BODEGAS: 'Bodegas',
-  INVENTARIO: 'Inventario',
-  VENTAS: 'Ventas',
-  CAJA: 'Caja',
-  COBROS: 'Cobros',
-  CLIENTES: 'Clientes',
-  DOMICILIOS: 'Domicilios',
-  ALERTAS: 'Alertas',
-  REPORTES: 'Reportes',
-  METODOS_PAGO: 'Métodos de pago',
-  GRAFICOS: 'Gráficos',
-  FACTURACION: 'Facturación',
-  CUPONES: 'Cupones y descuentos',
-  PAGOS: 'Pagos con Wompi',
-  TIENDA_ONLINE: 'Tienda online',
-  PAQUETES: 'Paquetes',
-  FACTURACION_ELECTRONICA_DIAN: 'Facturación electrónica DIAN',
-  DEVOLUCIONES: 'Devoluciones',
-};
 
 const ETIQUETAS_ACCION: Record<AccionPermiso, string> = {
   VER: 'Ver',
@@ -67,12 +39,15 @@ interface FilaMatriz {
 @Component({
   selector: 'app-roles-list',
   standalone: true,
-  imports: [Topbar, Button, Badge, Icon, Table, Modal, FormField, Input, EmptyState, Paginator, ReactiveFormsModule],
+  imports: [HistorialAuditoriaModal, Topbar, Button, Badge, Icon, Table, Modal, FormField, Input, EmptyState, Paginator, ReactiveFormsModule],
   templateUrl: './roles-list.html',
   styleUrl: './roles-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RolesList {
+  protected readonly puedeVerAuditoria = inject(AuthService).tienePermiso('AUDITORIA', 'VER');
+  /** Registro cuyo historial de auditoría está abierto (modal). */
+  protected readonly historialAuditoria = signal<{ entidadId: string; titulo: string } | null>(null);
   private readonly rolesService = inject(RolesService);
   private readonly toast = inject(ToastService);
   private readonly confirmService = inject(ConfirmService);

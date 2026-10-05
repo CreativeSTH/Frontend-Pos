@@ -15,16 +15,21 @@ import { MetodosPagoService } from '../../../core/services/metodos-pago.service'
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
 import { MetodoPago } from '../../../core/models/metodo-pago.model';
+import { HistorialAuditoriaModal } from '../../auditoria/historial-auditoria-modal/historial-auditoria-modal';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-metodos-pago-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, Switch, EmptyState, Paginator, ReactiveFormsModule],
+  imports: [HistorialAuditoriaModal, Topbar, Button, Icon, Table, Modal, FormField, Input, Switch, EmptyState, Paginator, ReactiveFormsModule],
   templateUrl: './metodos-pago-list.html',
   styleUrl: './metodos-pago-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MetodosPagoList {
+  protected readonly puedeVerAuditoria = inject(AuthService).tienePermiso('AUDITORIA', 'VER');
+  /** Registro cuyo historial de auditoría está abierto (modal). */
+  protected readonly historialAuditoria = signal<{ entidadId: string; titulo: string } | null>(null);
   private readonly metodosPagoService = inject(MetodosPagoService);
   private readonly toast = inject(ToastService);
   private readonly confirmService = inject(ConfirmService);

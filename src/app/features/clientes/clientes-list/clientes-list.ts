@@ -18,11 +18,14 @@ import { ClientesService } from '../../../core/services/clientes.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Cliente, SaldoAFavorCliente, TIPOS_DOCUMENTO_IDENTIDAD } from '../../../core/models/cliente.model';
 import { Select } from '../../../shared/ui/atoms/select/select';
+import { HistorialAuditoriaModal } from '../../auditoria/historial-auditoria-modal/historial-auditoria-modal';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-clientes-list',
   standalone: true,
   imports: [
+    HistorialAuditoriaModal,
     Topbar,
     Button,
     Badge,
@@ -44,6 +47,9 @@ import { Select } from '../../../shared/ui/atoms/select/select';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClientesList {
+  protected readonly puedeVerAuditoria = inject(AuthService).tienePermiso('AUDITORIA', 'VER');
+  /** Registro cuyo historial de auditoría está abierto (modal). */
+  protected readonly historialAuditoria = signal<{ entidadId: string; titulo: string } | null>(null);
   private readonly clientesService = inject(ClientesService);
   private readonly toast = inject(ToastService);
   private readonly fb = inject(FormBuilder);

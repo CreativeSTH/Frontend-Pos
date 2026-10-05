@@ -38,6 +38,16 @@
             </button>
           </td>
           <td class="roles-actions">
+            @if (puedeVerAuditoria) {
+              <button
+                type="button"
+                class="roles-actions__btn"
+                title="Historial de cambios"
+                (click)="historialAuditoria.set({ entidadId: rol.id, titulo: rol.nombre })"
+              >
+                <ds-icon name="clock" [size]="16" />
+              </button>
+            }
             <button type="button" class="roles-actions__btn" (click)="openEdit(rol)" title="Editar">
               <ds-icon name="pencil" [size]="16" />
             </button>
@@ -120,4 +130,13 @@
       <ds-button variant="primary" [loading]="savingPermisos()" (click)="guardarPermisos()">Guardar permisos</ds-button>
     </div>
   </ds-modal>
+}
+
+@if (historialAuditoria(); as h) {
+  <app-historial-auditoria-modal
+    entidad="Rol"
+    [entidadId]="h.entidadId"
+    [titulo]="h.titulo"
+    (close)="historialAuditoria.set(null)"
+  />
 }

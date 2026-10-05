@@ -1,0 +1,58 @@
+@for (grupo of dias(); track grupo.dia) {
+  <section class="lta-dia">
+    <h3 class="lta-dia__titulo">{{ grupo.titulo }}</h3>
+    <ul class="lta-lista">
+      @for (r of grupo.registros; track r.id) {
+        <li class="lta-fila" [class.is-abierta]="expandidos().has(r.id)">
+          <button
+            type="button"
+            class="lta-fila__cabecera"
+            [class.is-expandible]="!!r.cambios?.length"
+            [attr.aria-expanded]="r.cambios?.length ? expandidos().has(r.id) : null"
+            [disabled]="!r.cambios?.length"
+            (click)="alternar(r.id)"
+          >
+            <span class="lta-fila__hora">{{ hora(r.createdAt) }}</span>
+            <ds-badge [tone]="accion(r.accion).tono">{{ accion(r.accion).etiqueta }}</ds-badge>
+            <span class="lta-fila__texto">
+              <span class="lta-fila__autor">{{ autor(r) }}</span>
+              <span class="lta-fila__descripcion">{{ r.descripcion }}</span>
+            </span>
+            <span class="lta-fila__modulo">{{ modulo(r) }}</span>
+            @if (r.cambios?.length) {
+              <ds-icon class="lta-fila__chevron" name="chevron-down" [size]="16" />
+            }
+          </button>
+          @if (expandidos().has(r.id) && r.cambios?.length) {
+            <div class="lta-cambios">
+              <table class="lta-cambios__tabla">
+                <thead>
+                  <tr>
+                    <th>Campo</th>
+                    <th>Antes</th>
+                    <th>Después</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of r.cambios; track c.campo) {
+                    <tr>
+                      <td class="lta-cambios__campo">{{ c.etiqueta }}</td>
+                      <td class="lta-cambios__antes">{{ c.antes ?? '—' }}</td>
+                      <td class="lta-cambios__despues">{{ c.despues ?? '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              @if (mostrarEnlace() && ruta(r); as destino) {
+                <a class="lta-cambios__enlace" [routerLink]="destino">
+                  Ir a {{ modulo(r) }}
+                  <ds-icon name="arrow-up-right" [size]="14" />
+                </a>
+              }
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}

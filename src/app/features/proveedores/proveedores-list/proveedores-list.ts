@@ -16,16 +16,21 @@ import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
 import { Proveedor, ProveedorDocumentos } from '../../../core/models/proveedor.model';
 import { environment } from '../../../../environments/environment';
+import { HistorialAuditoriaModal } from '../../auditoria/historial-auditoria-modal/historial-auditoria-modal';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-proveedores-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Table, Modal, FormField, Input, DocumentUpload, EmptyState, Paginator, ReactiveFormsModule],
+  imports: [HistorialAuditoriaModal, Topbar, Button, Icon, Table, Modal, FormField, Input, DocumentUpload, EmptyState, Paginator, ReactiveFormsModule],
   templateUrl: './proveedores-list.html',
   styleUrl: './proveedores-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProveedoresList {
+  protected readonly puedeVerAuditoria = inject(AuthService).tienePermiso('AUDITORIA', 'VER');
+  /** Registro cuyo historial de auditoría está abierto (modal). */
+  protected readonly historialAuditoria = signal<{ entidadId: string; titulo: string } | null>(null);
   private readonly proveedoresService = inject(ProveedoresService);
   private readonly toast = inject(ToastService);
   private readonly confirmService = inject(ConfirmService);

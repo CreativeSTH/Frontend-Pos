@@ -57,6 +57,7 @@ export const CONFIG_GROUPS: ConfiguracionGroup[] = [
       { label: 'Asistente de configuración', description: 'Guía paso a paso para dejar una sucursal lista: bodega y productos', icon: 'layers', route: '/asistente', modulo: 'SUCURSALES', accion: 'CREAR' },
       { label: 'Usuarios', description: 'Usuarios y asignación de roles', icon: 'users', route: '/usuarios', modulo: 'USUARIOS' },
       { label: 'Roles', description: 'Roles y permisos por módulo', icon: 'tag', route: '/roles', modulo: 'ROLES' },
+      { label: 'Auditoría', description: 'Quién cambió qué y cuándo en tu negocio', icon: 'clock', route: '/auditoria', modulo: 'AUDITORIA' },
       { label: 'Métodos de pago', description: 'Formas de cobro disponibles en el POS', icon: 'credit-card', route: '/metodos-pago', modulo: 'METODOS_PAGO' },
       { label: 'Mi plan', description: 'Tu plan, cambiar de plan, pagos y tarjeta para cobro automático', icon: 'credit-card', route: '/configuracion/mi-plan', modulo: 'NEGOCIO' },
       { label: 'Cupones y descuentos', description: 'Cupones de código y promociones automáticas por sucursal, categoría o producto', icon: 'tag', route: '/configuracion/cupones', modulo: 'CUPONES' },

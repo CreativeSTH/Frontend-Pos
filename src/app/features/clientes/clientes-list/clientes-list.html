@@ -59,6 +59,16 @@
             }
           </td>
           <td class="clientes-actions">
+            @if (puedeVerAuditoria) {
+              <button
+                type="button"
+                class="clientes-actions__btn"
+                title="Historial de cambios"
+                (click)="historialAuditoria.set({ entidadId: cliente.id, titulo: cliente.nombre })"
+              >
+                <ds-icon name="clock" [size]="16" />
+              </button>
+            }
             <button type="button" class="clientes-actions__btn" (click)="openEdit(cliente)" title="Editar">
               <ds-icon name="pencil" [size]="16" />
             </button>
@@ -155,4 +165,13 @@
       <ds-button variant="ghost" (click)="saldoAbierto.set(null)">Cerrar</ds-button>
     </div>
   </ds-modal>
+}
+
+@if (historialAuditoria(); as h) {
+  <app-historial-auditoria-modal
+    entidad="Cliente"
+    [entidadId]="h.entidadId"
+    [titulo]="h.titulo"
+    (close)="historialAuditoria.set(null)"
+  />
 }

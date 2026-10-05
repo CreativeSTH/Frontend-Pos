@@ -27,11 +27,14 @@ import { Marca } from '../../../core/models/marca.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { Bodega } from '../../../core/models/bodega.model';
 import { environment } from '../../../../environments/environment';
+import { HistorialAuditoriaModal } from '../../auditoria/historial-auditoria-modal/historial-auditoria-modal';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-productos-list',
   standalone: true,
   imports: [
+    HistorialAuditoriaModal,
     Topbar,
     Button,
     Badge,
@@ -51,6 +54,9 @@ import { environment } from '../../../../environments/environment';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductosList {
+  protected readonly puedeVerAuditoria = inject(AuthService).tienePermiso('AUDITORIA', 'VER');
+  /** Registro cuyo historial de auditoría está abierto (modal). */
+  protected readonly historialAuditoria = signal<{ entidadId: string; titulo: string } | null>(null);
   private readonly productosService = inject(ProductosService);
   private readonly marcasService = inject(MarcasService);
   private readonly sucursalesService = inject(SucursalesService);

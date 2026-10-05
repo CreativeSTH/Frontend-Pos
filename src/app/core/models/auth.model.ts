@@ -26,7 +26,8 @@ export type ModuloPermiso =
   | 'TIENDA_ONLINE'
   | 'PAQUETES'
   | 'FACTURACION_ELECTRONICA_DIAN'
-  | 'DEVOLUCIONES';
+  | 'DEVOLUCIONES'
+  | 'AUDITORIA';
 
 export type AccionPermiso = 'VER' | 'CREAR' | 'EDITAR' | 'ELIMINAR';
 

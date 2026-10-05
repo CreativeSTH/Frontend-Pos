@@ -35,6 +35,16 @@
           </td>
           <td>{{ nombreSucursal(usuario.sucursalId) }}</td>
           <td class="usuarios-actions">
+            @if (puedeVerAuditoria) {
+              <button
+                type="button"
+                class="usuarios-actions__btn"
+                title="Historial de cambios"
+                (click)="historialAuditoria.set({ entidadId: usuario.id, titulo: usuario.nombre })"
+              >
+                <ds-icon name="clock" [size]="16" />
+              </button>
+            }
             <button type="button" class="usuarios-actions__btn" (click)="openEdit(usuario)">
               <ds-icon name="pencil" [size]="16" />
             </button>
@@ -106,4 +116,13 @@
       <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
     </div>
   </ds-modal>
+}
+
+@if (historialAuditoria(); as h) {
+  <app-historial-auditoria-modal
+    entidad="Usuario"
+    [entidadId]="h.entidadId"
+    [titulo]="h.titulo"
+    (close)="historialAuditoria.set(null)"
+  />
 }

@@ -104,6 +104,16 @@
           <td>{{ formatMoney(producto.costo) }}</td>
           <td>{{ etiquetaImpuesto(producto) }}</td>
           <td class="productos-actions">
+            @if (puedeVerAuditoria) {
+              <button
+                type="button"
+                class="productos-actions__btn"
+                title="Historial de cambios"
+                (click)="historialAuditoria.set({ entidadId: producto.id, titulo: producto.nombre })"
+              >
+                <ds-icon name="clock" [size]="16" />
+              </button>
+            }
             <button type="button" class="productos-actions__btn" (click)="openEdit(producto)">
               <ds-icon name="pencil" [size]="16" />
             </button>
@@ -139,4 +149,13 @@
       </ds-button>
     </div>
   </ds-modal>
+}
+
+@if (historialAuditoria(); as h) {
+  <app-historial-auditoria-modal
+    entidad="Producto"
+    [entidadId]="h.entidadId"
+    [titulo]="h.titulo"
+    (close)="historialAuditoria.set(null)"
+  />
 }

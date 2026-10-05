@@ -161,6 +161,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/roles/roles-list/roles-list').then((m) => m.RolesList),
       },
       {
+        path: 'auditoria',
+        canActivate: [permisoGuard('AUDITORIA')],
+        loadComponent: () => import('./features/auditoria/auditoria-page/auditoria-page').then((m) => m.AuditoriaPage),
+      },
+      {
         path: 'negocios',
         canActivate: [permisoGuard('NEGOCIOS')],
         loadComponent: () =>

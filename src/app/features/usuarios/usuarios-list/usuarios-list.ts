@@ -23,11 +23,13 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 import { Usuario } from '../../../core/models/usuario.model';
 import { Rol } from '../../../core/models/rol.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
+import { HistorialAuditoriaModal } from '../../auditoria/historial-auditoria-modal/historial-auditoria-modal';
 
 @Component({
   selector: 'app-usuarios-list',
   standalone: true,
   imports: [
+    HistorialAuditoriaModal,
     Topbar,
     Button,
     Badge,
@@ -47,6 +49,9 @@ import { Sucursal } from '../../../core/models/sucursal.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UsuariosList {
+  protected readonly puedeVerAuditoria = inject(AuthService).tienePermiso('AUDITORIA', 'VER');
+  /** Registro cuyo historial de auditoría está abierto (modal). */
+  protected readonly historialAuditoria = signal<{ entidadId: string; titulo: string } | null>(null);
   private readonly usuariosService = inject(UsuariosService);
   private readonly sucursalesService = inject(SucursalesService);
   private readonly rolesService = inject(RolesService);

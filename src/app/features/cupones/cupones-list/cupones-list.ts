@@ -10,6 +10,8 @@ import { CuponesService } from '../../../core/services/cupones.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../core/services/confirm.service';
 import { EstadoPromocion, Promocion } from '../../../core/models/promocion.model';
+import { HistorialAuditoriaModal } from '../../auditoria/historial-auditoria-modal/historial-auditoria-modal';
+import { AuthService } from '../../../core/services/auth.service';
 
 const TONO_ESTADO: Record<EstadoPromocion, BadgeTone> = {
   PROGRAMADA: 'info',
@@ -30,12 +32,15 @@ const ETIQUETA_ESTADO: Record<EstadoPromocion, string> = {
 @Component({
   selector: 'app-cupones-list',
   standalone: true,
-  imports: [Topbar, Button, Icon, Badge, Table, EmptyState],
+  imports: [HistorialAuditoriaModal, Topbar, Button, Icon, Badge, Table, EmptyState],
   templateUrl: './cupones-list.html',
   styleUrl: './cupones-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CuponesList {
+  protected readonly puedeVerAuditoria = inject(AuthService).tienePermiso('AUDITORIA', 'VER');
+  /** Registro cuyo historial de auditoría está abierto (modal). */
+  protected readonly historialAuditoria = signal<{ entidadId: string; titulo: string } | null>(null);
   private readonly cuponesService = inject(CuponesService);
   private readonly toast = inject(ToastService);
   private readonly confirmService = inject(ConfirmService);

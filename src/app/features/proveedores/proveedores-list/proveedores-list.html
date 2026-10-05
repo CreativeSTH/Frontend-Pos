@@ -30,6 +30,16 @@
           <td>{{ proveedor.contactoNombre || '—' }}</td>
           <td>{{ proveedor.telefono || '—' }}</td>
           <td class="proveedores-actions">
+            @if (puedeVerAuditoria) {
+              <button
+                type="button"
+                class="proveedores-actions__btn"
+                title="Historial de cambios"
+                (click)="historialAuditoria.set({ entidadId: proveedor.id, titulo: proveedor.nombre })"
+              >
+                <ds-icon name="clock" [size]="16" />
+              </button>
+            }
             <button type="button" class="proveedores-actions__btn" (click)="openEdit(proveedor)" title="Editar">
               <ds-icon name="pencil" [size]="16" />
             </button>
@@ -119,4 +129,13 @@
       <ds-button variant="primary" [loading]="saving()" (click)="save()">Guardar</ds-button>
     </div>
   </ds-modal>
+}
+
+@if (historialAuditoria(); as h) {
+  <app-historial-auditoria-modal
+    entidad="Proveedor"
+    [entidadId]="h.entidadId"
+    [titulo]="h.titulo"
+    (close)="historialAuditoria.set(null)"
+  />
 }
